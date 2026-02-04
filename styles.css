@@ -936,6 +936,16 @@ body.chat-page {
     overflow: hidden;
 }
 
+.chat-page .app-shell {
+    min-height: 100vh;
+    max-width: 100%;
+}
+
+.chat-page .chat-card {
+    min-height: 100vh;
+    border-radius: 0;
+}
+
 .redirect-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1011,10 +1021,11 @@ body.chat-page {
 .primary-btn,
 .ghost-btn {
     border: none;
-    padding: 12px 18px;
-    border-radius: 14px;
+    padding: 8px 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.85rem;
 }
 
 .primary-btn {
@@ -1088,7 +1099,7 @@ body.chat-page {
 
 .chat-page .chat-header {
     background: linear-gradient(135deg, #1f1f1f 0%, #0e0e0e 100%);
-    padding: 16px 18px;
+    padding: 10px 14px;
 }
 
 .brand {
@@ -1098,7 +1109,7 @@ body.chat-page {
 }
 
 .brand-logo {
-    height: 108px;
+    height: 72px;
     width: auto;
     display: block;
 }
@@ -1115,17 +1126,19 @@ body.chat-page {
 
 .pill {
     background: rgba(255, 255, 255, 0.1);
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-radius: 999px;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
 }
 
 .chat-tabs {
-    margin: 20px 0;
+    margin: 12px 0;
 }
 
 .chat-tabs .tab-btn {
-    border-radius: 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    padding: 10px 12px;
 }
 
 .chat-body {
@@ -1470,6 +1483,7 @@ body.chat-page {
     min-width: 64px;
 }
 
+/* Only show scrollbar when needed */
 .message-container,
 .private-list,
 .admin-messages {
@@ -1526,8 +1540,8 @@ body.chat-page {
 }
 
 .header-avatar {
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.08);
     background-size: cover;
@@ -1624,6 +1638,36 @@ body.chat-page {
 
 .avatar-option.selected {
     border-color: #ff69b4;
+}
+
+/* Ensure avatars fully visible */
+.user-avatar.has-image,
+.message-avatar.has-image {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Keep chat scroll inside card */
+.chat-page .app-shell {
+    height: 100%;
+}
+
+.chat-page .chat-card {
+    height: 100%;
+}
+
+.chat-page .chat-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.chat-page .message-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .profile-view {
