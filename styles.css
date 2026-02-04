@@ -931,6 +931,11 @@ body.redirect-page {
     color: #fff;
 }
 
+body.chat-page {
+    height: 100vh;
+    overflow: hidden;
+}
+
 .redirect-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1058,6 +1063,7 @@ body.redirect-page {
     gap: 20px;
     width: 100%;
     max-width: 1200px;
+    height: 100%;
 }
 
 .chat-card {
@@ -1066,7 +1072,7 @@ body.redirect-page {
     border-radius: 22px;
     padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.12);
-    min-height: 80vh;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -1131,7 +1137,7 @@ body.redirect-page {
 }
 
 .message-container {
-    max-height: 55vh;
+    max-height: 100%;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -1511,7 +1517,7 @@ body.redirect-page {
     }
 
     .chat-page .message-container {
-        max-height: calc(100vh - 300px);
+        max-height: 100%;
     }
 }
 .tagline {
@@ -1654,6 +1660,37 @@ body.redirect-page {
     padding: 10px 12px;
     border-radius: 12px;
     width: 100%;
+}
+
+.profile-view-meta {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.meta-item {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.meta-label {
+    font-size: 0.75rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.meta-value {
+    font-size: 0.95rem;
+    color: #fff;
+    font-weight: 600;
 }
 
 .glass-rotate {
