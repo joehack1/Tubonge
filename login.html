@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tubonge - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Tubonge</h1>
+            <p>Welcome back. Log in or create an account.</p>
+        </div>
+        <div class="auth-tabs">
+            <button class="tab-btn active" data-tab="login">Log In</button>
+            <button class="tab-btn" data-tab="signup">Sign Up</button>
+        </div>
+        <div class="auth-body">
+            <div class="tab-panel active" id="tab-login">
+                <div class="field">
+                    <label for="login-username">Username</label>
+                    <input id="login-username" type="text" autocomplete="username" maxlength="20" placeholder="Your username">
+                </div>
+                <div class="field">
+                    <label for="login-password">Password</label>
+                    <input id="login-password" type="password" autocomplete="current-password" placeholder="Your password">
+                </div>
+                <button id="login-btn" class="primary-btn">Log In</button>
+            </div>
+            <div class="tab-panel" id="tab-signup">
+                <div class="field">
+                    <label for="signup-username">Username</label>
+                    <input id="signup-username" type="text" maxlength="20" placeholder="Choose a username">
+                </div>
+                <div class="field">
+                    <label for="signup-password">Password</label>
+                    <input id="signup-password" type="password" placeholder="Create a password">
+                </div>
+                <button id="signup-btn" class="primary-btn">Create Account</button>
+            </div>
+        </div>
+        <div class="auth-footer">
+            <button id="admin-link" class="ghost-btn">Admin Login</button>
+        </div>
+        <div class="admin-panel" id="admin-panel">
+            <div class="field">
+                <label for="admin-password">Admin Password</label>
+                <input id="admin-password" type="password" placeholder="Enter admin password">
+            </div>
+            <button id="admin-login-btn" class="primary-btn">Enter Admin Console</button>
+        </div>
+        <div class="auth-status" id="auth-status"></div>
+    </div>
+    <script type="module" src="login.js"></script>
+</body>
+</html>

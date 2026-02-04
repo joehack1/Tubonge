@@ -3,151 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tubonge - Real-time Chat</title>
-
-    <!-- Font Awesome for icons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-
-    <!-- External CSS -->
+    <meta http-equiv="refresh" content="0; url=login.html">
+    <title>Tubonge</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <!-- Profile Modal -->
-    <div class="modal-overlay" id="profile-modal">
-        <div class="modal-content glass">
-            <div class="modal-header">
-                <h2><i class="fas fa-user"></i> Profile Settings</h2>
-                <button class="close-btn" id="close-profile-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="profile-avatar-section">
-                    <div class="current-avatar" id="current-avatar">
-                        <img id="profile-avatar-img" src="" alt="Profile Picture" style="display: none;">
-                        <div class="avatar-placeholder" id="avatar-placeholder">A</div>
-                    </div>
-                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
-                    <button class="upload-btn" id="upload-avatar-btn">
-                        <i class="fas fa-camera"></i> Change Picture
-                    </button>
-                </div>
-                <div class="profile-form">
-                    <div class="form-group">
-                        <label for="profile-username">Username</label>
-                        <input type="text" id="profile-username" maxlength="20">
-                    </div>
-                    <div class="form-group">
-                        <label for="profile-bio">Bio</label>
-                        <textarea id="profile-bio" maxlength="100" placeholder="Tell others about yourself..."></textarea>
-                    </div>
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <span class="stat-number" id="messages-sent">0</span>
-                            <span class="stat-label">Messages Sent</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="online-time">0h</span>
-                            <span class="stat-label">Online Time</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="join-date">Today</span>
-                            <span class="stat-label">Member Since</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="cancel-btn" id="cancel-profile">Cancel</button>
-                <button class="save-btn" id="save-profile">Save Changes</button>
-            </div>
-        </div>
+<body class="redirect-page">
+    <div class="redirect-card">
+        <h1>Tubonge</h1>
+        <p>Redirecting to login...</p>
+        <a class="primary-link" href="login.html">Go to login</a>
     </div>
-
-    <!-- Image Upload Modal -->
-    <div class="modal-overlay" id="image-modal">
-        <div class="modal-content glass">
-            <div class="modal-header">
-                <h2><i class="fas fa-image"></i> Share Image</h2>
-                <button class="close-btn" id="close-image-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="image-preview" id="image-preview">
-                    <div class="image-placeholder">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>Click to select an image</p>
-                    </div>
-                </div>
-                <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                <div class="image-caption">
-                    <input type="text" id="image-caption" placeholder="Add a caption (optional)" maxlength="100">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="cancel-btn" id="cancel-image">Cancel</button>
-                <button class="share-btn" id="share-image">Share Image</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="app-container glass">
-        <div class="sidebar glass">
-            <div class="sidebar-header">
-                <h3>Online Users</h3>
-                <button class="profile-btn" id="open-profile-btn">
-                    <i class="fas fa-user-cog"></i>
-                </button>
-            </div>
-            <div class="user-list" id="user-list">
-                <!-- User list will be populated here -->
-            </div>
-        </div>
-
-        <div class="chat-container glass">
-            <div class="chat-header glass">
-                <h1><i class="fas fa-comments"></i> TUBONGE</h1>
-                <p>Real-time chat with other users</p>
-            </div>
-
-            <div class="user-info">
-                <div class="auth-row">
-                    <input type="email" id="email-input" placeholder="Email address">
-                    <input type="password" id="password-input" placeholder="Password (min 6 chars)">
-                    <button id="login-btn">Log In</button>
-                    <button id="register-btn">Sign Up</button>
-                    <button id="logout-btn" style="display: none;">Log Out</button>
-                </div>
-                <div class="username-row">
-                    <input type="text" id="username-input" placeholder="Choose a username..." maxlength="20">
-                    <button id="save-username">Save Username</button>
-                </div>
-            </div>
-
-            <div class="chat-tabs">
-                <button class="tab-btn active" id="group-tab">Group Chat</button>
-                <button class="tab-btn" id="private-tab">Private Chat</button>
-            </div>
-
-            <div class="chat-body" id="chat-body">
-                <div class="message-container" id="message-container">
-                    <div class="empty-chat" id="empty-chat">
-                        <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
-                        <p>No messages yet. Start the conversation!</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-footer">
-                <input type="text" id="message-input" placeholder="Type your message here..." disabled maxlength="500">
-                <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
-            </div>
-
-            <div class="chat-info">
-                <p>Real-time messages with other users. All data is stored in Firebase.</p>
-                <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- External JavaScript -->
-    <script type="module" src="script.js"></script>
 </body>
 </html>

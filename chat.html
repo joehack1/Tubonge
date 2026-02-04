@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tubonge - Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="chat-page">
+    <div class="app-shell">
+        <aside class="sidebar" id="desktop-users">
+            <div class="sidebar-header">
+                <h3>Users</h3>
+                <span id="online-count" class="pill">0 online</span>
+            </div>
+            <div class="user-list" id="user-list"></div>
+        </aside>
+
+        <main class="chat-card">
+            <header class="chat-header">
+                <div>
+                    <h1>Tubonge</h1>
+                    <p>General group chat and private messages.</p>
+                </div>
+                <div class="header-actions">
+                    <span id="session-user" class="pill"></span>
+                    <button id="logout-btn" class="ghost-btn">Log Out</button>
+                </div>
+            </header>
+
+            <nav class="chat-tabs">
+                <button class="tab-btn active" data-tab="group">Group</button>
+                <button class="tab-btn" data-tab="private">Private</button>
+                <button class="tab-btn mobile-only" data-tab="users">Users</button>
+            </nav>
+
+            <section class="chat-body">
+                <div class="tab-panel active" id="panel-group">
+                    <div class="message-container" id="group-messages"></div>
+                    <div class="empty-state" id="group-empty">No group messages yet.</div>
+                </div>
+
+                <div class="tab-panel" id="panel-private">
+                    <div class="private-layout">
+                        <div class="private-list" id="private-list"></div>
+                        <div class="private-chat">
+                            <div class="message-container" id="private-messages"></div>
+                            <div class="empty-state" id="private-empty">Select a conversation to start chatting.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" id="panel-users">
+                    <div class="user-list" id="user-list-mobile"></div>
+                </div>
+            </section>
+
+            <footer class="chat-footer">
+                <div class="reply-preview" id="reply-preview">
+                    <span id="reply-text"></span>
+                    <button id="clear-reply" class="ghost-btn">Clear</button>
+                </div>
+                <div class="composer">
+                    <input id="message-input" type="text" placeholder="Type a message..." maxlength="500">
+                    <button id="send-btn" class="primary-btn">Send</button>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script type="module" src="chat.js"></script>
+</body>
+</html>

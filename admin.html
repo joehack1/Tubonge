@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tubonge - Admin</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+    <div class="admin-shell">
+        <div class="admin-card">
+            <header class="admin-header">
+                <h1>Admin Console</h1>
+                <p>Manage group messages only.</p>
+            </header>
+            <div class="admin-controls">
+                <span id="admin-status" class="pill"></span>
+                <button id="admin-logout" class="ghost-btn">Log Out</button>
+                <a class="ghost-btn" href="chat.html">Go to Chat</a>
+            </div>
+            <div class="admin-messages" id="admin-messages"></div>
+            <div class="empty-state" id="admin-empty">No group messages found.</div>
+        </div>
+    </div>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>

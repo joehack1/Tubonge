@@ -7,10 +7,10 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
-    authDomain: "dtubonge.firebaseapp.com",
-    databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
-    projectId: "dtubonge",
-    storageBucket: "dtubonge.firebasestorage.app",
+    authDomain: "Tubonge.firebaseapp.com",
+    databaseURL: "https://Tubonge-default-rtdb.firebaseio.com",
+    projectId: "Tubonge",
+    storageBucket: "Tubonge.firebasestorage.app",
     messagingSenderId: "194637518723",
     appId: "1:194637518723:web:891227e82ea2817e6888b6",
     measurementId: "G-5NPT1KM5DR"
@@ -821,5 +821,5 @@ function showNotification(message, type = 'info') {
 }
 
 // Welcome message in console
-console.log('%cDTubonge Chat App', 'color: #e91e63; font-size: 16px; font-weight: bold;');
+console.log('%cTubonge Chat App', 'color: #e91e63; font-size: 16px; font-weight: bold;');
 console.log('%cWelcome to the chat!', 'color: #ff69b4;');
