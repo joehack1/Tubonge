@@ -194,8 +194,18 @@ body {
     padding: 15px 20px;
     background-color: #2d2d2d;
     border-bottom: 1px solid #444;
+    flex-direction: column;
 }
 
+.auth-row,
+.username-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#email-input,
+#password-input,
 #username-input {
     flex: 1;
     padding: 12px 15px;
@@ -207,10 +217,15 @@ body {
     color: white;
 }
 
+#email-input:focus,
+#password-input:focus,
 #username-input:focus {
     border-color: var(--primary-color);
 }
 
+#login-btn,
+#register-btn,
+#logout-btn,
 #save-username {
     padding: 12px 24px;
     background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
@@ -222,10 +237,16 @@ body {
     transition: transform 0.2s;
 }
 
+#login-btn:hover,
+#register-btn:hover,
+#logout-btn:hover,
 #save-username:hover {
     transform: scale(1.05);
 }
 
+#login-btn:disabled,
+#register-btn:disabled,
+#logout-btn:disabled,
 #save-username:disabled {
     opacity: 0.5;
     cursor: not-allowed;

@@ -1,7 +1,7 @@
 // Import Firebase v9+ (modern version)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast, query } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast, query, update, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 // Firebase Configuration
@@ -20,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence);
 
 // DOM elements
 const messageContainer = document.getElementById('message-container');
@@ -27,6 +28,11 @@ const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
 const usernameInput = document.getElementById('username-input');
 const saveUsernameBtn = document.getElementById('save-username');
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
+const loginBtn = document.getElementById('login-btn');
+const registerBtn = document.getElementById('register-btn');
+const logoutBtn = document.getElementById('logout-btn');
 const clearChatBtn = document.getElementById('clear-chat-btn');
 const chatBody = document.getElementById('chat-body');
 const emptyChat = document.getElementById('empty-chat');
@@ -54,47 +60,145 @@ function generateUserColor() {
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
+function updateAuthUI(signedIn) {
+    emailInput.disabled = signedIn;
+    passwordInput.disabled = signedIn;
+    loginBtn.disabled = signedIn;
+    registerBtn.disabled = signedIn;
+    logoutBtn.style.display = signedIn ? 'inline-flex' : 'none';
+    usernameInput.disabled = !signedIn;
+    saveUsernameBtn.disabled = !signedIn;
+}
+
+async function loadUserProfile() {
+    const userRef = ref(database, 'users/' + userId);
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+        const userData = snapshot.val();
+        username = userData.username || null;
+        userColor = userData.color || generateUserColor();
+        usernameInput.value = username || '';
+    } else {
+        username = null;
+        userColor = generateUserColor();
+        usernameInput.value = '';
+    }
+}
+
 // Listen for authentication state changes
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // User is signed in
         currentUser = user;
         userId = user.uid;
+        updateAuthUI(true);
+        await loadUserProfile();
         setupUserPresence();
         loadMessages();
-        enableChat();
+        if (username) {
+            enableChat();
+        } else {
+            disableChat();
+            messageInput.placeholder = 'Set a username to start chatting...';
+        }
     } else {
-        // User is signed out
+        currentUser = null;
+        userId = null;
+        username = null;
+        userColor = null;
+        updateAuthUI(false);
         disableChat();
     }
 });
 
-// Join chat button
-saveUsernameBtn.addEventListener('click', () => {
+// Save username button
+saveUsernameBtn.addEventListener('click', async () => {
     const name = usernameInput.value.trim();
-    if (name) {
-        username = name;
-        userColor = generateUserColor();
-
-        // Sign in anonymously to Firebase
-        signInAnonymously(auth)
-            .then(() => {
-                console.log("Signed in anonymously");
-                // Save username to Firebase
-                const userRef = ref(database, 'users/' + userId);
-                set(userRef, {
-                    username: username,
-                    color: userColor,
-                    lastActive: Date.now(),
-                    online: true
-                });
-            })
-            .catch((error) => {
-                console.error("Auth error:", error);
-                alert("Error joining chat. Please try again.");
-            });
-    } else {
+    if (!currentUser) {
+        alert("Please log in first.");
+        return;
+    }
+    if (!name) {
         alert("Please enter a username");
+        return;
+    }
+
+    username = name;
+    if (!userColor) {
+        userColor = generateUserColor();
+    }
+
+    const userRef = ref(database, 'users/' + userId);
+    await update(userRef, {
+        username: username,
+        color: userColor,
+        lastActive: Date.now()
+    });
+
+    enableChat();
+});
+
+// Auth actions
+loginBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) {
+        alert("Please enter email and password.");
+        return;
+    }
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        passwordInput.value = '';
+    } catch (error) {
+        console.error("Login error:", error);
+        alert(error.message || "Login failed. Please try again.");
+    }
+});
+
+registerBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const name = usernameInput.value.trim();
+
+    if (!email || !password) {
+        alert("Please enter email and password.");
+        return;
+    }
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+    }
+    if (!name) {
+        alert("Please choose a username.");
+        return;
+    }
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        userId = userCredential.user.uid;
+        userColor = generateUserColor();
+        username = name;
+
+        const userRef = ref(database, 'users/' + userId);
+        await update(userRef, {
+            username: username,
+            color: userColor,
+            joinDate: Date.now(),
+            messagesSent: 0,
+            onlineTime: 0
+        });
+        passwordInput.value = '';
+    } catch (error) {
+        console.error("Registration error:", error);
+        alert(error.message || "Sign up failed. Please try again.");
+    }
+});
+
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error("Logout error:", error);
+        alert("Error logging out. Please try again.");
     }
 });
 
@@ -103,8 +207,8 @@ function setupUserPresence() {
     // User is online
     const userStatusRef = ref(database, 'users/' + userId);
 
-    // Set user as online
-    set(userStatusRef, {
+    // Set user as online without overwriting profile fields
+    update(userStatusRef, {
         username: username,
         color: userColor,
         online: true,
@@ -135,13 +239,16 @@ function setupUserPresence() {
             });
         }
 
-        onlineCount.textContent = `${onlineCountNum} user${onlineCountNum !== 1 ? 's' : ''} online`;
+        if (onlineCount) {
+            onlineCount.textContent = `${onlineCountNum} user${onlineCountNum !== 1 ? 's' : ''} online`;
+        }
 
-        // Show online users
-        if (userList.length > 0) {
-            onlineUsersDiv.innerHTML = `<span class="online-dot"></span> Online: ${userList.join(', ')}`;
-        } else {
-            onlineUsersDiv.innerHTML = `<span class="online-dot"></span> You're the only one online`;
+        if (onlineUsersDiv) {
+            if (userList.length > 0) {
+                onlineUsersDiv.innerHTML = `<span class="online-dot"></span> Online: ${userList.join(', ')}`;
+            } else {
+                onlineUsersDiv.innerHTML = `<span class="online-dot"></span> You're the only one online`;
+            }
         }
     });
 }
@@ -249,9 +356,7 @@ messageInput.addEventListener('keypress', (e) => {
 function enableChat() {
     messageInput.disabled = false;
     sendBtn.disabled = false;
-    usernameInput.disabled = true;
-    saveUsernameBtn.disabled = true;
-    saveUsernameBtn.textContent = "Joined";
+    saveUsernameBtn.textContent = "Save Username";
     messageInput.placeholder = `Message as ${username}...`;
     messageInput.focus();
     clearChatBtn.disabled = false;
@@ -261,9 +366,7 @@ function enableChat() {
 function disableChat() {
     messageInput.disabled = true;
     sendBtn.disabled = true;
-    usernameInput.disabled = false;
-    saveUsernameBtn.disabled = false;
-    saveUsernameBtn.textContent = "Join Chat";
+    saveUsernameBtn.textContent = "Save Username";
     clearChatBtn.disabled = true;
 }
 
@@ -290,14 +393,21 @@ clearChatBtn.addEventListener('click', () => {
 
 // Initialize
 disableChat();
+updateAuthUI(false);
 
-// Auto-focus on username input
-usernameInput.focus();
+// Auto-focus on email input
+emailInput.focus();
 
 // Allow Enter key in username input
 usernameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         saveUsernameBtn.click();
+    }
+});
+
+passwordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        loginBtn.click();
     }
 });
 
@@ -490,6 +600,10 @@ setupUserPresence = function() {
 
 // Profile Management
 function openProfileModal() {
+    if (!currentUser) {
+        alert("Please log in to edit your profile.");
+        return;
+    }
     const profileModal = document.getElementById('profile-modal');
     const profileUsername = document.getElementById('profile-username');
     const profileBio = document.getElementById('profile-bio');
@@ -536,7 +650,7 @@ function saveProfile() {
 
     if (newUsername) {
         const userRef = ref(database, 'users/' + userId);
-        set(userRef, {
+        update(userRef, {
             username: newUsername,
             bio: newBio,
             color: userColor,
@@ -545,7 +659,7 @@ function saveProfile() {
             messagesSent: 0,
             onlineTime: 0,
             joinDate: Date.now()
-        }, { merge: true }).then(() => {
+        }).then(() => {
             username = newUsername;
             messageInput.placeholder = `Message as ${username}...`;
             showNotification('Profile updated successfully!');
@@ -569,7 +683,7 @@ function uploadAvatar(file) {
     uploadBytes(avatarRef, file).then((snapshot) => {
         getDownloadURL(snapshot.ref).then((downloadURL) => {
             const userRef = ref(database, 'users/' + userId);
-            set(userRef, { avatar: downloadURL }, { merge: true }).then(() => {
+            update(userRef, { avatar: downloadURL }).then(() => {
                 showNotification('Profile picture updated!');
                 openProfileModal(); // Refresh modal
             });
