@@ -4,1028 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DTubonge - Real-time Chat</title>
-    
-    <!-- Import Firebase v9+ (modern version) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast, query } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-        
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
-            authDomain: "dtubonge.firebaseapp.com",
-            databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
-            projectId: "dtubonge",
-            storageBucket: "dtubonge.firebasestorage.app",
-            messagingSenderId: "194637518723",
-            appId: "1:194637518723:web:891227e82ea2817e6888b6",
-            measurementId: "G-5NPT1KM5DR"
-        };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const auth = getAuth(app);
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
-        // DOM elements
-        const messageContainer = document.getElementById('message-container');
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const usernameInput = document.getElementById('username-input');
-        const saveUsernameBtn = document.getElementById('save-username');
-        const clearChatBtn = document.getElementById('clear-chat-btn');
-        const chatBody = document.getElementById('chat-body');
-        const emptyChat = document.getElementById('empty-chat');
-        const onlineUsersDiv = document.getElementById('online-users');
-        const onlineCount = document.getElementById('online-count');
-
-        // User state
-        let currentUser = null;
-        let userId = null;
-        let username = null;
-        let userColor = null;
-        let currentChatMode = 'group'; // 'group' or 'private'
-        let selectedUserId = null;
-        let selectedUsername = null;
-        let onlineUsers = {};
-
-        // Generate a random color for user messages
-        function generateUserColor() {
-            const colors = [
-                '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', 
-                '#2196F3', '#03A9F4', '#00BCD4', '#009688',
-                '#4CAF50', '#8BC34A', '#CDDC39', '#FFC107',
-                '#FF9800', '#FF5722', '#795548', '#607D8B'
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // Listen for authentication state changes
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in
-                currentUser = user;
-                userId = user.uid;
-                setupUserPresence();
-                loadMessages();
-                enableChat();
-            } else {
-                // User is signed out
-                disableChat();
-            }
-        });
-
-        // Join chat button
-        saveUsernameBtn.addEventListener('click', () => {
-            const name = usernameInput.value.trim();
-            if (name) {
-                username = name;
-                userColor = generateUserColor();
-                
-                // Sign in anonymously to Firebase
-                signInAnonymously(auth)
-                    .then(() => {
-                        console.log("Signed in anonymously");
-                        // Save username to Firebase
-                        const userRef = ref(database, 'users/' + userId);
-                        set(userRef, {
-                            username: username,
-                            color: userColor,
-                            lastActive: Date.now(),
-                            online: true
-                        });
-                    })
-                    .catch((error) => {
-                        console.error("Auth error:", error);
-                        alert("Error joining chat. Please try again.");
-                    });
-            } else {
-                alert("Please enter a username");
-            }
-        });
-
-        // Setup user presence tracking
-        function setupUserPresence() {
-            // User is online
-            const userStatusRef = ref(database, 'users/' + userId);
-            
-            // Set user as online
-            set(userStatusRef, {
-                username: username,
-                color: userColor,
-                online: true,
-                lastActive: Date.now()
-            });
-
-            // When user disconnects, set to offline
-            onDisconnect(userStatusRef).update({
-                online: false,
-                lastActive: Date.now()
-            });
-
-            // Listen for online users
-            const usersRef = ref(database, 'users');
-            onValue(usersRef, (snapshot) => {
-                const users = snapshot.val();
-                let onlineCountNum = 0;
-                let userList = [];
-                
-                if (users) {
-                    Object.keys(users).forEach((key) => {
-                        if (users[key].online) {
-                            onlineCountNum++;
-                            if (users[key].username !== username) {
-                                userList.push(users[key].username);
-                            }
-                        }
-                    });
-                }
-                
-                onlineCount.textContent = `${onlineCountNum} user${onlineCountNum !== 1 ? 's' : ''} online`;
-                
-                // Show online users
-                if (userList.length > 0) {
-                    onlineUsersDiv.innerHTML = `<span class="online-dot"></span> Online: ${userList.join(', ')}`;
-                } else {
-                    onlineUsersDiv.innerHTML = `<span class="online-dot"></span> You're the only one online`;
-                }
-            });
-        }
-
-        // Load messages from Firebase
-        function loadMessages() {
-            const messagesRef = ref(database, 'messages');
-            const recentMessagesQuery = query(messagesRef, limitToLast(100));
-            
-            onValue(recentMessagesQuery, (snapshot) => {
-                messageContainer.innerHTML = '';
-                const messages = snapshot.val();
-                
-                if (!messages || Object.keys(messages).length === 0) {
-                    emptyChat.style.display = 'block';
-                    return;
-                }
-                
-                emptyChat.style.display = 'none';
-                
-                // Convert object to array and sort by timestamp
-                const messagesArray = Object.entries(messages).map(([id, msg]) => ({
-                    id,
-                    ...msg
-                })).sort((a, b) => a.timestamp - b.timestamp);
-                
-                messagesArray.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    const isCurrentUser = msg.userId === userId;
-                    
-                    messageDiv.className = `message ${isCurrentUser ? 'user-message' : 'other-message'}`;
-                    
-                    // Set custom color for user's own messages
-                    if (isCurrentUser) {
-                        messageDiv.style.backgroundColor = userColor;
-                    }
-                    
-                    const senderSpan = document.createElement('div');
-                    senderSpan.className = 'message-sender';
-                    senderSpan.textContent = msg.username;
-                    
-                    const textDiv = document.createElement('div');
-                    textDiv.className = 'message-text';
-                    textDiv.textContent = msg.text;
-                    
-                    const timeSpan = document.createElement('div');
-                    timeSpan.className = 'message-time';
-                    timeSpan.textContent = formatTime(msg.timestamp);
-                    
-                    messageDiv.appendChild(senderSpan);
-                    messageDiv.appendChild(textDiv);
-                    messageDiv.appendChild(timeSpan);
-                    
-                    messageContainer.appendChild(messageDiv);
-                });
-                
-                // Scroll to bottom
-                setTimeout(() => {
-                    chatBody.scrollTop = chatBody.scrollHeight;
-                }, 100);
-            });
-        }
-
-        // Send message function
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text || !currentUser) return;
-            
-            // Create message object
-            const message = {
-                userId: userId,
-                username: username,
-                text: text,
-                timestamp: Date.now(),
-                color: userColor
-            };
-            
-            // Save to Firebase
-            const messagesRef = ref(database, 'messages');
-            const newMessageRef = push(messagesRef);
-            
-            set(newMessageRef, message)
-                .then(() => {
-                    // Clear input
-                    messageInput.value = '';
-                    messageInput.focus();
-                })
-                .catch((error) => {
-                    console.error("Error sending message:", error);
-                    alert("Error sending message. Please try again.");
-                });
-        }
-
-        // Send message on button click
-        sendBtn.addEventListener('click', sendMessage);
-
-        // Send message on Enter key press
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Enable chat interface
-        function enableChat() {
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            usernameInput.disabled = true;
-            saveUsernameBtn.disabled = true;
-            saveUsernameBtn.textContent = "Joined";
-            messageInput.placeholder = `Message as ${username}...`;
-            messageInput.focus();
-            clearChatBtn.disabled = false;
-        }
-
-        // Disable chat interface
-        function disableChat() {
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
-            usernameInput.disabled = false;
-            saveUsernameBtn.disabled = false;
-            saveUsernameBtn.textContent = "Join Chat";
-            clearChatBtn.disabled = true;
-        }
-
-        // Format timestamp
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // Clear chat function (admin only - for demo purposes)
-        clearChatBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to clear ALL messages for everyone? This cannot be undone.')) {
-                const messagesRef = ref(database, 'messages');
-                remove(messagesRef)
-                    .then(() => {
-                        alert('All messages cleared.');
-                    })
-                    .catch((error) => {
-                        console.error("Error clearing messages:", error);
-                        alert("Error clearing messages. You might need to set proper database rules.");
-                    });
-            }
-        });
-
-        // Initialize
-        disableChat();
-
-        // Auto-focus on username input
-        usernameInput.focus();
-        
-        // Allow Enter key in username input
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                saveUsernameBtn.click();
-            }
-        });
-        
-        // Make Firebase functions available globally for debugging
-        window.firebaseApp = app;
-        window.firebaseDatabase = database;
-        window.firebaseAuth = auth;
-
-        // Private chat functionality
-        function switchToGroupChat() {
-            currentChatMode = 'group';
-            selectedUserId = null;
-            selectedUsername = null;
-            document.getElementById('group-tab').classList.add('active');
-            document.getElementById('private-tab').classList.remove('active');
-            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
-            messageInput.placeholder = `Message as ${username}...`;
-            loadMessages();
-        }
-
-        function switchToPrivateChat(userId, userName) {
-            currentChatMode = 'private';
-            selectedUserId = userId;
-            selectedUsername = userName;
-            document.getElementById('private-tab').classList.add('active');
-            document.getElementById('group-tab').classList.remove('active');
-            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
-            document.querySelector(`[data-user-id="${userId}"]`).classList.add('active');
-            messageInput.placeholder = `Private message to ${userName}...`;
-            loadPrivateMessages();
-        }
-
-        function loadPrivateMessages() {
-            if (!selectedUserId) return;
-
-            const chatId = [userId, selectedUserId].sort().join('_');
-            const privateMessagesRef = ref(database, `private_messages/${chatId}`);
-            const recentMessagesQuery = query(privateMessagesRef, limitToLast(100));
-
-            onValue(recentMessagesQuery, (snapshot) => {
-                messageContainer.innerHTML = '';
-                const messages = snapshot.val();
-
-                if (!messages || Object.keys(messages).length === 0) {
-                    emptyChat.style.display = 'block';
-                    emptyChat.innerHTML = `
-                        <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
-                        <p>Private conversation with ${selectedUsername}</p>
-                        <p style="font-size: 0.9rem; color: #888;">Messages are only visible to you and ${selectedUsername}</p>
-                    `;
-                    return;
-                }
-
-                emptyChat.style.display = 'none';
-
-                const messagesArray = Object.entries(messages).map(([id, msg]) => ({
-                    id,
-                    ...msg
-                })).sort((a, b) => a.timestamp - b.timestamp);
-
-                messagesArray.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    const isCurrentUser = msg.userId === userId;
-
-                    messageDiv.className = `message ${isCurrentUser ? 'user-message' : 'other-message'}`;
-
-                    if (isCurrentUser) {
-                        messageDiv.style.backgroundColor = userColor;
-                    }
-
-                    const senderSpan = document.createElement('div');
-                    senderSpan.className = 'message-sender';
-                    senderSpan.textContent = msg.username;
-
-                    const textDiv = document.createElement('div');
-                    textDiv.className = 'message-text';
-                    textDiv.textContent = msg.text;
-
-                    const timeSpan = document.createElement('div');
-                    timeSpan.className = 'message-time';
-                    timeSpan.textContent = formatTime(msg.timestamp);
-
-                    messageDiv.appendChild(senderSpan);
-                    messageDiv.appendChild(textDiv);
-                    messageDiv.appendChild(timeSpan);
-
-                    messageContainer.appendChild(messageDiv);
-                });
-
-                setTimeout(() => {
-                    chatBody.scrollTop = chatBody.scrollHeight;
-                }, 100);
-            });
-        }
-
-        function sendPrivateMessage() {
-            const text = messageInput.value.trim();
-            if (!text || !currentUser || !selectedUserId) return;
-
-            const chatId = [userId, selectedUserId].sort().join('_');
-            const message = {
-                userId: userId,
-                username: username,
-                text: text,
-                timestamp: Date.now(),
-                color: userColor
-            };
-
-            const privateMessagesRef = ref(database, `private_messages/${chatId}`);
-            const newMessageRef = push(privateMessagesRef);
-
-            set(newMessageRef, message)
-                .then(() => {
-                    messageInput.value = '';
-                    messageInput.focus();
-                })
-                .catch((error) => {
-                    console.error("Error sending private message:", error);
-                    alert("Error sending private message. Please try again.");
-                });
-        }
-
-        function updateUserList() {
-            const userListDiv = document.getElementById('user-list');
-            userListDiv.innerHTML = '';
-
-            Object.keys(onlineUsers).forEach(userId => {
-                if (userId !== currentUser.uid) {
-                    const user = onlineUsers[userId];
-                    const userItem = document.createElement('div');
-                    userItem.className = 'user-item';
-                    userItem.setAttribute('data-user-id', userId);
-
-                    userItem.innerHTML = `
-                        <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
-                        <div class="user-info">
-                            <div class="user-name">${user.username}</div>
-                            <div class="user-status"></div>
-                        </div>
-                    `;
-
-                    userItem.addEventListener('click', () => {
-                        switchToPrivateChat(userId, user.username);
-                    });
-
-                    userListDiv.appendChild(userItem);
-                }
-            });
-        }
-
-        // Tab event listeners
-        document.getElementById('group-tab').addEventListener('click', switchToGroupChat);
-        document.getElementById('private-tab').addEventListener('click', () => {
-            if (!selectedUserId) {
-                alert('Please select a user to start a private chat.');
-            }
-        });
-
-        // Override send message function
-        const originalSendMessage = sendMessage;
-        sendMessage = function() {
-            if (currentChatMode === 'private') {
-                sendPrivateMessage();
-            } else {
-                originalSendMessage();
-            }
-        };
-
-        // Update setupUserPresence to populate onlineUsers
-        const originalSetupUserPresence = setupUserPresence;
-        setupUserPresence = function() {
-            originalSetupUserPresence();
-
-            const usersRef = ref(database, 'users');
-            onValue(usersRef, (snapshot) => {
-                const users = snapshot.val();
-                onlineUsers = {};
-
-                if (users) {
-                    Object.keys(users).forEach((key) => {
-                        if (users[key].online) {
-                            onlineUsers[key] = users[key];
-                        }
-                    });
-                }
-
-                updateUserList();
-            });
-        };
-    </script>
-    
-    <style>
-        :root {
-            --primary-color: #e91e63;
-            --secondary-color: #ff69b4;
-            --light-color: #fce4ec;
-            --dark-color: #212529;
-            --success-color: #f8bbd9;
-            --user-msg-color: #e91e63;
-            --other-msg-color: #424242;
-            --bg-dark: #1a1a1a;
-            --bg-darker: #121212;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #000000 0%, #e91e63 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .chat-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background-color: var(--bg-darker);
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            color: white;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .chat-header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .chat-header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .chat-body {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: var(--bg-dark);
-        }
-
-        .message-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            position: relative;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .user-message {
-            align-self: flex-end;
-            background-color: var(--user-msg-color);
-            color: white;
-            border-bottom-right-radius: 5px;
-        }
-
-        .other-message {
-            align-self: flex-start;
-            background-color: #2d2d2d;
-            color: white;
-            border-bottom-left-radius: 5px;
-            border-left: 3px solid var(--secondary-color);
-        }
-
-        .message-sender {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .user-message .message-sender {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .other-message .message-sender {
-            color: var(--secondary-color);
-        }
-
-        .message-text {
-            font-size: 1rem;
-            line-height: 1.4;
-        }
-
-        .message-time {
-            font-size: 0.7rem;
-            opacity: 0.7;
-            text-align: right;
-            margin-top: 5px;
-        }
-
-        .chat-footer {
-            padding: 20px;
-            background-color: #2d2d2d;
-            border-top: 1px solid #444;
-            display: flex;
-            gap: 10px;
-        }
-
-        #message-input {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #444;
-            border-radius: 30px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-            background-color: #1a1a1a;
-            color: white;
-        }
-
-        #message-input:focus {
-            border-color: var(--primary-color);
-        }
-
-        #message-input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #send-btn {
-            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        #send-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.4);
-        }
-
-        #send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .user-info {
-            display: flex;
-            gap: 10px;
-            padding: 15px 20px;
-            background-color: #2d2d2d;
-            border-bottom: 1px solid #444;
-        }
-
-        #username-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #444;
-            border-radius: 20px;
-            outline: none;
-            font-size: 1rem;
-            background-color: #1a1a1a;
-            color: white;
-        }
-
-        #username-input:focus {
-            border-color: var(--primary-color);
-        }
-
-        #save-username {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-
-        #save-username:hover {
-            transform: scale(1.05);
-        }
-
-        #save-username:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .chat-info {
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #ff69b4;
-            background-color: var(--bg-dark);
-            border-top: 1px solid #333;
-        }
-
-        .empty-chat {
-            text-align: center;
-            color: #888;
-            padding: 40px 20px;
-            font-style: italic;
-        }
-
-        .clear-chat-btn {
-            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 10px;
-            transition: transform 0.2s;
-        }
-
-        .clear-chat-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .clear-chat-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .online-users {
-            padding: 12px 20px;
-            background-color: #1a1a1a;
-            border-bottom: 1px solid #333;
-            font-size: 0.9rem;
-            color: #4ade80;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .online-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #4ade80;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .connection-status {
-            margin-left: auto;
-            font-size: 0.8rem;
-            color: #888;
-        }
-
-        .connected::before {
-            content: "●";
-            color: #4ade80;
-            margin-right: 5px;
-        }
-
-        .disconnected::before {
-            content: "●";
-            color: #ff6b6b;
-            margin-right: 5px;
-        }
-
-        .typing-indicator {
-            padding: 5px 15px;
-            font-style: italic;
-            color: #888;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                height: 95vh;
-                border-radius: 10px;
-            }
-            
-            .message {
-                max-width: 85%;
-            }
-            
-            body {
-                padding: 10px;
-            }
-            
-            .chat-header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .user-info {
-                flex-direction: column;
-            }
-            
-            #save-username {
-                width: 100%;
-            }
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #2d2d2d;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #e91e63;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ff69b4;
-        }
-
-        /* App container and sidebar */
-        .app-container {
-            display: flex;
-            width: 100%;
-            max-width: 1200px;
-            height: 90vh;
-            background-color: var(--bg-darker);
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 300px;
-            background-color: #2d2d2d;
-            border-right: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar h3 {
-            padding: 20px;
-            color: #ff69b4;
-            border-bottom: 1px solid #444;
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
-        .user-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .user-item {
-            padding: 12px 15px;
-            margin: 5px 0;
-            background-color: #1a1a1a;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-item:hover {
-            background-color: #333;
-            transform: translateX(5px);
-        }
-
-        .user-item.active {
-            background-color: #e91e63;
-            color: white;
-        }
-
-        .user-avatar {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff69b4, #e91e63);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            font-size: 0.8rem;
-        }
-
-        .user-status {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #4ade80;
-        }
-
-        .chat-tabs {
-            display: flex;
-            background-color: #2d2d2d;
-            border-bottom: 1px solid #444;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 15px 20px;
-            background: none;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .tab-btn.active {
-            color: #ff69b4;
-            background-color: #1a1a1a;
-        }
-
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(135deg, #e91e63, #ff69b4);
-        }
-
-        .tab-btn:hover:not(.active) {
-            color: #ccc;
-            background-color: #333;
-        }
-
-        /* Notification styles */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
-            max-width: 300px;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-    </style>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar">
-            <h3>Online Users</h3>
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2><i class="fas fa-user"></i> Profile Settings</h2>
+                <button class="close-btn" id="close-profile-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-avatar-section">
+                    <div class="current-avatar" id="current-avatar">
+                        <img id="profile-avatar-img" src="" alt="Profile Picture" style="display: none;">
+                        <div class="avatar-placeholder" id="avatar-placeholder">A</div>
+                    </div>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                    <button class="upload-btn" id="upload-avatar-btn">
+                        <i class="fas fa-camera"></i> Change Picture
+                    </button>
+                </div>
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label for="profile-username">Username</label>
+                        <input type="text" id="profile-username" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-bio">Bio</label>
+                        <textarea id="profile-bio" maxlength="100" placeholder="Tell others about yourself..."></textarea>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="messages-sent">0</span>
+                            <span class="stat-label">Messages Sent</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="online-time">0h</span>
+                            <span class="stat-label">Online Time</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="join-date">Today</span>
+                            <span class="stat-label">Member Since</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="cancel-profile">Cancel</button>
+                <button class="save-btn" id="save-profile">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Upload Modal -->
+    <div class="modal-overlay" id="image-modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2><i class="fas fa-image"></i> Share Image</h2>
+                <button class="close-btn" id="close-image-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="image-preview" id="image-preview">
+                    <div class="image-placeholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select an image</p>
+                    </div>
+                </div>
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                <div class="image-caption">
+                    <input type="text" id="image-caption" placeholder="Add a caption (optional)" maxlength="100">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="cancel-image">Cancel</button>
+                <button class="share-btn" id="share-image">Share Image</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container glass">
+        <div class="sidebar glass">
+            <div class="sidebar-header">
+                <h3>Online Users</h3>
+                <button class="profile-btn" id="open-profile-btn">
+                    <i class="fas fa-user-cog"></i>
+                </button>
+            </div>
             <div class="user-list" id="user-list">
                 <!-- User list will be populated here -->
             </div>
         </div>
 
-        <div class="chat-container">
-            <div class="chat-header">
+        <div class="chat-container glass">
+            <div class="chat-header glass">
                 <h1><i class="fas fa-comments"></i> DTubonge</h1>
                 <p>Real-time chat with other users</p>
             </div>
 
             <div class="user-info">
-                <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20">
-                <button id="save-username">Join Chat</button>
+                <div class="auth-row">
+                    <input type="email" id="email-input" placeholder="Email address">
+                    <input type="password" id="password-input" placeholder="Password (min 6 chars)">
+                    <button id="login-btn">Log In</button>
+                    <button id="register-btn">Sign Up</button>
+                    <button id="logout-btn" style="display: none;">Log Out</button>
+                </div>
+                <div class="username-row">
+                    <input type="text" id="username-input" placeholder="Choose a username..." maxlength="20">
+                    <button id="save-username">Save Username</button>
+                </div>
             </div>
 
             <div class="chat-tabs">
@@ -1054,82 +147,7 @@
         </div>
     </div>
 
-    <!-- Font Awesome for icons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-
-    <script>
-        // This script handles notifications and connection status
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check connection status
-            function updateConnectionStatus(connected) {
-                const statusElement = document.getElementById('connection-status');
-                if (connected) {
-                    statusElement.textContent = 'Connected';
-                    statusElement.className = 'connection-status connected';
-                    showNotification('Connected to chat server');
-                } else {
-                    statusElement.textContent = 'Disconnected';
-                    statusElement.className = 'connection-status disconnected';
-                    showNotification('Disconnected from chat server', 'error');
-                }
-            }
-            
-            // Show notification function
-            function showNotification(message, type = 'info') {
-                // Remove existing notification
-                const existing = document.querySelector('.notification');
-                if (existing) existing.remove();
-                
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.innerHTML = `
-                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                    <span style="margin-left: 10px;">${message}</span>
-                `;
-                document.body.appendChild(notification);
-                
-                // Remove after animation
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 3000);
-            }
-            
-            // Initial connection status
-            updateConnectionStatus(navigator.onLine);
-            
-            // Listen for online/offline events
-            window.addEventListener('online', () => {
-                updateConnectionStatus(true);
-            });
-            
-            window.addEventListener('offline', () => {
-                updateConnectionStatus(false);
-            });
-            
-            // For debugging: log Firebase errors to console
-            window.addEventListener('error', function(e) {
-                console.error('Global error:', e.error);
-            });
-            
-            // Add typing indicator (optional enhancement)
-            let typingTimeout;
-            const messageInput = document.getElementById('message-input');
-            
-            if (messageInput) {
-                messageInput.addEventListener('input', function() {
-                    // Here you could add typing status to Firebase
-                    // For now, just a visual indicator
-                    clearTimeout(typingTimeout);
-                    // Simulate typing indicator
-                });
-            }
-            
-            // Welcome message in console
-            console.log('%cDTubonge Chat App', 'color: #e91e63; font-size: 16px; font-weight: bold;');
-            console.log('%cWelcome to the chat!', 'color: #ff69b4;');
-        });
-    </script>
+    <!-- External JavaScript -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
