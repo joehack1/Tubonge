@@ -45,6 +45,10 @@
         let userId = null;
         let username = null;
         let userColor = null;
+        let currentChatMode = 'group'; // 'group' or 'private'
+        let selectedUserId = null;
+        let selectedUsername = null;
+        let onlineUsers = {};
 
         // Generate a random color for user messages
         function generateUserColor() {
@@ -308,6 +312,188 @@
         window.firebaseApp = app;
         window.firebaseDatabase = database;
         window.firebaseAuth = auth;
+
+        // Private chat functionality
+        function switchToGroupChat() {
+            currentChatMode = 'group';
+            selectedUserId = null;
+            selectedUsername = null;
+            document.getElementById('group-tab').classList.add('active');
+            document.getElementById('private-tab').classList.remove('active');
+            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
+            messageInput.placeholder = `Message as ${username}...`;
+            loadMessages();
+        }
+
+        function switchToPrivateChat(userId, userName) {
+            currentChatMode = 'private';
+            selectedUserId = userId;
+            selectedUsername = userName;
+            document.getElementById('private-tab').classList.add('active');
+            document.getElementById('group-tab').classList.remove('active');
+            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-user-id="${userId}"]`).classList.add('active');
+            messageInput.placeholder = `Private message to ${userName}...`;
+            loadPrivateMessages();
+        }
+
+        function loadPrivateMessages() {
+            if (!selectedUserId) return;
+
+            const chatId = [userId, selectedUserId].sort().join('_');
+            const privateMessagesRef = ref(database, `private_messages/${chatId}`);
+            const recentMessagesQuery = query(privateMessagesRef, limitToLast(100));
+
+            onValue(recentMessagesQuery, (snapshot) => {
+                messageContainer.innerHTML = '';
+                const messages = snapshot.val();
+
+                if (!messages || Object.keys(messages).length === 0) {
+                    emptyChat.style.display = 'block';
+                    emptyChat.innerHTML = `
+                        <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
+                        <p>Private conversation with ${selectedUsername}</p>
+                        <p style="font-size: 0.9rem; color: #888;">Messages are only visible to you and ${selectedUsername}</p>
+                    `;
+                    return;
+                }
+
+                emptyChat.style.display = 'none';
+
+                const messagesArray = Object.entries(messages).map(([id, msg]) => ({
+                    id,
+                    ...msg
+                })).sort((a, b) => a.timestamp - b.timestamp);
+
+                messagesArray.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    const isCurrentUser = msg.userId === userId;
+
+                    messageDiv.className = `message ${isCurrentUser ? 'user-message' : 'other-message'}`;
+
+                    if (isCurrentUser) {
+                        messageDiv.style.backgroundColor = userColor;
+                    }
+
+                    const senderSpan = document.createElement('div');
+                    senderSpan.className = 'message-sender';
+                    senderSpan.textContent = msg.username;
+
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'message-text';
+                    textDiv.textContent = msg.text;
+
+                    const timeSpan = document.createElement('div');
+                    timeSpan.className = 'message-time';
+                    timeSpan.textContent = formatTime(msg.timestamp);
+
+                    messageDiv.appendChild(senderSpan);
+                    messageDiv.appendChild(textDiv);
+                    messageDiv.appendChild(timeSpan);
+
+                    messageContainer.appendChild(messageDiv);
+                });
+
+                setTimeout(() => {
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, 100);
+            });
+        }
+
+        function sendPrivateMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !currentUser || !selectedUserId) return;
+
+            const chatId = [userId, selectedUserId].sort().join('_');
+            const message = {
+                userId: userId,
+                username: username,
+                text: text,
+                timestamp: Date.now(),
+                color: userColor
+            };
+
+            const privateMessagesRef = ref(database, `private_messages/${chatId}`);
+            const newMessageRef = push(privateMessagesRef);
+
+            set(newMessageRef, message)
+                .then(() => {
+                    messageInput.value = '';
+                    messageInput.focus();
+                })
+                .catch((error) => {
+                    console.error("Error sending private message:", error);
+                    alert("Error sending private message. Please try again.");
+                });
+        }
+
+        function updateUserList() {
+            const userListDiv = document.getElementById('user-list');
+            userListDiv.innerHTML = '';
+
+            Object.keys(onlineUsers).forEach(userId => {
+                if (userId !== currentUser.uid) {
+                    const user = onlineUsers[userId];
+                    const userItem = document.createElement('div');
+                    userItem.className = 'user-item';
+                    userItem.setAttribute('data-user-id', userId);
+
+                    userItem.innerHTML = `
+                        <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-info">
+                            <div class="user-name">${user.username}</div>
+                            <div class="user-status"></div>
+                        </div>
+                    `;
+
+                    userItem.addEventListener('click', () => {
+                        switchToPrivateChat(userId, user.username);
+                    });
+
+                    userListDiv.appendChild(userItem);
+                }
+            });
+        }
+
+        // Tab event listeners
+        document.getElementById('group-tab').addEventListener('click', switchToGroupChat);
+        document.getElementById('private-tab').addEventListener('click', () => {
+            if (!selectedUserId) {
+                alert('Please select a user to start a private chat.');
+            }
+        });
+
+        // Override send message function
+        const originalSendMessage = sendMessage;
+        sendMessage = function() {
+            if (currentChatMode === 'private') {
+                sendPrivateMessage();
+            } else {
+                originalSendMessage();
+            }
+        };
+
+        // Update setupUserPresence to populate onlineUsers
+        const originalSetupUserPresence = setupUserPresence;
+        setupUserPresence = function() {
+            originalSetupUserPresence();
+
+            const usersRef = ref(database, 'users');
+            onValue(usersRef, (snapshot) => {
+                const users = snapshot.val();
+                onlineUsers = {};
+
+                if (users) {
+                    Object.keys(users).forEach((key) => {
+                        if (users[key].online) {
+                            onlineUsers[key] = users[key];
+                        }
+                    });
+                }
+
+                updateUserList();
+            });
+        };
     </script>
     
     <style>
@@ -681,6 +867,121 @@
             background: #ff69b4;
         }
 
+        /* App container and sidebar */
+        .app-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background-color: var(--bg-darker);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #2d2d2d;
+            border-right: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h3 {
+            padding: 20px;
+            color: #ff69b4;
+            border-bottom: 1px solid #444;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .user-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-item:hover {
+            background-color: #333;
+            transform: translateX(5px);
+        }
+
+        .user-item.active {
+            background-color: #e91e63;
+            color: white;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff69b4, #e91e63);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .user-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4ade80;
+        }
+
+        .chat-tabs {
+            display: flex;
+            background-color: #2d2d2d;
+            border-bottom: 1px solid #444;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #ff69b4;
+            background-color: #1a1a1a;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #e91e63, #ff69b4);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #ccc;
+            background-color: #333;
+        }
+
         /* Notification styles */
         .notification {
             position: fixed;
@@ -708,40 +1009,48 @@
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1><i class="fas fa-comments"></i> DTubonge</h1>
-            <p>Real-time chat with other users</p>
-        </div>
-        
-        <div class="user-info">
-            <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20">
-            <button id="save-username">Join Chat</button>
-        </div>
-        
-        <div class="online-users" id="online-users">
-            <span class="online-dot"></span>
-            <span id="online-count">0 users online</span>
-            <span class="connection-status" id="connection-status">Connecting...</span>
-        </div>
-        
-        <div class="chat-body" id="chat-body">
-            <div class="message-container" id="message-container">
-                <div class="empty-chat" id="empty-chat">
-                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
-                    <p>No messages yet. Start the conversation!</p>
-                </div>
+    <div class="app-container">
+        <div class="sidebar">
+            <h3>Online Users</h3>
+            <div class="user-list" id="user-list">
+                <!-- User list will be populated here -->
             </div>
         </div>
-        
-        <div class="chat-footer">
-            <input type="text" id="message-input" placeholder="Type your message here..." disabled maxlength="500">
-            <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
-        </div>
-        
-        <div class="chat-info">
-            <p>Real-time messages with other users. All data is stored in Firebase.</p>
-            <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages</button>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <h1><i class="fas fa-comments"></i> DTubonge</h1>
+                <p>Real-time chat with other users</p>
+            </div>
+
+            <div class="user-info">
+                <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20">
+                <button id="save-username">Join Chat</button>
+            </div>
+
+            <div class="chat-tabs">
+                <button class="tab-btn active" id="group-tab">Group Chat</button>
+                <button class="tab-btn" id="private-tab">Private Chat</button>
+            </div>
+
+            <div class="chat-body" id="chat-body">
+                <div class="message-container" id="message-container">
+                    <div class="empty-chat" id="empty-chat">
+                        <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-footer">
+                <input type="text" id="message-input" placeholder="Type your message here..." disabled maxlength="500">
+                <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+            </div>
+
+            <div class="chat-info">
+                <p>Real-time messages with other users. All data is stored in Firebase.</p>
+                <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages</button>
+            </div>
         </div>
     </div>
 
