@@ -66,6 +66,8 @@ const closeViewProfileBtn = document.getElementById('close-view-profile');
 const viewProfileAvatar = document.getElementById('view-profile-avatar');
 const viewProfileName = document.getElementById('view-profile-name');
 const viewProfileBio = document.getElementById('view-profile-bio');
+const viewProfileStatus = document.getElementById('view-profile-status');
+const viewProfileJoin = document.getElementById('view-profile-join');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
@@ -178,9 +180,13 @@ function openUserProfile(username) {
     const displayName = profile.displayName || username || 'User';
     const bio = profile.bio || 'No bio provided.';
     const avatarUrl = profile.avatarUrl || null;
+    const statusText = profile.online ? 'Online' : 'Offline';
+    const joinDate = profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'Unknown';
 
     viewProfileName.textContent = displayName;
     viewProfileBio.textContent = bio;
+    viewProfileStatus.textContent = statusText;
+    viewProfileJoin.textContent = joinDate;
     if (avatarUrl) {
         viewProfileAvatar.style.backgroundImage = `url("${avatarUrl}")`;
     } else {
