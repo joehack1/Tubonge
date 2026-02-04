@@ -1492,9 +1492,18 @@ body.redirect-page {
 }
 
 @media (max-width: 900px) {
+    body.chat-page {
+        padding: 0;
+    }
+
+    .app-shell {
+        min-height: 100vh;
+    }
+
     .chat-page .chat-card {
-        min-height: calc(100vh - 40px);
+        min-height: 100vh;
         padding: 14px;
+        border-radius: 0;
     }
 
     .chat-page .chat-body {
@@ -1540,4 +1549,46 @@ body.redirect-page {
 
 .tab-btn.active {
     border-radius: 14px;
+}
+
+/* Profile modal + avatar grid */
+.profile-modal {
+    max-width: 560px;
+}
+
+.profile-modal textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #121212;
+    color: #fff;
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.avatar-option {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.avatar-option:hover {
+    transform: scale(1.04);
+}
+
+.avatar-option.selected {
+    border-color: #ff69b4;
 }
