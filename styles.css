@@ -1080,6 +1080,27 @@ body.redirect-page {
     border-radius: 16px;
 }
 
+.chat-page .chat-header {
+    background: linear-gradient(135deg, #1f1f1f 0%, #0e0e0e 100%);
+    padding: 16px 18px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    height: 108px;
+    width: auto;
+    display: block;
+}
+
+.auth-header .brand {
+    margin-bottom: 10px;
+}
+
 .header-actions {
     display: flex;
     align-items: center;
