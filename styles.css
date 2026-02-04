@@ -90,14 +90,14 @@ body {
 
 .user-message {
     align-self: flex-end;
-    background-color: var(--user-msg-color);
+    background-color: rgba(233, 30, 99, 0.5);
     color: white;
     border-bottom-right-radius: 5px;
 }
 
 .other-message {
     align-self: flex-start;
-    background-color: #2d2d2d;
+    background-color: rgba(45, 45, 45, 0.55);
     color: white;
     border-bottom-left-radius: 5px;
     border-left: 3px solid var(--secondary-color);
@@ -1584,11 +1584,12 @@ body.redirect-page {
 
 .profile-modal textarea {
     width: 100%;
-    padding: 10px 12px;
-    border-radius: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
     border: 1px solid #333;
     background: #121212;
     color: #fff;
+    font-size: 0.95rem;
 }
 
 .avatar-grid {
@@ -1617,4 +1618,53 @@ body.redirect-page {
 
 .avatar-option.selected {
     border-color: #ff69b4;
+}
+
+.profile-view {
+    max-width: 420px;
+    text-align: center;
+}
+
+.profile-view-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-view-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    background-size: cover;
+    background-position: center;
+    border: 3px solid rgba(255, 105, 180, 0.6);
+}
+
+.profile-view-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.profile-view-bio {
+    font-size: 0.95rem;
+    color: #ccc;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 10px 12px;
+    border-radius: 12px;
+    width: 100%;
+}
+
+.glass-rotate {
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    animation: glassRotateIn 0.35s ease;
+}
+
+@keyframes glassRotateIn {
+    from { opacity: 0; transform: rotateX(12deg) translateY(-12px); }
+    to { opacity: 1; transform: rotateX(0deg) translateY(0); }
 }

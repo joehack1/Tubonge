@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tubonge - Chat</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="logo2.png" type="image/png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="chat-page">
@@ -109,6 +108,20 @@
             <div class="modal-footer">
                 <button class="ghost-btn" id="cancel-profile">Cancel</button>
                 <button class="primary-btn" id="save-profile">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="view-profile-modal">
+        <div class="modal-content profile-view glass-rotate">
+            <div class="modal-header">
+                <h2>Profile</h2>
+                <button class="close-btn" id="close-view-profile">&times;</button>
+            </div>
+            <div class="modal-body profile-view-body">
+                <div class="profile-view-avatar" id="view-profile-avatar"></div>
+                <div class="profile-view-name" id="view-profile-name"></div>
+                <div class="profile-view-bio" id="view-profile-bio"></div>
             </div>
         </div>
     </div>

@@ -61,6 +61,11 @@ const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
 const headerAvatar = document.getElementById('header-avatar');
+const viewProfileModal = document.getElementById('view-profile-modal');
+const closeViewProfileBtn = document.getElementById('close-view-profile');
+const viewProfileAvatar = document.getElementById('view-profile-avatar');
+const viewProfileName = document.getElementById('view-profile-name');
+const viewProfileBio = document.getElementById('view-profile-bio');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
@@ -168,6 +173,26 @@ function updateHeaderAvatar() {
     }
 }
 
+function openUserProfile(username) {
+    const profile = userProfiles[username] || {};
+    const displayName = profile.displayName || username || 'User';
+    const bio = profile.bio || 'No bio provided.';
+    const avatarUrl = profile.avatarUrl || null;
+
+    viewProfileName.textContent = displayName;
+    viewProfileBio.textContent = bio;
+    if (avatarUrl) {
+        viewProfileAvatar.style.backgroundImage = `url("${avatarUrl}")`;
+    } else {
+        viewProfileAvatar.style.backgroundImage = '';
+    }
+    viewProfileModal.style.display = 'flex';
+}
+
+function closeUserProfile() {
+    viewProfileModal.style.display = 'none';
+}
+
 function setReplyContext(message) {
     replyContext = {
         id: message.id,
@@ -231,6 +256,12 @@ profileBtn.addEventListener('click', openProfileModal);
 closeProfileBtn.addEventListener('click', closeProfileModal);
 cancelProfileBtn.addEventListener('click', closeProfileModal);
 saveProfileBtn.addEventListener('click', saveProfile);
+closeViewProfileBtn.addEventListener('click', closeUserProfile);
+viewProfileModal.addEventListener('click', (event) => {
+    if (event.target === viewProfileModal) {
+        closeUserProfile();
+    }
+});
 
 function showUploadProgress(label, percent) {
     uploadStatus.classList.add('active');
@@ -282,6 +313,10 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
     const senderWrap = document.createElement('div');
     senderWrap.className = 'sender-wrap';
     const avatar = buildAvatarElement(msg.username, 'message-avatar');
+    avatar.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openUserProfile(msg.username);
+    });
     const sender = document.createElement('span');
     sender.className = 'message-sender';
     sender.textContent = getDisplayName(msg.username);
@@ -447,6 +482,10 @@ function renderUserList() {
         const item = document.createElement('div');
         item.className = 'user-item';
         const avatar = buildAvatarElement(username, 'user-avatar');
+        avatar.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openUserProfile(username);
+        });
         item.innerHTML = `
             <div class="user-info">
                 <div class="user-name">${getDisplayName(username)}</div>
@@ -474,6 +513,10 @@ function renderPrivateList(chats) {
         const item = document.createElement('div');
         item.className = `private-item ${chat.user === selectedPrivateName ? 'active' : ''}`;
         const avatar = buildAvatarElement(chat.user, 'user-avatar');
+        avatar.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openUserProfile(chat.user);
+        });
         item.innerHTML = `
             <div class="user-info">
                 <div class="user-name">${getDisplayName(chat.user)}</div>
