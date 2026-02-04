@@ -4,315 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DTubonge - Real-time Chat</title>
-    <!-- Add Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     
-    <style>
-        /* Keep all the same CSS styles from previous version */
-        :root {
-            --primary-color: #e91e63;
-            --secondary-color: #ff69b4;
-            --light-color: #fce4ec;
-            --dark-color: #212529;
-            --success-color: #f8bbd9;
-            --user-msg-color: #e91e63;
-            --other-msg-color: #424242;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #000000 0%, #e91e63 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .chat-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background-color: white;
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .chat-header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .chat-header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .chat-body {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: #1a1a1a;
-        }
-
-        .message-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            position: relative;
-            word-wrap: break-word;
-        }
-
-        .user-message {
-            align-self: flex-end;
-            background-color: var(--user-msg-color);
-            color: white;
-            border-bottom-right-radius: 5px;
-        }
-
-        .other-message {
-            align-self: flex-start;
-            background-color: var(--other-msg-color);
-            color: var(--dark-color);
-            border-bottom-left-radius: 5px;
-        }
-
-        .message-sender {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 5px;
-        }
-
-        .user-message .message-sender {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .other-message .message-sender {
-            color: var(--secondary-color);
-        }
-
-        .message-time {
-            font-size: 0.7rem;
-            opacity: 0.7;
-            text-align: right;
-            margin-top: 5px;
-        }
-
-        .chat-footer {
-            padding: 20px;
-            background-color: white;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-        }
-
-        #message-input {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #ddd;
-            border-radius: 30px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        #message-input:focus {
-            border-color: var(--primary-color);
-        }
-
-        #send-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s;
-        }
-
-        #send-btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .user-info {
-            display: flex;
-            gap: 10px;
-            padding: 15px 20px;
-            background-color: white;
-            border-bottom: 1px solid #eee;
-        }
-
-        #username-input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            outline: none;
-        }
-
-        #save-username {
-            padding: 10px 20px;
-            background-color: var(--success-color);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.3s;
-        }
-
-        #save-username:hover {
-            background-color: var(--primary-color);
-        }
-
-        .chat-info {
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #ff69b4;
-            background-color: #1a1a1a;
-            border-top: 1px solid #333;
-        }
-
-        .empty-chat {
-            text-align: center;
-            color: #999;
-            padding: 40px 20px;
-            font-style: italic;
-        }
-
-        .clear-chat-btn {
-            background-color: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 10px;
-            transition: background-color 0.3s;
-        }
-
-        .clear-chat-btn:hover {
-            background-color: #ff5252;
-        }
-
-        .online-users {
-            padding: 10px 20px;
-            background-color: #2d1b69;
-            border-bottom: 1px solid #ddd;
-            font-size: 0.9rem;
-            color: #ff69b4;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #4ade80;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                height: 95vh;
-                border-radius: 10px;
-            }
-            
-            .message {
-                max-width: 85%;
-            }
-            
-            body {
-                padding: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1><i class="fas fa-comments"></i> DTubonge</h1>
-            <p>Real-time chat with other users</p>
-        </div>
+    <!-- Import Firebase v9+ (modern version) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast, query } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         
-        <div class="user-info">
-            <input type="text" id="username-input" placeholder="Enter your username...">
-            <button id="save-username">Join Chat</button>
-        </div>
-        
-        <div class="online-users" id="online-users">
-            <span class="online-dot"></span>
-            <span id="online-count">0 users online</span>
-        </div>
-        
-        <div class="chat-body" id="chat-body">
-            <div class="message-container" id="message-container">
-                <div class="empty-chat" id="empty-chat">
-                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px;"></i>
-                    <p>No messages yet. Start the conversation!</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="chat-footer">
-            <input type="text" id="message-input" placeholder="Type your message here..." disabled>
-            <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
-        </div>
-        
-        <div class="chat-info">
-            <p>Real-time messages with other users. All data is stored in Firebase.</p>
-            <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages (Admin)</button>
-        </div>
-    </div>
-
-    <!-- Font Awesome for icons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-
-    <script>
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
             authDomain: "dtubonge.firebaseapp.com",
-            databaseURL: "https://dtubonge-default-rtdb.firebaseio.com/",
+            databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
             projectId: "dtubonge",
             storageBucket: "dtubonge.firebasestorage.app",
             messagingSenderId: "194637518723",
@@ -321,9 +24,9 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const auth = firebase.auth();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
 
         // DOM elements
         const messageContainer = document.getElementById('message-container');
@@ -341,9 +44,21 @@
         let currentUser = null;
         let userId = null;
         let username = null;
+        let userColor = null;
+
+        // Generate a random color for user messages
+        function generateUserColor() {
+            const colors = [
+                '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', 
+                '#2196F3', '#03A9F4', '#00BCD4', '#009688',
+                '#4CAF50', '#8BC34A', '#CDDC39', '#FFC107',
+                '#FF9800', '#FF5722', '#795548', '#607D8B'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
 
         // Listen for authentication state changes
-        auth.onAuthStateChanged((user) => {
+        onAuthStateChanged(auth, (user) => {
             if (user) {
                 // User is signed in
                 currentUser = user;
@@ -362,13 +77,17 @@
             const name = usernameInput.value.trim();
             if (name) {
                 username = name;
+                userColor = generateUserColor();
+                
                 // Sign in anonymously to Firebase
-                auth.signInAnonymously()
+                signInAnonymously(auth)
                     .then(() => {
                         console.log("Signed in anonymously");
                         // Save username to Firebase
-                        database.ref('users/' + userId).set({
+                        const userRef = ref(database, 'users/' + userId);
+                        set(userRef, {
                             username: username,
+                            color: userColor,
                             lastActive: Date.now(),
                             online: true
                         });
@@ -385,22 +104,25 @@
         // Setup user presence tracking
         function setupUserPresence() {
             // User is online
-            const userStatusRef = database.ref('users/' + userId);
+            const userStatusRef = ref(database, 'users/' + userId);
             
             // Set user as online
-            userStatusRef.update({
+            set(userStatusRef, {
+                username: username,
+                color: userColor,
                 online: true,
                 lastActive: Date.now()
             });
 
             // When user disconnects, set to offline
-            userStatusRef.onDisconnect().update({
+            onDisconnect(userStatusRef).update({
                 online: false,
                 lastActive: Date.now()
             });
 
             // Listen for online users
-            database.ref('users').on('value', (snapshot) => {
+            const usersRef = ref(database, 'users');
+            onValue(usersRef, (snapshot) => {
                 const users = snapshot.val();
                 let onlineCountNum = 0;
                 let userList = [];
@@ -429,7 +151,10 @@
 
         // Load messages from Firebase
         function loadMessages() {
-            database.ref('messages').limitToLast(100).on('value', (snapshot) => {
+            const messagesRef = ref(database, 'messages');
+            const recentMessagesQuery = query(messagesRef, limitToLast(100));
+            
+            onValue(recentMessagesQuery, (snapshot) => {
                 messageContainer.innerHTML = '';
                 const messages = snapshot.val();
                 
@@ -441,13 +166,21 @@
                 emptyChat.style.display = 'none';
                 
                 // Convert object to array and sort by timestamp
-                const messagesArray = Object.values(messages).sort((a, b) => a.timestamp - b.timestamp);
+                const messagesArray = Object.entries(messages).map(([id, msg]) => ({
+                    id,
+                    ...msg
+                })).sort((a, b) => a.timestamp - b.timestamp);
                 
                 messagesArray.forEach(msg => {
                     const messageDiv = document.createElement('div');
                     const isCurrentUser = msg.userId === userId;
                     
                     messageDiv.className = `message ${isCurrentUser ? 'user-message' : 'other-message'}`;
+                    
+                    // Set custom color for user's own messages
+                    if (isCurrentUser) {
+                        messageDiv.style.backgroundColor = userColor;
+                    }
                     
                     const senderSpan = document.createElement('div');
                     senderSpan.className = 'message-sender';
@@ -469,7 +202,9 @@
                 });
                 
                 // Scroll to bottom
-                chatBody.scrollTop = chatBody.scrollHeight;
+                setTimeout(() => {
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, 100);
             });
         }
 
@@ -483,14 +218,19 @@
                 userId: userId,
                 username: username,
                 text: text,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                color: userColor
             };
             
             // Save to Firebase
-            database.ref('messages').push(message)
+            const messagesRef = ref(database, 'messages');
+            const newMessageRef = push(messagesRef);
+            
+            set(newMessageRef, message)
                 .then(() => {
                     // Clear input
                     messageInput.value = '';
+                    messageInput.focus();
                 })
                 .catch((error) => {
                     console.error("Error sending message:", error);
@@ -517,6 +257,7 @@
             saveUsernameBtn.textContent = "Joined";
             messageInput.placeholder = `Message as ${username}...`;
             messageInput.focus();
+            clearChatBtn.disabled = false;
         }
 
         // Disable chat interface
@@ -526,6 +267,7 @@
             usernameInput.disabled = false;
             saveUsernameBtn.disabled = false;
             saveUsernameBtn.textContent = "Join Chat";
+            clearChatBtn.disabled = true;
         }
 
         // Format timestamp
@@ -537,18 +279,548 @@
         // Clear chat function (admin only - for demo purposes)
         clearChatBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to clear ALL messages for everyone? This cannot be undone.')) {
-                database.ref('messages').remove()
+                const messagesRef = ref(database, 'messages');
+                remove(messagesRef)
                     .then(() => {
                         alert('All messages cleared.');
                     })
                     .catch((error) => {
                         console.error("Error clearing messages:", error);
+                        alert("Error clearing messages. You might need to set proper database rules.");
                     });
             }
         });
 
         // Initialize
         disableChat();
+
+        // Auto-focus on username input
+        usernameInput.focus();
+        
+        // Allow Enter key in username input
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveUsernameBtn.click();
+            }
+        });
+        
+        // Make Firebase functions available globally for debugging
+        window.firebaseApp = app;
+        window.firebaseDatabase = database;
+        window.firebaseAuth = auth;
+    </script>
+    
+    <style>
+        :root {
+            --primary-color: #e91e63;
+            --secondary-color: #ff69b4;
+            --light-color: #fce4ec;
+            --dark-color: #212529;
+            --success-color: #f8bbd9;
+            --user-msg-color: #e91e63;
+            --other-msg-color: #424242;
+            --bg-dark: #1a1a1a;
+            --bg-darker: #121212;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #000000 0%, #e91e63 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: var(--bg-darker);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: white;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--bg-dark);
+        }
+
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--user-msg-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .other-message {
+            align-self: flex-start;
+            background-color: #2d2d2d;
+            color: white;
+            border-bottom-left-radius: 5px;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .user-message .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .other-message .message-sender {
+            color: var(--secondary-color);
+        }
+
+        .message-text {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .chat-footer {
+            padding: 20px;
+            background-color: #2d2d2d;
+            border-top: 1px solid #444;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #444;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        #message-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        #message-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #send-btn {
+            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.4);
+        }
+
+        #send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background-color: #2d2d2d;
+            border-bottom: 1px solid #444;
+        }
+
+        #username-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #444;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        #username-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        #save-username {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        #save-username:hover {
+            transform: scale(1.05);
+        }
+
+        #save-username:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #ff69b4;
+            background-color: var(--bg-dark);
+            border-top: 1px solid #333;
+        }
+
+        .empty-chat {
+            text-align: center;
+            color: #888;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .clear-chat-btn {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .clear-chat-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .clear-chat-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .online-users {
+            padding: 12px 20px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            font-size: 0.9rem;
+            color: #4ade80;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .connection-status {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .connected::before {
+            content: "●";
+            color: #4ade80;
+            margin-right: 5px;
+        }
+
+        .disconnected::before {
+            content: "●";
+            color: #ff6b6b;
+            margin-right: 5px;
+        }
+
+        .typing-indicator {
+            padding: 5px 15px;
+            font-style: italic;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                border-radius: 10px;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .chat-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+            }
+            
+            #save-username {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e91e63;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff69b4;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1><i class="fas fa-comments"></i> DTubonge</h1>
+            <p>Real-time chat with other users</p>
+        </div>
+        
+        <div class="user-info">
+            <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20">
+            <button id="save-username">Join Chat</button>
+        </div>
+        
+        <div class="online-users" id="online-users">
+            <span class="online-dot"></span>
+            <span id="online-count">0 users online</span>
+            <span class="connection-status" id="connection-status">Connecting...</span>
+        </div>
+        
+        <div class="chat-body" id="chat-body">
+            <div class="message-container" id="message-container">
+                <div class="empty-chat" id="empty-chat">
+                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px; color: #666;"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-footer">
+            <input type="text" id="message-input" placeholder="Type your message here..." disabled maxlength="500">
+            <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+        </div>
+        
+        <div class="chat-info">
+            <p>Real-time messages with other users. All data is stored in Firebase.</p>
+            <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages</button>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <script>
+        // This script handles notifications and connection status
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check connection status
+            function updateConnectionStatus(connected) {
+                const statusElement = document.getElementById('connection-status');
+                if (connected) {
+                    statusElement.textContent = 'Connected';
+                    statusElement.className = 'connection-status connected';
+                    showNotification('Connected to chat server');
+                } else {
+                    statusElement.textContent = 'Disconnected';
+                    statusElement.className = 'connection-status disconnected';
+                    showNotification('Disconnected from chat server', 'error');
+                }
+            }
+            
+            // Show notification function
+            function showNotification(message, type = 'info') {
+                // Remove existing notification
+                const existing = document.querySelector('.notification');
+                if (existing) existing.remove();
+                
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <span style="margin-left: 10px;">${message}</span>
+                `;
+                document.body.appendChild(notification);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3000);
+            }
+            
+            // Initial connection status
+            updateConnectionStatus(navigator.onLine);
+            
+            // Listen for online/offline events
+            window.addEventListener('online', () => {
+                updateConnectionStatus(true);
+            });
+            
+            window.addEventListener('offline', () => {
+                updateConnectionStatus(false);
+            });
+            
+            // For debugging: log Firebase errors to console
+            window.addEventListener('error', function(e) {
+                console.error('Global error:', e.error);
+            });
+            
+            // Add typing indicator (optional enhancement)
+            let typingTimeout;
+            const messageInput = document.getElementById('message-input');
+            
+            if (messageInput) {
+                messageInput.addEventListener('input', function() {
+                    // Here you could add typing status to Firebase
+                    // For now, just a visual indicator
+                    clearTimeout(typingTimeout);
+                    // Simulate typing indicator
+                });
+            }
+            
+            // Welcome message in console
+            console.log('%cDTubonge Chat App', 'color: #e91e63; font-size: 16px; font-weight: bold;');
+            console.log('%cWelcome to the chat!', 'color: #ff69b4;');
+        });
     </script>
 </body>
 </html>
