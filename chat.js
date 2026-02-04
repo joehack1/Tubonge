@@ -3,10 +3,10 @@ import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast
 
 const firebaseConfig = {
     apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
-    authDomain: "Tubonge.firebaseapp.com",
-    databaseURL: "https://Tubonge-default-rtdb.firebaseio.com",
-    projectId: "Tubonge",
-    storageBucket: "Tubonge.firebasestorage.app",
+    authDomain: "dtubonge.firebaseapp.com",
+    databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
+    projectId: "dtubonge",
+    storageBucket: "dtubonge.firebasestorage.app",
     messagingSenderId: "194637518723",
     appId: "1:194637518723:web:891227e82ea2817e6888b6",
     measurementId: "G-5NPT1KM5DR"
@@ -15,8 +15,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const sessionRaw = localStorage.getItem('Tubonge_session');
-const adminSession = localStorage.getItem('Tubonge_admin');
+const sessionRaw = localStorage.getItem('dtubonge_session');
+const adminSession = localStorage.getItem('dtubonge_admin');
 
 if (adminSession === 'true') {
     window.location.href = 'admin.html';
@@ -72,8 +72,8 @@ tabs.forEach(tab => {
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
 logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('Tubonge_session');
-    localStorage.removeItem('Tubonge_admin');
+    localStorage.removeItem('dtubonge_session');
+    localStorage.removeItem('dtubonge_admin');
     window.location.href = 'login.html';
 });
 

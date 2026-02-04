@@ -4,10 +4,10 @@ import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/fire
 
 const firebaseConfig = {
     apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
-    authDomain: "Tubonge.firebaseapp.com",
-    databaseURL: "https://Tubonge-default-rtdb.firebaseio.com",
-    projectId: "Tubonge",
-    storageBucket: "Tubonge.firebasestorage.app",
+    authDomain: "dtubonge.firebaseapp.com",
+    databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
+    projectId: "dtubonge",
+    storageBucket: "dtubonge.firebasestorage.app",
     messagingSenderId: "194637518723",
     appId: "1:194637518723:web:891227e82ea2817e6888b6",
     measurementId: "G-5NPT1KM5DR"
@@ -64,15 +64,15 @@ adminLink.addEventListener('click', () => {
 });
 
 function saveSession(username) {
-    localStorage.setItem('Tubonge_session', JSON.stringify({ username }));
+    localStorage.setItem('dtubonge_session', JSON.stringify({ username }));
 }
 
 function clearSession() {
-    localStorage.removeItem('Tubonge_session');
+    localStorage.removeItem('dtubonge_session');
 }
 
 function saveAdminSession() {
-    localStorage.setItem('Tubonge_admin', 'true');
+    localStorage.setItem('dtubonge_admin', 'true');
 }
 
 loginBtn.addEventListener('click', async () => {
@@ -96,7 +96,7 @@ loginBtn.addEventListener('click', async () => {
             return;
         }
         saveSession(username);
-        localStorage.removeItem('Tubonge_admin');
+        localStorage.removeItem('dtubonge_admin');
         window.location.href = 'chat.html';
     } catch (error) {
         console.error(error);
@@ -153,7 +153,7 @@ signupBtn.addEventListener('click', async () => {
         });
 
         saveSession(username);
-        localStorage.removeItem('Tubonge_admin');
+        localStorage.removeItem('dtubonge_admin');
         window.location.href = 'chat.html';
     } catch (error) {
         console.error(error);
@@ -161,7 +161,7 @@ signupBtn.addEventListener('click', async () => {
     }
 });
 
-const existingSession = localStorage.getItem('Tubonge_session');
+const existingSession = localStorage.getItem('dtubonge_session');
 if (existingSession) {
     window.location.href = 'chat.html';
 }
