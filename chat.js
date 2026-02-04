@@ -61,6 +61,7 @@ const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
 const headerAvatar = document.getElementById('header-avatar');
+const headerToggle = document.getElementById('header-toggle');
 const viewProfileModal = document.getElementById('view-profile-modal');
 const closeViewProfileBtn = document.getElementById('close-view-profile');
 const viewProfileAvatar = document.getElementById('view-profile-avatar');
@@ -131,6 +132,14 @@ tabs.forEach(tab => {
         });
     });
 });
+
+if (headerToggle) {
+    headerToggle.addEventListener('click', () => {
+        if (window.matchMedia('(max-width: 900px)').matches) {
+            document.body.classList.toggle('header-collapsed');
+        }
+    });
+}
 
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
@@ -420,6 +429,10 @@ function loadGroupMessages() {
         messages.forEach(msg => {
             renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false, true);
         });
+        // Default to bottom on group chat
+        setTimeout(() => {
+            groupMessages.scrollTop = groupMessages.scrollHeight;
+        }, 0);
     });
 }
 
@@ -523,9 +536,13 @@ function renderPrivateList(chats) {
             event.stopPropagation();
             openUserProfile(chat.user);
         });
+        const timeLabel = chat.lastTimestamp ? new Date(chat.lastTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         item.innerHTML = `
             <div class="user-info">
-                <div class="user-name">${getDisplayName(chat.user)}</div>
+                <div class="user-name">
+                    <span>${getDisplayName(chat.user)}</span>
+                    <span class="chat-time">${timeLabel}</span>
+                </div>
                 <div class="user-status">${chat.lastMessage || 'No messages yet'}</div>
             </div>
         `;
@@ -559,7 +576,8 @@ function refreshPrivateList() {
                 chats.push({
                     id: chatId,
                     user: otherUser,
-                    lastMessage: lastMessage?.text || ''
+                    lastMessage: lastMessage?.text || '',
+                    lastTimestamp: lastMessage?.timestamp || null
                 });
             }
         });
