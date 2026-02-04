@@ -24,6 +24,7 @@
                 </div>
                 <div class="header-actions">
                     <span id="session-user" class="pill"></span>
+                    <button id="profile-btn" class="ghost-btn">Profile</button>
                     <button id="logout-btn" class="ghost-btn">Log Out</button>
                 </div>
             </header>
@@ -81,6 +82,30 @@
                 </div>
             </footer>
         </main>
+    </div>
+
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-content profile-modal">
+            <div class="modal-header">
+                <h2>Profile</h2>
+                <button class="close-btn" id="close-profile">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label for="profile-display">Display Name (optional)</label>
+                    <input id="profile-display" type="text" maxlength="24" placeholder="How others see you">
+                </div>
+                <div class="field">
+                    <label for="profile-bio">Bio (optional)</label>
+                    <textarea id="profile-bio" rows="3" maxlength="120" placeholder="Short bio"></textarea>
+                </div>
+                <div class="avatar-grid" id="avatar-grid"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="ghost-btn" id="cancel-profile">Cancel</button>
+                <button class="primary-btn" id="save-profile">Save</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="chat.js"></script>

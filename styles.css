@@ -1123,6 +1123,27 @@ body.redirect-page {
     margin-bottom: 6px;
 }
 
+.message-header .sender-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    background-size: cover;
+    background-position: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
 .reply-btn,
 .delete-btn {
     border: none;
@@ -1319,6 +1340,12 @@ body.redirect-page {
     font-weight: 700;
 }
 
+.user-avatar.has-image {
+    background-size: cover;
+    background-position: center;
+    color: transparent;
+}
+
 .private-layout {
     display: grid;
     grid-template-columns: 220px 1fr;
@@ -1381,6 +1408,45 @@ body.redirect-page {
     color: #ff69b4;
 }
 
+.profile-modal {
+    max-width: 560px;
+}
+
+.profile-modal textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #121212;
+    color: #fff;
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.avatar-option {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.avatar-option:hover {
+    transform: scale(1.04);
+}
+
+.avatar-option.selected {
+    border-color: #ff69b4;
+}
+
 .mobile-only {
     display: none;
 }
@@ -1404,5 +1470,81 @@ body.redirect-page {
 
     .message-container {
         max-height: 45vh;
+    }
+}
+
+/* Compact chat sizing + thin scrollbars */
+.chat-page .chat-card {
+    min-height: 78vh;
+}
+
+.chat-page .chat-body {
+    padding: 12px;
+}
+
+.chat-page .message-container {
+    gap: 10px;
+}
+
+.chat-page .message {
+    max-width: 72%;
+    padding: 8px 12px;
+}
+
+.chat-page .message-text {
+    font-size: 0.92rem;
+}
+
+.chat-page .message-time {
+    font-size: 0.65rem;
+}
+
+.chat-page .composer input {
+    padding: 10px 14px;
+}
+
+.chat-page .composer .ghost-btn {
+    min-width: 64px;
+}
+
+.message-container,
+.private-list,
+.admin-messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 105, 180, 0.6) rgba(255, 255, 255, 0.08);
+}
+
+.message-container::-webkit-scrollbar,
+.private-list::-webkit-scrollbar,
+.admin-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.message-container::-webkit-scrollbar-track,
+.private-list::-webkit-scrollbar-track,
+.admin-messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+}
+
+.message-container::-webkit-scrollbar-thumb,
+.private-list::-webkit-scrollbar-thumb,
+.admin-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 105, 180, 0.6);
+    border-radius: 999px;
+}
+
+@media (max-width: 900px) {
+    .chat-page .chat-card {
+        min-height: calc(100vh - 40px);
+        padding: 14px;
+    }
+
+    .chat-page .chat-body {
+        padding: 10px;
+    }
+
+    .chat-page .message-container {
+        max-height: calc(100vh - 300px);
     }
 }

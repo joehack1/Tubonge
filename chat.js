@@ -52,16 +52,59 @@ const uploadLabel = document.getElementById('upload-label');
 const uploadBarFill = document.getElementById('upload-bar-fill');
 const recordingIndicator = document.getElementById('recording-indicator');
 const recordingTimer = document.getElementById('recording-timer');
+const profileBtn = document.getElementById('profile-btn');
+const profileModal = document.getElementById('profile-modal');
+const profileDisplay = document.getElementById('profile-display');
+const profileBio = document.getElementById('profile-bio');
+const avatarGrid = document.getElementById('avatar-grid');
+const closeProfileBtn = document.getElementById('close-profile');
+const cancelProfileBtn = document.getElementById('cancel-profile');
+const saveProfileBtn = document.getElementById('save-profile');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
 let selectedPrivateName = null;
 let replyContext = null;
 let onlineUsers = {};
+let userProfiles = {};
+let selectedAvatarUrl = null;
 let mediaRecorder = null;
 let recordingTimeout = null;
 let recordingInterval = null;
 const MAX_MEDIA_BYTES = 10_000_000;
+const USER_COLORS = ['#e91e63', '#00bcd4', '#8bc34a', '#ff9800', '#9c27b0', '#3f51b5', '#795548'];
+const DEFAULT_AVATARS = [
+    'https://api.dicebear.com/9.x/avataaars/png?seed=Azuri&size=128',
+    'https://api.dicebear.com/9.x/avataaars/png?seed=Kairo&size=128',
+    'https://api.dicebear.com/9.x/avataaars/png?seed=Nala&size=128',
+    'https://api.dicebear.com/9.x/avataaars/png?seed=Zuri&size=128',
+    'https://api.dicebear.com/9.x/adventurer/png?seed=Kimo&size=128',
+    'https://api.dicebear.com/9.x/adventurer/png?seed=Lina&size=128',
+    'https://api.dicebear.com/9.x/adventurer/png?seed=Ony&size=128',
+    'https://api.dicebear.com/9.x/adventurer/png?seed=Vee&size=128',
+    'https://api.dicebear.com/9.x/croodles/png?seed=Rex&size=128',
+    'https://api.dicebear.com/9.x/croodles/png?seed=Zed&size=128',
+    'https://api.dicebear.com/9.x/croodles/png?seed=Tani&size=128',
+    'https://api.dicebear.com/9.x/croodles/png?seed=Miko&size=128',
+    'https://api.dicebear.com/9.x/lorelei/png?seed=Aria&size=128',
+    'https://api.dicebear.com/9.x/lorelei/png?seed=Nova&size=128',
+    'https://api.dicebear.com/9.x/lorelei/png?seed=Zane&size=128',
+    'https://api.dicebear.com/9.x/lorelei/png?seed=Koda&size=128',
+    'https://api.dicebear.com/9.x/micah/png?seed=Jade&size=128',
+    'https://api.dicebear.com/9.x/micah/png?seed=Rio&size=128',
+    'https://api.dicebear.com/9.x/micah/png?seed=Faye&size=128',
+    'https://api.dicebear.com/9.x/micah/png?seed=Omar&size=128',
+    'https://api.dicebear.com/9.x/pixel-art/png?seed=Zaza&size=128',
+    'https://api.dicebear.com/9.x/pixel-art/png?seed=Mara&size=128',
+    'https://api.dicebear.com/9.x/pixel-art/png?seed=Rune&size=128',
+    'https://api.dicebear.com/9.x/pixel-art/png?seed=Kiki&size=128',
+    'https://api.dicebear.com/9.x/bottts/png?seed=BotA&size=128',
+    'https://api.dicebear.com/9.x/bottts/png?seed=BotB&size=128',
+    'https://api.dicebear.com/9.x/bottts/png?seed=BotC&size=128',
+    'https://api.dicebear.com/9.x/bottts/png?seed=BotD&size=128',
+    'https://api.dicebear.com/9.x/fun-emoji/png?seed=Hype&size=128',
+    'https://api.dicebear.com/9.x/fun-emoji/png?seed=Smirk&size=128'
+];
 
 const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
@@ -93,6 +136,28 @@ function getChatId(userA, userB) {
     return [userA, userB].sort().join('_');
 }
 
+function getDisplayName(username) {
+    return userProfiles[username]?.displayName || username;
+}
+
+function getAvatarUrl(username) {
+    return userProfiles[username]?.avatarUrl || null;
+}
+
+function buildAvatarElement(username, className) {
+    const avatar = document.createElement('div');
+    avatar.className = className;
+    const url = getAvatarUrl(username);
+    if (url) {
+        avatar.style.backgroundImage = `url("${url}")`;
+        avatar.classList.add('has-image');
+        avatar.textContent = '';
+    } else {
+        avatar.textContent = username ? username.charAt(0).toUpperCase() : '?';
+    }
+    return avatar;
+}
+
 function setReplyContext(message) {
     replyContext = {
         id: message.id,
@@ -108,6 +173,53 @@ clearReplyBtn.addEventListener('click', () => {
     replyPreview.classList.remove('active');
     replyText.textContent = '';
 });
+
+function renderAvatarGrid() {
+    avatarGrid.innerHTML = '';
+    DEFAULT_AVATARS.forEach(url => {
+        const option = document.createElement('div');
+        option.className = 'avatar-option';
+        option.style.backgroundImage = `url("${url}")`;
+        if (selectedAvatarUrl === url) {
+            option.classList.add('selected');
+        }
+        option.addEventListener('click', () => {
+            selectedAvatarUrl = url;
+            renderAvatarGrid();
+        });
+        avatarGrid.appendChild(option);
+    });
+}
+
+function openProfileModal() {
+    const profile = userProfiles[currentUser] || {};
+    profileDisplay.value = profile.displayName || '';
+    profileBio.value = profile.bio || '';
+    selectedAvatarUrl = profile.avatarUrl || DEFAULT_AVATARS[0];
+    renderAvatarGrid();
+    profileModal.style.display = 'flex';
+}
+
+function closeProfileModal() {
+    profileModal.style.display = 'none';
+}
+
+async function saveProfile() {
+    const displayName = profileDisplay.value.trim();
+    const bio = profileBio.value.trim();
+    const avatarUrl = selectedAvatarUrl || null;
+    await update(ref(db, `users/${currentUser}`), {
+        displayName,
+        bio,
+        avatarUrl
+    });
+    closeProfileModal();
+}
+
+profileBtn.addEventListener('click', openProfileModal);
+closeProfileBtn.addEventListener('click', closeProfileModal);
+cancelProfileBtn.addEventListener('click', closeProfileModal);
+saveProfileBtn.addEventListener('click', saveProfile);
 
 function showUploadProgress(label, percent) {
     uploadStatus.classList.add('active');
@@ -144,20 +256,36 @@ function stopRecordingTimer() {
     recordingTimer.textContent = '0:00';
 }
 
-function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton) {
+function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton, useUserColors) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''}`;
+    if (useUserColors && msg.username) {
+        const colorIndex = Math.abs(msg.username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % USER_COLORS.length;
+        const color = USER_COLORS[colorIndex];
+        messageDiv.style.borderLeftColor = color;
+        messageDiv.style.backgroundColor = `${color}22`;
+    }
 
     const header = document.createElement('div');
     header.className = 'message-header';
-    header.innerHTML = `<span class="message-sender">${msg.username}</span>`;
+    const senderWrap = document.createElement('div');
+    senderWrap.className = 'sender-wrap';
+    const avatar = buildAvatarElement(msg.username, 'message-avatar');
+    const sender = document.createElement('span');
+    sender.className = 'message-sender';
+    sender.textContent = getDisplayName(msg.username);
+    senderWrap.appendChild(avatar);
+    senderWrap.appendChild(sender);
+
+    const actionWrap = document.createElement('div');
+    actionWrap.className = 'message-actions';
 
     if (showReplyButton) {
         const replyBtn = document.createElement('button');
         replyBtn.className = 'reply-btn';
         replyBtn.textContent = 'Reply';
         replyBtn.addEventListener('click', () => setReplyContext(msg));
-        header.appendChild(replyBtn);
+        actionWrap.appendChild(replyBtn);
     }
 
     if (showDeleteButton) {
@@ -165,7 +293,7 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'Delete';
         deleteBtn.addEventListener('click', () => deleteGroupMessage(msg.id));
-        header.appendChild(deleteBtn);
+        actionWrap.appendChild(deleteBtn);
     }
 
     if (showReply && msg.replyTo) {
@@ -210,6 +338,8 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
     timeDiv.className = 'message-time';
     timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    header.appendChild(senderWrap);
+    header.appendChild(actionWrap);
     messageDiv.appendChild(header);
     messageDiv.appendChild(timeDiv);
 
@@ -236,7 +366,7 @@ function loadGroupMessages() {
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
         messages.forEach(msg => {
-            renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false);
+            renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false, true);
         });
     });
 }
@@ -262,7 +392,7 @@ function loadPrivateMessages(chatId) {
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
         messages.forEach(msg => {
-            renderMessage(privateMessages, msg, msg.username === currentUser, false, false, false);
+            renderMessage(privateMessages, msg, msg.username === currentUser, false, false, false, false);
         });
     });
 }
@@ -283,6 +413,7 @@ function updatePresence() {
     onValue(ref(db, 'users'), snapshot => {
         const data = snapshot.val() || {};
         onlineUsers = {};
+        userProfiles = data || {};
         Object.keys(data).forEach(key => {
             if (data[key].online) {
                 onlineUsers[key] = data[key];
@@ -290,6 +421,7 @@ function updatePresence() {
         });
         const count = Object.keys(onlineUsers).length;
         onlineCount.textContent = `${count} online`;
+        sessionUser.textContent = currentUser ? `@${getDisplayName(currentUser)}` : '';
         renderUserList();
     });
 }
@@ -302,13 +434,14 @@ function renderUserList() {
         if (username === currentUser) return;
         const item = document.createElement('div');
         item.className = 'user-item';
+        const avatar = buildAvatarElement(username, 'user-avatar');
         item.innerHTML = `
-            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
             <div class="user-info">
-                <div class="user-name">${username}</div>
+                <div class="user-name">${getDisplayName(username)}</div>
                 <div class="user-status">Online</div>
             </div>
         `;
+        item.prepend(avatar);
         item.addEventListener('click', () => selectPrivateUser(username));
 
         const mobileItem = item.cloneNode(true);
@@ -328,13 +461,14 @@ function renderPrivateList(chats) {
     chats.forEach(chat => {
         const item = document.createElement('div');
         item.className = `private-item ${chat.user === selectedPrivateName ? 'active' : ''}`;
+        const avatar = buildAvatarElement(chat.user, 'user-avatar');
         item.innerHTML = `
-            <div class="user-avatar">${chat.user.charAt(0).toUpperCase()}</div>
             <div class="user-info">
-                <div class="user-name">${chat.user}</div>
+                <div class="user-name">${getDisplayName(chat.user)}</div>
                 <div class="user-status">${chat.lastMessage || 'No messages yet'}</div>
             </div>
         `;
+        item.prepend(avatar);
         item.addEventListener('click', () => selectPrivateUser(chat.user));
         privateList.appendChild(item);
     });
