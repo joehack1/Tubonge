@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTubonge - Real-time Chat</title>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <style>
+        /* Keep all the same CSS styles from previous version */
+        :root {
+            --primary-color: #e91e63;
+            --secondary-color: #ff69b4;
+            --light-color: #fce4ec;
+            --dark-color: #212529;
+            --success-color: #f8bbd9;
+            --user-msg-color: #e91e63;
+            --other-msg-color: #424242;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #000000 0%, #e91e63 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #1a1a1a;
+        }
+
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--user-msg-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .other-message {
+            align-self: flex-start;
+            background-color: var(--other-msg-color);
+            color: var(--dark-color);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .user-message .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .other-message .message-sender {
+            color: var(--secondary-color);
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .chat-footer {
+            padding: 20px;
+            background-color: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #message-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        #send-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        #send-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        #username-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        #save-username {
+            padding: 10px 20px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+        #save-username:hover {
+            background-color: var(--primary-color);
+        }
+
+        .chat-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #ff69b4;
+            background-color: #1a1a1a;
+            border-top: 1px solid #333;
+        }
+
+        .empty-chat {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .clear-chat-btn {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .clear-chat-btn:hover {
+            background-color: #ff5252;
+        }
+
+        .online-users {
+            padding: 10px 20px;
+            background-color: #2d1b69;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+            color: #ff69b4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                border-radius: 10px;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1><i class="fas fa-comments"></i> DTubonge</h1>
+            <p>Real-time chat with other users</p>
+        </div>
+        
+        <div class="user-info">
+            <input type="text" id="username-input" placeholder="Enter your username...">
+            <button id="save-username">Join Chat</button>
+        </div>
+        
+        <div class="online-users" id="online-users">
+            <span class="online-dot"></span>
+            <span id="online-count">0 users online</span>
+        </div>
+        
+        <div class="chat-body" id="chat-body">
+            <div class="message-container" id="message-container">
+                <div class="empty-chat" id="empty-chat">
+                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-footer">
+            <input type="text" id="message-input" placeholder="Type your message here..." disabled>
+            <button id="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+        </div>
+        
+        <div class="chat-info">
+            <p>Real-time messages with other users. All data is stored in Firebase.</p>
+            <button class="clear-chat-btn" id="clear-chat-btn" disabled><i class="fas fa-trash-alt"></i> Clear All Messages (Admin)</button>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
+            authDomain: "dtubonge.firebaseapp.com",
+            databaseURL: "https://dtubonge-default-rtdb.firebaseio.com/",
+            projectId: "dtubonge",
+            storageBucket: "dtubonge.firebasestorage.app",
+            messagingSenderId: "194637518723",
+            appId: "1:194637518723:web:891227e82ea2817e6888b6",
+            measurementId: "G-5NPT1KM5DR"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // DOM elements
+        const messageContainer = document.getElementById('message-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const usernameInput = document.getElementById('username-input');
+        const saveUsernameBtn = document.getElementById('save-username');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+        const chatBody = document.getElementById('chat-body');
+        const emptyChat = document.getElementById('empty-chat');
+        const onlineUsersDiv = document.getElementById('online-users');
+        const onlineCount = document.getElementById('online-count');
+
+        // User state
+        let currentUser = null;
+        let userId = null;
+        let username = null;
+
+        // Listen for authentication state changes
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                userId = user.uid;
+                setupUserPresence();
+                loadMessages();
+                enableChat();
+            } else {
+                // User is signed out
+                disableChat();
+            }
+        });
+
+        // Join chat button
+        saveUsernameBtn.addEventListener('click', () => {
+            const name = usernameInput.value.trim();
+            if (name) {
+                username = name;
+                // Sign in anonymously to Firebase
+                auth.signInAnonymously()
+                    .then(() => {
+                        console.log("Signed in anonymously");
+                        // Save username to Firebase
+                        database.ref('users/' + userId).set({
+                            username: username,
+                            lastActive: Date.now(),
+                            online: true
+                        });
+                    })
+                    .catch((error) => {
+                        console.error("Auth error:", error);
+                        alert("Error joining chat. Please try again.");
+                    });
+            } else {
+                alert("Please enter a username");
+            }
+        });
+
+        // Setup user presence tracking
+        function setupUserPresence() {
+            // User is online
+            const userStatusRef = database.ref('users/' + userId);
+            
+            // Set user as online
+            userStatusRef.update({
+                online: true,
+                lastActive: Date.now()
+            });
+
+            // When user disconnects, set to offline
+            userStatusRef.onDisconnect().update({
+                online: false,
+                lastActive: Date.now()
+            });
+
+            // Listen for online users
+            database.ref('users').on('value', (snapshot) => {
+                const users = snapshot.val();
+                let onlineCountNum = 0;
+                let userList = [];
+                
+                if (users) {
+                    Object.keys(users).forEach((key) => {
+                        if (users[key].online) {
+                            onlineCountNum++;
+                            if (users[key].username !== username) {
+                                userList.push(users[key].username);
+                            }
+                        }
+                    });
+                }
+                
+                onlineCount.textContent = `${onlineCountNum} user${onlineCountNum !== 1 ? 's' : ''} online`;
+                
+                // Show online users
+                if (userList.length > 0) {
+                    onlineUsersDiv.innerHTML = `<span class="online-dot"></span> Online: ${userList.join(', ')}`;
+                } else {
+                    onlineUsersDiv.innerHTML = `<span class="online-dot"></span> You're the only one online`;
+                }
+            });
+        }
+
+        // Load messages from Firebase
+        function loadMessages() {
+            database.ref('messages').limitToLast(100).on('value', (snapshot) => {
+                messageContainer.innerHTML = '';
+                const messages = snapshot.val();
+                
+                if (!messages || Object.keys(messages).length === 0) {
+                    emptyChat.style.display = 'block';
+                    return;
+                }
+                
+                emptyChat.style.display = 'none';
+                
+                // Convert object to array and sort by timestamp
+                const messagesArray = Object.values(messages).sort((a, b) => a.timestamp - b.timestamp);
+                
+                messagesArray.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    const isCurrentUser = msg.userId === userId;
+                    
+                    messageDiv.className = `message ${isCurrentUser ? 'user-message' : 'other-message'}`;
+                    
+                    const senderSpan = document.createElement('div');
+                    senderSpan.className = 'message-sender';
+                    senderSpan.textContent = msg.username;
+                    
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'message-text';
+                    textDiv.textContent = msg.text;
+                    
+                    const timeSpan = document.createElement('div');
+                    timeSpan.className = 'message-time';
+                    timeSpan.textContent = formatTime(msg.timestamp);
+                    
+                    messageDiv.appendChild(senderSpan);
+                    messageDiv.appendChild(textDiv);
+                    messageDiv.appendChild(timeSpan);
+                    
+                    messageContainer.appendChild(messageDiv);
+                });
+                
+                // Scroll to bottom
+                chatBody.scrollTop = chatBody.scrollHeight;
+            });
+        }
+
+        // Send message function
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !currentUser) return;
+            
+            // Create message object
+            const message = {
+                userId: userId,
+                username: username,
+                text: text,
+                timestamp: Date.now()
+            };
+            
+            // Save to Firebase
+            database.ref('messages').push(message)
+                .then(() => {
+                    // Clear input
+                    messageInput.value = '';
+                })
+                .catch((error) => {
+                    console.error("Error sending message:", error);
+                    alert("Error sending message. Please try again.");
+                });
+        }
+
+        // Send message on button click
+        sendBtn.addEventListener('click', sendMessage);
+
+        // Send message on Enter key press
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Enable chat interface
+        function enableChat() {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            usernameInput.disabled = true;
+            saveUsernameBtn.disabled = true;
+            saveUsernameBtn.textContent = "Joined";
+            messageInput.placeholder = `Message as ${username}...`;
+            messageInput.focus();
+        }
+
+        // Disable chat interface
+        function disableChat() {
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            usernameInput.disabled = false;
+            saveUsernameBtn.disabled = false;
+            saveUsernameBtn.textContent = "Join Chat";
+        }
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Clear chat function (admin only - for demo purposes)
+        clearChatBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear ALL messages for everyone? This cannot be undone.')) {
+                database.ref('messages').remove()
+                    .then(() => {
+                        alert('All messages cleared.');
+                    })
+                    .catch((error) => {
+                        console.error("Error clearing messages:", error);
+                    });
+            }
+        });
+
+        // Initialize
+        disableChat();
+    </script>
+</body>
+</html>
