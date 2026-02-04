@@ -56,11 +56,26 @@
             </section>
 
             <footer class="chat-footer">
+                <div class="upload-status" id="upload-status">
+                    <div class="upload-label" id="upload-label"></div>
+                    <div class="upload-bar">
+                        <div class="upload-bar-fill" id="upload-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="recording-indicator" id="recording-indicator">
+                    <div class="waveform">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="recording-timer" id="recording-timer">0:00</div>
+                </div>
                 <div class="reply-preview" id="reply-preview">
                     <span id="reply-text"></span>
                     <button id="clear-reply" class="ghost-btn">Clear</button>
                 </div>
                 <div class="composer">
+                    <input id="image-input" type="file" accept="image/*" style="display: none;">
+                    <button id="image-btn" class="ghost-btn" title="Share photo">Photo</button>
+                    <button id="voice-btn" class="ghost-btn" title="Record voice">Voice</button>
                     <input id="message-input" type="text" placeholder="Type a message..." maxlength="500">
                     <button id="send-btn" class="primary-btn">Send</button>
                 </div>

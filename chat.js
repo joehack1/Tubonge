@@ -33,6 +33,9 @@ const logoutBtn = document.getElementById('logout-btn');
 const sessionUser = document.getElementById('session-user');
 const sendBtn = document.getElementById('send-btn');
 const messageInput = document.getElementById('message-input');
+const imageInput = document.getElementById('image-input');
+const imageBtn = document.getElementById('image-btn');
+const voiceBtn = document.getElementById('voice-btn');
 const groupMessages = document.getElementById('group-messages');
 const privateMessages = document.getElementById('private-messages');
 const groupEmpty = document.getElementById('group-empty');
@@ -44,12 +47,21 @@ const onlineCount = document.getElementById('online-count');
 const replyPreview = document.getElementById('reply-preview');
 const replyText = document.getElementById('reply-text');
 const clearReplyBtn = document.getElementById('clear-reply');
+const uploadStatus = document.getElementById('upload-status');
+const uploadLabel = document.getElementById('upload-label');
+const uploadBarFill = document.getElementById('upload-bar-fill');
+const recordingIndicator = document.getElementById('recording-indicator');
+const recordingTimer = document.getElementById('recording-timer');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
 let selectedPrivateName = null;
 let replyContext = null;
 let onlineUsers = {};
+let mediaRecorder = null;
+let recordingTimeout = null;
+let recordingInterval = null;
+const MAX_MEDIA_BYTES = 10_000_000;
 
 const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
@@ -97,9 +109,44 @@ clearReplyBtn.addEventListener('click', () => {
     replyText.textContent = '';
 });
 
+function showUploadProgress(label, percent) {
+    uploadStatus.classList.add('active');
+    uploadLabel.textContent = label;
+    uploadBarFill.style.width = `${percent}%`;
+    if (percent >= 100) {
+        setTimeout(() => {
+            uploadStatus.classList.remove('active');
+            uploadLabel.textContent = '';
+            uploadBarFill.style.width = '0%';
+        }, 800);
+    }
+}
+
+function startRecordingTimer() {
+    const startedAt = Date.now();
+    recordingIndicator.classList.add('active');
+    recordingTimer.textContent = '0:00';
+    recordingInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = String(elapsed % 60).padStart(2, '0');
+        recordingTimer.textContent = `${minutes}:${seconds}`;
+    }, 500);
+    return startedAt;
+}
+
+function stopRecordingTimer() {
+    if (recordingInterval) {
+        clearInterval(recordingInterval);
+        recordingInterval = null;
+    }
+    recordingIndicator.classList.remove('active');
+    recordingTimer.textContent = '0:00';
+}
+
 function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'}`;
+    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''}`;
 
     const header = document.createElement('div');
     header.className = 'message-header';
@@ -128,16 +175,42 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         messageDiv.appendChild(replyBlock);
     }
 
-    const textDiv = document.createElement('div');
-    textDiv.className = 'message-text';
-    textDiv.textContent = msg.text;
+    if (msg.type === 'image' && msg.imageData) {
+        const image = document.createElement('img');
+        image.src = msg.imageData;
+        image.alt = msg.caption || 'Shared photo';
+        image.className = 'shared-image';
+        messageDiv.appendChild(image);
+        if (msg.caption) {
+            const caption = document.createElement('div');
+            caption.className = 'message-text';
+            caption.textContent = msg.caption;
+            messageDiv.appendChild(caption);
+        }
+    } else if (msg.type === 'voice' && msg.audioData) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = msg.audioData;
+        audio.className = 'voice-audio';
+        messageDiv.appendChild(audio);
+        if (msg.duration) {
+            const duration = document.createElement('div');
+            duration.className = 'message-time';
+            duration.textContent = `Voice · ${Math.round(msg.duration)}s`;
+            messageDiv.appendChild(duration);
+        }
+    } else {
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.textContent = msg.text;
+        messageDiv.appendChild(textDiv);
+    }
 
     const timeDiv = document.createElement('div');
     timeDiv.className = 'message-time';
     timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     messageDiv.appendChild(header);
-    messageDiv.appendChild(textDiv);
     messageDiv.appendChild(timeDiv);
 
     container.appendChild(messageDiv);
@@ -311,7 +384,8 @@ sendBtn.addEventListener('click', async () => {
         const message = {
             username: currentUser,
             text,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            type: 'text'
         };
         const messagesRef = ref(db, `private_messages/${selectedPrivateId}`);
         const newMessageRef = push(messagesRef);
@@ -320,7 +394,8 @@ sendBtn.addEventListener('click', async () => {
         const message = {
             username: currentUser,
             text,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            type: 'text'
         };
         if (replyContext) {
             message.replyTo = replyContext;
@@ -341,6 +416,120 @@ messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         sendBtn.click();
     }
+});
+
+imageBtn.addEventListener('click', () => {
+    imageInput.click();
+});
+
+imageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (currentTab === 'private' && !selectedPrivateId) {
+        alert('Select a private chat first.');
+        imageInput.value = '';
+        return;
+    }
+    if (file.size > MAX_MEDIA_BYTES) {
+        alert('Image too large. Please use a smaller image (about 1.5MB max).');
+        imageInput.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    showUploadProgress('Preparing photo...', 20);
+    reader.onload = async () => {
+        const imageData = reader.result;
+        const message = {
+            username: currentUser,
+            timestamp: Date.now(),
+            type: 'image',
+            imageData
+        };
+
+        const messagesRef = currentTab === 'private'
+            ? ref(db, `private_messages/${selectedPrivateId}`)
+            : ref(db, 'messages');
+        const newMessageRef = push(messagesRef);
+        await set(newMessageRef, message);
+        showUploadProgress('Uploaded photo', 100);
+        imageInput.value = '';
+    };
+    reader.readAsDataURL(file);
+});
+
+voiceBtn.addEventListener('click', async () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+    }
+    if (currentTab === 'private' && !selectedPrivateId) {
+        alert('Select a private chat first.');
+        return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Voice recording is not supported on this device.');
+        return;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    const startedAt = startRecordingTimer();
+
+    mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            chunks.push(event.data);
+        }
+    };
+
+    mediaRecorder.onstop = async () => {
+        clearTimeout(recordingTimeout);
+        stopRecordingTimer();
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        const duration = Math.min(15, (Date.now() - startedAt) / 1000);
+
+        if (blob.size > MAX_MEDIA_BYTES) {
+            alert('Voice message too large. Try a shorter clip (15s max).');
+            return;
+        }
+
+        const reader = new FileReader();
+        showUploadProgress('Preparing voice...', 20);
+        reader.onload = async () => {
+            const audioData = reader.result;
+            const message = {
+                username: currentUser,
+                timestamp: Date.now(),
+                type: 'voice',
+                audioData,
+                duration
+            };
+
+            const messagesRef = currentTab === 'private'
+                ? ref(db, `private_messages/${selectedPrivateId}`)
+                : ref(db, 'messages');
+            const newMessageRef = push(messagesRef);
+            await set(newMessageRef, message);
+            showUploadProgress('Uploaded voice', 100);
+        };
+        reader.readAsDataURL(blob);
+    };
+
+    mediaRecorder.start();
+    voiceBtn.textContent = 'Stop';
+
+    recordingTimeout = setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+    }, 15000);
+
+    mediaRecorder.addEventListener('stop', () => {
+        voiceBtn.textContent = 'Voice';
+    }, { once: true });
 });
 
 async function loadUserColor() {
