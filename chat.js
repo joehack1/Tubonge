@@ -60,6 +60,7 @@ const avatarGrid = document.getElementById('avatar-grid');
 const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
+const headerAvatar = document.getElementById('header-avatar');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
@@ -158,6 +159,15 @@ function buildAvatarElement(username, className) {
     return avatar;
 }
 
+function updateHeaderAvatar() {
+    const url = getAvatarUrl(currentUser);
+    if (url) {
+        headerAvatar.style.backgroundImage = `url("${url}")`;
+    } else {
+        headerAvatar.style.backgroundImage = '';
+    }
+}
+
 function setReplyContext(message) {
     replyContext = {
         id: message.id,
@@ -213,6 +223,7 @@ async function saveProfile() {
         bio,
         avatarUrl
     });
+    updateHeaderAvatar();
     closeProfileModal();
 }
 
@@ -422,6 +433,7 @@ function updatePresence() {
         const count = Object.keys(onlineUsers).length;
         onlineCount.textContent = `${count} online`;
         sessionUser.textContent = currentUser ? `@${getDisplayName(currentUser)}` : '';
+        updateHeaderAvatar();
         renderUserList();
     });
 }
