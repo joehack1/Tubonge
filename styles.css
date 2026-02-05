@@ -434,25 +434,28 @@ body {
 }
 
 .user-item {
-    padding: 12px 15px;
-    margin: 5px 0;
-    background-color: #1a1a1a;
+    padding: 8px 10px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .user-item:hover {
-    background-color: #333;
-    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 105, 180, 0.35);
+    transform: translateX(4px);
 }
 
 .user-item.active {
-    background-color: #e91e63;
+    background: rgba(255, 105, 180, 0.2);
     color: white;
+    border-color: rgba(255, 105, 180, 0.6);
 }
 
 .user-avatar {
@@ -468,9 +471,28 @@ body {
     font-size: 0.8rem;
 }
 
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #f1f1f1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .user-status {
-    font-size: 0.8rem;
-    color: #bdbdbd;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.65);
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -510,6 +532,27 @@ body {
     font-weight: 600;
     transition: all 0.3s;
     position: relative;
+}
+
+.tab-badge {
+    display: none;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ff69b4;
+    color: #121212;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    margin-left: 6px;
+}
+
+.tab-badge.active {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .tab-btn.active {
@@ -1175,7 +1218,7 @@ body.chat-page {
 
 .chat-body {
     flex: 1;
-    background: #121212;
+    background: transparent;
     border-radius: 16px;
     padding: 16px;
     overflow: hidden;
@@ -1925,45 +1968,64 @@ body.chat-page {
 }
 
 .private-item {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    padding: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 10px;
     display: grid;
-    grid-template-columns: 36px 1fr;
+    grid-template-columns: 32px 1fr;
     gap: 10px;
     align-items: center;
-    margin-bottom: 8px;
-    transition: background 0.2s ease;
+    margin-bottom: 6px;
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .private-item .user-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .private-item .user-name {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: flex;
     justify-content: space-between;
     gap: 8px;
 }
 
 .private-item .chat-time {
-    font-size: 0.75rem;
-    color: #9e9e9e;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.55);
     white-space: nowrap;
 }
 
 .private-item .user-status {
-    font-size: 0.78rem;
-    color: #bdbdbd;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .private-item.active {
-    background: rgba(255, 105, 180, 0.18);
+    background: rgba(255, 105, 180, 0.14);
+    border-color: rgba(255, 105, 180, 0.5);
+}
+
+.private-item.unread {
+    border: 1px solid rgba(255, 105, 180, 0.45);
+    background: rgba(255, 105, 180, 0.12);
+}
+
+.private-item .unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff69b4;
+    display: inline-block;
+    margin-left: 6px;
 }

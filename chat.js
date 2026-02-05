@@ -53,6 +53,7 @@ const uploadBarFill = document.getElementById('upload-bar-fill');
 const recordingIndicator = document.getElementById('recording-indicator');
 const recordingTimer = document.getElementById('recording-timer');
 const profileBtn = document.getElementById('profile-btn');
+const privateBadge = document.getElementById('private-badge');
 const profileModal = document.getElementById('profile-modal');
 const profileDisplay = document.getElementById('profile-display');
 const profileBio = document.getElementById('profile-bio');
@@ -120,6 +121,31 @@ const panels = {
     private: document.getElementById('panel-private'),
     users: document.getElementById('panel-users')
 };
+
+function getReadKey(chatId) {
+    return `dtubonge_read_${chatId}`;
+}
+
+function getLastRead(chatId) {
+    if (!chatId) return 0;
+    return Number(localStorage.getItem(getReadKey(chatId))) || 0;
+}
+
+function setLastRead(chatId, timestamp) {
+    if (!chatId || !timestamp) return;
+    localStorage.setItem(getReadKey(chatId), String(timestamp));
+}
+
+function updatePrivateBadge(count) {
+    if (!privateBadge) return;
+    if (count > 0) {
+        privateBadge.textContent = count > 99 ? '99+' : String(count);
+        privateBadge.classList.add('active');
+    } else {
+        privateBadge.textContent = '';
+        privateBadge.classList.remove('active');
+    }
+}
 
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -450,6 +476,10 @@ function loadPrivateMessages(chatId) {
         messages.forEach(msg => {
             renderMessage(privateMessages, msg, msg.username === currentUser, false, false, false, false);
         });
+        const latest = messages[messages.length - 1];
+        if (latest?.timestamp) {
+            setLastRead(chatId, latest.timestamp);
+        }
         setTimeout(() => {
             privateMessages.scrollTop = privateMessages.scrollHeight;
         }, 0);
@@ -550,13 +580,14 @@ function renderPrivateList(chats) {
 
     chats.forEach(chat => {
         const item = document.createElement('div');
-        item.className = `private-item ${chat.user === selectedPrivateName ? 'active' : ''}`;
+        item.className = `private-item ${chat.user === selectedPrivateName ? 'active' : ''} ${chat.unread ? 'unread' : ''}`;
         const avatar = buildAvatarElement(chat.user, 'user-avatar');
         avatar.addEventListener('click', (event) => {
             event.stopPropagation();
             openUserProfile(chat.user);
         });
         const timeLabel = chat.lastTimestamp ? new Date(chat.lastTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const unreadDot = chat.unread ? '<span class="unread-dot" aria-label="Unread"></span>' : '';
         item.innerHTML = `
             <div class="user-info">
                 <div class="user-name">
@@ -567,6 +598,12 @@ function renderPrivateList(chats) {
             </div>
         `;
         item.prepend(avatar);
+        if (chat.unread) {
+            const nameRow = item.querySelector('.user-name');
+            if (nameRow) {
+                nameRow.insertAdjacentHTML('beforeend', unreadDot);
+            }
+        }
         item.addEventListener('click', () => selectPrivateUser(chat.user));
         privateList.appendChild(item);
     });
@@ -575,6 +612,7 @@ function renderPrivateList(chats) {
 function selectPrivateUser(username) {
     selectedPrivateName = username;
     selectedPrivateId = getChatId(currentUser, username);
+    setLastRead(selectedPrivateId, Date.now());
     loadPrivateMessages(selectedPrivateId);
     if (currentTab !== 'private') {
         document.querySelector('[data-tab="private"]').click();
@@ -587,21 +625,34 @@ function refreshPrivateList() {
     onValue(privateRef, snapshot => {
         const data = snapshot.val() || {};
         const chats = [];
+        let unreadTotal = 0;
         Object.keys(data).forEach(chatId => {
             if (!chatId.includes(currentUser)) return;
             const messages = Object.values(data[chatId]);
             const lastMessage = messages.sort((a, b) => b.timestamp - a.timestamp)[0];
             const otherUser = chatId.split('_').find(name => name !== currentUser);
             if (otherUser) {
+                const lastRead = getLastRead(chatId);
+                const isUnread = !!lastMessage
+                    && lastMessage.username !== currentUser
+                    && lastMessage.timestamp > lastRead;
+                if (selectedPrivateId === chatId && currentTab === 'private' && lastMessage?.timestamp) {
+                    setLastRead(chatId, lastMessage.timestamp);
+                }
+                if (isUnread) {
+                    unreadTotal += 1;
+                }
                 chats.push({
                     id: chatId,
                     user: otherUser,
                     lastMessage: lastMessage?.text || '',
-                    lastTimestamp: lastMessage?.timestamp || null
+                    lastTimestamp: lastMessage?.timestamp || null,
+                    unread: isUnread
                 });
             }
         });
         renderPrivateList(chats);
+        updatePrivateBadge(unreadTotal);
     });
 }
 
