@@ -517,6 +517,8 @@
         const session = sessionRaw ? JSON.parse(sessionRaw) : null;
         const storedName = localStorage.getItem('space_invaders_player');
         let playerName = storedName || session?.username || 'Guest';
+        const LOCAL_SCORES_KEY = 'space_invaders_local_scores';
+        const LOCAL_BEST_KEY = 'space_invaders_local_best';
 
         function encodeKey(value) {
             return btoa(unescape(encodeURIComponent(value)))
@@ -527,6 +529,48 @@
 
         function setStatus(text) {
             scoreStatus.textContent = text || '';
+        }
+
+        function readLocalScores() {
+            try {
+                return JSON.parse(localStorage.getItem(LOCAL_SCORES_KEY) || '[]');
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeLocalScores(scores) {
+            localStorage.setItem(LOCAL_SCORES_KEY, JSON.stringify(scores.slice(-50)));
+        }
+
+        function addLocalScore(entry) {
+            const scores = readLocalScores();
+            scores.push(entry);
+            writeLocalScores(scores);
+            return scores;
+        }
+
+        function readLocalBest() {
+            try {
+                return JSON.parse(localStorage.getItem(LOCAL_BEST_KEY) || '{}');
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function writeLocalBest(map) {
+            localStorage.setItem(LOCAL_BEST_KEY, JSON.stringify(map));
+        }
+
+        function updateLocalBest(score) {
+            if (!playerName || playerName === 'Guest') return;
+            const bestMap = readLocalBest();
+            const current = bestMap[playerName] || 0;
+            if (score > current) {
+                bestMap[playerName] = score;
+                writeLocalBest(bestMap);
+                playerBestEl.textContent = score;
+            }
         }
 
         function updatePlayerUI() {
@@ -550,7 +594,8 @@
                     playerBestEl.textContent = '--';
                 }
             } catch (error) {
-                playerBestEl.textContent = '--';
+                const bestMap = readLocalBest();
+                playerBestEl.textContent = bestMap[playerName] || '--';
             }
         }
 
@@ -570,6 +615,18 @@
             });
         }
 
+        function renderLocalLeaderboard() {
+            const scores = readLocalScores()
+                .map(item => ({
+                    username: item.username,
+                    score: item.score || 0,
+                    timestamp: item.timestamp || 0
+                }))
+                .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
+                .slice(0, 10);
+            renderLeaderboard(scores);
+        }
+
         function loadLeaderboard() {
             const scoresRef = query(ref(db, 'scores/space_invaders'), orderByChild('score'), limitToLast(10));
             onValue(scoresRef, (snapshot) => {
@@ -583,7 +640,7 @@
                     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp);
                 renderLeaderboard(scores);
             }, () => {
-                leaderboardEl.innerHTML = '<li>Unable to load scores</li>';
+                renderLocalLeaderboard();
             });
         }
 
@@ -603,8 +660,24 @@
                     playerBestEl.textContent = score;
                 }
             } catch (error) {
-                // ignore best update failures
+                updateLocalBest(score);
             }
+        }
+
+        async function flushLocalScores() {
+            const queued = readLocalScores();
+            if (queued.length === 0) return;
+            const remaining = [];
+            for (const entry of queued) {
+                try {
+                    const scoreRef = ref(db, 'scores/space_invaders');
+                    const newScore = push(scoreRef);
+                    await set(newScore, entry);
+                } catch (error) {
+                    remaining.push(entry);
+                }
+            }
+            writeLocalScores(remaining);
         }
 
         async function submitScore(score) {
@@ -621,7 +694,11 @@
                 await saveBestScore(score);
                 setStatus('Score saved!');
             } catch (error) {
-                setStatus('Save failed. Check connection or rules.');
+                const entry = { username: playerName, score, timestamp: Date.now() };
+                addLocalScore(entry);
+                updateLocalBest(score);
+                renderLocalLeaderboard();
+                setStatus('Saved locally (offline).');
             } finally {
                 setTimeout(() => setStatus(''), 2500);
             }
@@ -649,6 +726,11 @@
         updatePlayerUI();
         loadLeaderboard();
         loadPlayerBest();
+        flushLocalScores();
+
+        window.addEventListener('online', () => {
+            flushLocalScores();
+        });
 
         if (reloadBtn) {
             reloadBtn.addEventListener('click', () => {

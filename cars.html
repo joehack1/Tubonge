@@ -2,699 +2,1202 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Car Racing Game - Three.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Mobile Racer</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            touch-action: manipulation;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
-            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            background: #0a0a1a;
             color: white;
+            height: 100vh;
+            width: 100vw;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            height: 100vh;
         }
-        
-        #game-container {
+
+        #gameContainer {
+            flex: 1;
             position: relative;
-            width: 100%;
-            flex-grow: 1;
             overflow: hidden;
         }
-        
-        #gameCanvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        
+
         #ui {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
+            z-index: 100;
             pointer-events: none;
-            z-index: 10;
         }
-        
+
         .ui-panel {
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #3498db;
-            min-width: 180px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            min-width: 110px;
             backdrop-filter: blur(5px);
-        }
-        
-        .ui-title {
+            border: 1px solid rgba(255, 255, 255, 0.1);
             font-size: 14px;
-            color: #3498db;
-            margin-bottom: 5px;
         }
-        
-        .ui-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2ecc71;
-        }
-        
-        #controls {
+
+        #touch-controls {
             position: absolute;
-            bottom: 30px;
+            bottom: 0;
             left: 0;
             width: 100%;
+            height: 40vh; /* Large touch area for steering */
+            z-index: 90;
             display: flex;
-            justify-content: center;
+        }
+
+        #left-touch-area {
+            flex: 1;
+            background: rgba(74, 175, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #right-touch-area {
+            flex: 1;
+            background: rgba(255, 74, 74, 0.1);
+        }
+
+        #touch-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            font-size: 14px;
+            text-align: center;
             pointer-events: none;
-            z-index: 10;
+            z-index: 100;
+            display: none;
         }
-        
-        .controls-info {
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px 30px;
-            border-radius: 10px;
-            border: 2px solid #e74c3c;
-            text-align: center;
+
+        #tilt-indicator {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
             backdrop-filter: blur(5px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            display: none;
+            pointer-events: none;
+            font-size: 12px;
+            text-align: center;
         }
-        
-        .controls-title {
-            font-size: 18px;
-            color: #e74c3c;
-            margin-bottom: 10px;
-        }
-        
-        .controls-desc {
-            font-size: 14px;
-            color: #ecf0f1;
-        }
-        
-        #start-screen {
+
+        #menu {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.95));
+            background: rgba(5, 5, 20, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
-            transition: opacity 0.5s;
+            z-index: 200;
+            padding: 20px;
+            overflow-y: auto;
         }
-        
-        .game-title {
-            font-size: 48px;
-            color: #3498db;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
-            text-align: center;
-        }
-        
-        .game-subtitle {
-            font-size: 22px;
-            color: #2ecc71;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        
-        #start-button {
-            background: linear-gradient(to right, #3498db, #2ecc71);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        
-        #start-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.7);
-        }
-        
-        #game-over {
-            position: absolute;
-            top: 0;
-            left: 0;
+
+        .menu-card {
+            background: linear-gradient(145deg, #1a1a3a, #0f0f2a);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            margin: 10px 0;
         }
-        
-        .game-over-title {
-            font-size: 48px;
-            color: #e74c3c;
-            margin-bottom: 30px;
+
+        h1 {
             text-align: center;
+            color: #4af;
+            margin-bottom: 15px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(74, 175, 255, 0.5);
         }
-        
-        .game-over-score {
-            font-size: 36px;
-            color: #f1c40f;
-            margin-bottom: 40px;
-            text-align: center;
+
+        h2 {
+            color: #6bf;
+            margin: 12px 0 8px 0;
+            font-size: 1.2rem;
         }
-        
-        #restart-button {
-            background: linear-gradient(to right, #e74c3c, #f39c12);
+
+        .slider-container {
+            margin: 12px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .slider-value {
+            color: #4af;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            background: rgba(30, 40, 80, 0.8);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #4af;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(74, 175, 255, 0.8);
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #4af, #28f);
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: bold;
-            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 8px 0;
+            width: 100%;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
         }
-        
-        #restart-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.7);
+
+        .btn:hover, .btn:active {
+            background: linear-gradient(to bottom, #5bf, #39f);
+            transform: translateY(-2px);
         }
-        
-        .key {
-            display: inline-block;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid #3498db;
-            border-radius: 5px;
-            padding: 3px 8px;
-            margin: 0 5px;
-            font-family: monospace;
-            color: #3498db;
+
+        .btn-small {
+            padding: 10px 20px;
+            font-size: 14px;
         }
-        
-        @media (max-width: 768px) {
+
+        .controls-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+        }
+
+        .control-icon {
+            width: 35px;
+            height: 35px;
+            background: rgba(74, 175, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+        }
+
+        .difficulty-btn {
+            flex: 1;
+            margin: 0 4px;
+            padding: 10px;
+            text-align: center;
+            background: rgba(30, 40, 80, 0.8);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            font-size: 14px;
+            touch-action: manipulation;
+        }
+
+        .difficulty-btn.active {
+            background: rgba(74, 175, 255, 0.3);
+            border-color: #4af;
+        }
+
+        #gameOver {
+            display: none;
+        }
+
+        #gameOver h1 {
+            color: #f44;
+        }
+
+        #pauseBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(30, 30, 60, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            border: 2px solid rgba(100, 150, 255, 0.6);
+            z-index: 100;
+            pointer-events: all;
+            touch-action: manipulation;
+        }
+
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4af;
+        }
+
+        .speed-indicator {
+            font-size: 16px;
+            color: #6f6;
+        }
+
+        .tilt-status {
+            color: #4af;
+            font-weight: bold;
+        }
+
+        #brake-indicator {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 50, 50, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+            pointer-events: none;
+            z-index: 100;
+            font-weight: bold;
+        }
+
+        @media (max-height: 700px) {
+            #touch-controls {
+                height: 35vh;
+            }
+            
             .ui-panel {
-                padding: 10px 15px;
-                min-width: 140px;
+                padding: 6px 10px;
+                min-width: 100px;
+                font-size: 13px;
             }
-            
-            .ui-value {
-                font-size: 22px;
-            }
-            
-            .game-title {
-                font-size: 36px;
-            }
-            
-            .game-subtitle {
-                font-size: 18px;
-            }
-            
-            .controls-info {
-                padding: 10px 20px;
+        }
+
+        @media (max-height: 600px) {
+            #touch-controls {
+                height: 30vh;
             }
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        
+    <div id="gameContainer">
         <div id="ui">
             <div class="ui-panel">
-                <div class="ui-title">SPEED</div>
-                <div class="ui-value" id="speed">0 KM/H</div>
+                <div>SCORE: <span id="score" class="score">0</span></div>
+                <div>SPEED: <span id="speed" class="speed-indicator">60</span></div>
             </div>
             <div class="ui-panel">
-                <div class="ui-title">LAP TIME</div>
-                <div class="ui-value" id="lap-time">0:00</div>
-            </div>
-            <div class="ui-panel">
-                <div class="ui-title">SCORE</div>
-                <div class="ui-value" id="score">0</div>
+                <div>DIFFICULTY: <span id="difficultyDisplay">Medium</span></div>
+                <div>HIGH: <span id="highScore" class="score">0</span></div>
             </div>
         </div>
         
-        <div id="controls">
-            <div class="controls-info">
-                <div class="controls-title">CONTROLS</div>
-                <div class="controls-desc">
-                    <span class="key">W</span>/<span class="key">↑</span> Accelerate | 
-                    <span class="key">S</span>/<span class="key">↓</span> Brake | 
-                    <span class="key">A</span>/<span class="key">←</span> Left | 
-                    <span class="key">D</span>/<span class="key">→</span> Right
+        <div id="tilt-indicator">
+            Tilt: <span id="tiltValue">0°</span>
+        </div>
+        
+        <div id="touch-indicator">
+            Touch left side to steer left, right side to steer right
+        </div>
+        
+        <div id="brake-indicator">
+            BRAKING
+        </div>
+        
+        <div id="touch-controls">
+            <div id="left-touch-area"></div>
+            <div id="right-touch-area"></div>
+        </div>
+        
+        <div id="pauseBtn">⏸</div>
+        
+        <div id="menu">
+            <div class="menu-card">
+                <h1>3D MOBILE RACER</h1>
+                
+                <div id="mainMenu">
+                    <button id="startBtn" class="btn">START GAME</button>
+                    
+                    <h2>GAME SETTINGS</h2>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>SPEED</span>
+                            <span id="speedValue" class="slider-value">60</span>
+                        </div>
+                        <input type="range" id="speedSlider" min="40" max="100" value="60">
+                    </div>
+                    
+                    <h2>DIFFICULTY</h2>
+                    <div class="difficulty-selector">
+                        <div class="difficulty-btn" data-difficulty="easy">EASY</div>
+                        <div class="difficulty-btn active" data-difficulty="medium">MEDIUM</div>
+                        <div class="difficulty-btn" data-difficulty="hard">HARD</div>
+                    </div>
+                    
+                    <div class="controls-info">
+                        <h3>CONTROLS</h3>
+                        <div class="control-item">
+                            <div class="control-icon">👈👉</div>
+                            <div><span class="tilt-status" id="tiltStatus">Checking...</span> Tilt device or touch screen sides</div>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-icon">←→</div>
+                            <div>PC: Use Left / Right arrows to steer</div>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-icon">␣</div>
+                            <div>PC: Space to pause / resume</div>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-icon">👇</div>
+                            <div>Swipe down anywhere to brake</div>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-icon">📱</div>
+                            <div>Touch controls: Left side = Left, Right side = Right</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="gameOver" style="display: none;">
+                    <h1>GAME OVER</h1>
+                    <p style="text-align: center; margin: 15px 0; font-size: 16px;">You crashed!</p>
+                    <div style="text-align: center; font-size: 20px; margin: 15px 0;">
+                        Score: <span id="finalScore" class="score">0</span>
+                    </div>
+                    <button id="restartBtn" class="btn">PLAY AGAIN</button>
+                    <button id="menuBtn" class="btn btn-small">MAIN MENU</button>
                 </div>
             </div>
         </div>
-        
-        <div id="start-screen">
-            <h1 class="game-title">3D CAR RACER</h1>
-            <p class="game-subtitle">Race against traffic and avoid collisions!</p>
-            <button id="start-button">START RACE</button>
-        </div>
-        
-        <div id="game-over">
-            <h1 class="game-over-title">RACE OVER!</h1>
-            <div class="game-over-score" id="final-score">Score: 0</div>
-            <button id="restart-button">RESTART RACE</button>
-        </div>
     </div>
 
-    <!-- Three.js library -->
+    <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- OrbitControls for camera manipulation during development -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     
     <script>
         // Game variables
         let scene, camera, renderer;
-        let playerCar, trafficCars = [];
-        let road, roadLines = [];
-        let trees = [];
-        let keys = {};
-        let gameStarted = false;
-        let gameOver = false;
+        let playerCar, road;
+        let traffic = [];
+        let streetLights = [];
+        let roadLines = [];
+        let gameActive = false;
         let score = 0;
-        let lapTime = 0;
-        let speed = 0;
-        let lapTimerInterval;
-        let gameClock = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+        let speed = 60;
+        let baseSpeed = 0.5;
+        let difficulty = 'medium';
+        let lanePositions = [-2, 0, 2];
+        let currentLane = 1;
+        let carMoveSpeed = 0.2;
+        let carTargetX = 0;
+        let lastTimestamp = 0;
+        let trafficFrequency = 120;
+        let frameCount = 0;
+        let tiltEnabled = false;
+        let tiltCalibration = 0;
+        let gamePaused = false;
+        let isBraking = false;
+        let originalSpeed = 0;
+        let touchStartY = 0;
         
         // DOM elements
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over');
-        const startButton = document.getElementById('start-button');
-        const restartButton = document.getElementById('restart-button');
-        const speedElement = document.getElementById('speed');
-        const lapTimeElement = document.getElementById('lap-time');
         const scoreElement = document.getElementById('score');
-        const finalScoreElement = document.getElementById('final-score');
+        const speedElement = document.getElementById('speed');
+        const highScoreElement = document.getElementById('highScore');
+        const difficultyDisplay = document.getElementById('difficultyDisplay');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const menuBtn = document.getElementById('menuBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const mainMenu = document.getElementById('mainMenu');
+        const gameOverMenu = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const tiltIndicator = document.getElementById('tilt-indicator');
+        const tiltValue = document.getElementById('tiltValue');
+        const tiltStatus = document.getElementById('tiltStatus');
+        const leftTouchArea = document.getElementById('left-touch-area');
+        const rightTouchArea = document.getElementById('right-touch-area');
+        const touchIndicator = document.getElementById('touch-indicator');
+        const brakeIndicator = document.getElementById('brake-indicator');
         
-        // Initialize the game
+        // Initialize high score display
+        highScoreElement.textContent = highScore;
+        
+        // Set up Three.js scene
         function init() {
             // Create scene
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x16213e, 10, 200);
+            scene.fog = new THREE.Fog(0x0a0a1a, 10, 80);
             
             // Create camera
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
             
             // Create renderer
-            renderer = new THREE.WebGLRenderer({
-                canvas: document.getElementById('gameCanvas'),
-                antialias: true
-            });
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
             
-            // Add lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
             scene.add(ambientLight);
             
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
             directionalLight.position.set(10, 20, 5);
             directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 100;
-            directionalLight.shadow.camera.left = -50;
-            directionalLight.shadow.camera.right = 50;
-            directionalLight.shadow.camera.top = 50;
-            directionalLight.shadow.camera.bottom = -50;
             scene.add(directionalLight);
             
-            // Create game objects
+            // Create road
             createRoad();
+            
+            // Create road lines
+            createRoadLines();
+            
+            // Create player car
             createPlayerCar();
-            createTrafficCars(5);
-            createTrees(30);
             
-            // Add event listeners
-            window.addEventListener('resize', onWindowResize);
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
+            // Create street lights
+            createStreetLights();
             
-            // UI event listeners
-            startButton.addEventListener('click', startGame);
-            restartButton.addEventListener('click', restartGame);
-            
-            // Start the game loop
+            // Start game loop
             animate();
+            
+            // Check for tilt support
+            checkTiltSupport();
+            
+            // Event listeners
+            setupEventListeners();
         }
         
         function createRoad() {
             // Road surface
-            const roadGeometry = new THREE.PlaneGeometry(100, 2000);
-            const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const roadGeometry = new THREE.PlaneGeometry(20, 200);
+            const roadMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x222233,
+                roughness: 0.9,
+                metalness: 0.1
+            });
             road = new THREE.Mesh(roadGeometry, roadMaterial);
             road.rotation.x = -Math.PI / 2;
             road.position.y = -0.1;
             road.receiveShadow = true;
             scene.add(road);
             
-            // Road markings (center lines)
-            const lineGeometry = new THREE.PlaneGeometry(0.5, 20);
-            const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            // Road sides
+            const sideGeometry = new THREE.PlaneGeometry(5, 200);
+            const sideMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x111122,
+                roughness: 0.8
+            });
             
-            for (let i = 0; i < 50; i++) {
-                const line = new THREE.Mesh(lineGeometry, lineMaterial);
-                line.rotation.x = -Math.PI / 2;
-                line.position.set(0, 0.1, -i * 40);
-                roadLines.push(line);
-                scene.add(line);
+            const leftSide = new THREE.Mesh(sideGeometry, sideMaterial);
+            leftSide.rotation.x = -Math.PI / 2;
+            leftSide.position.set(-7.5, -0.09, 0);
+            scene.add(leftSide);
+            
+            const rightSide = new THREE.Mesh(sideGeometry, sideMaterial);
+            rightSide.rotation.x = -Math.PI / 2;
+            rightSide.position.set(7.5, -0.09, 0);
+            scene.add(rightSide);
+        }
+        
+        function createRoadLines() {
+            const laneMarkingGeometry = new THREE.PlaneGeometry(0.2, 1.5);
+            const laneMarkingMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 0.3
+            });
+            
+            // Create many road lines for continuous movement illusion
+            for (let i = 0; i < 200; i++) {
+                // Center dashed line
+                if (i % 2 === 0) { // Every other one for dashed effect
+                    const centerMarking = new THREE.Mesh(laneMarkingGeometry, laneMarkingMaterial);
+                    centerMarking.rotation.x = -Math.PI / 2;
+                    centerMarking.position.set(0, 0.01, -i * 2);
+                    scene.add(centerMarking);
+                    roadLines.push(centerMarking);
+                }
+                
+                // Side lines (continuous)
+                const leftLine = new THREE.Mesh(laneMarkingGeometry, laneMarkingMaterial);
+                leftLine.scale.set(1, 6, 1);
+                leftLine.rotation.x = -Math.PI / 2;
+                leftLine.position.set(-3.5, 0.01, -i * 2);
+                scene.add(leftLine);
+                roadLines.push(leftLine);
+                
+                const rightLine = new THREE.Mesh(laneMarkingGeometry, laneMarkingMaterial);
+                rightLine.scale.set(1, 6, 1);
+                rightLine.rotation.x = -Math.PI / 2;
+                rightLine.position.set(3.5, 0.01, -i * 2);
+                scene.add(rightLine);
+                roadLines.push(rightLine);
+                
+                // Lane dividers
+                const leftDivider = new THREE.Mesh(laneMarkingGeometry, laneMarkingMaterial);
+                leftDivider.scale.set(0.5, 0.8, 1);
+                leftDivider.rotation.x = -Math.PI / 2;
+                leftDivider.position.set(-1.75, 0.01, -i * 2);
+                scene.add(leftDivider);
+                roadLines.push(leftDivider);
+                
+                const rightDivider = new THREE.Mesh(laneMarkingGeometry, laneMarkingMaterial);
+                rightDivider.scale.set(0.5, 0.8, 1);
+                rightDivider.rotation.x = -Math.PI / 2;
+                rightDivider.position.set(1.75, 0.01, -i * 2);
+                scene.add(rightDivider);
+                roadLines.push(rightDivider);
             }
-            
-            // Road borders
-            const borderGeometry = new THREE.BoxGeometry(102, 0.5, 2000);
-            const borderMaterial = new THREE.MeshLambertMaterial({ color: 0x555555 });
-            
-            const leftBorder = new THREE.Mesh(borderGeometry, borderMaterial);
-            leftBorder.position.set(-51, 0, 0);
-            leftBorder.receiveShadow = true;
-            scene.add(leftBorder);
-            
-            const rightBorder = new THREE.Mesh(borderGeometry, borderMaterial);
-            rightBorder.position.set(51, 0, 0);
-            rightBorder.receiveShadow = true;
-            scene.add(rightBorder);
+        }
+        
+        function updateRoadLines() {
+            roadLines.forEach(line => {
+                // Move lines forward to create movement illusion
+                line.position.z += baseSpeed * 1.5;
+                
+                // Reset line position when it goes past the camera
+                if (line.position.z > 20) {
+                    line.position.z -= 400; // Reset to beginning
+                }
+            });
         }
         
         function createPlayerCar() {
+            const carGroup = new THREE.Group();
+            
             // Car body
-            const carBodyGeometry = new THREE.BoxGeometry(2, 0.5, 4);
-            const carBodyMaterial = new THREE.MeshLambertMaterial({ color: 0x3498db });
-            const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
+            const bodyGeometry = new THREE.BoxGeometry(1.5, 0.6, 3);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x2255ff,
+                roughness: 0.3,
+                metalness: 0.7,
+                emissive: 0x001144,
+                emissiveIntensity: 0.1
+            });
+            const carBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
             carBody.castShadow = true;
-            carBody.receiveShadow = true;
+            carBody.position.y = 0.3;
+            carGroup.add(carBody);
             
-            // Car roof
-            const carRoofGeometry = new THREE.BoxGeometry(1.5, 0.5, 2);
-            const carRoofMaterial = new THREE.MeshLambertMaterial({ color: 0x2980b9 });
-            const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
-            carRoof.position.y = 0.5;
-            carRoof.castShadow = true;
+            // Car top
+            const topGeometry = new THREE.BoxGeometry(1.2, 0.4, 1.8);
+            const topMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1144cc,
+                roughness: 0.4,
+                metalness: 0.6
+            });
+            const carTop = new THREE.Mesh(topGeometry, topMaterial);
+            carTop.castShadow = true;
+            carTop.position.y = 0.8;
+            carTop.position.z = -0.2;
+            carGroup.add(carTop);
             
-            // Car wheels
-            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 16);
-            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
-            
-            const wheelPositions = [
-                [-0.8, -0.3, 1.2],
-                [0.8, -0.3, 1.2],
-                [-0.8, -0.3, -1.2],
-                [0.8, -0.3, -1.2]
-            ];
-            
-            const wheels = [];
-            wheelPositions.forEach(pos => {
-                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                wheel.rotation.z = Math.PI / 2;
-                wheel.position.set(pos[0], pos[1], pos[2]);
-                wheel.castShadow = true;
-                wheels.push(wheel);
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+            wheelGeometry.rotateZ(Math.PI / 2);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x222222,
+                roughness: 0.8,
+                metalness: 0.2
             });
             
-            // Create car group
-            playerCar = new THREE.Group();
-            playerCar.add(carBody);
-            playerCar.add(carRoof);
-            wheels.forEach(wheel => playerCar.add(wheel));
+            const positions = [
+                [-0.8, 0.3, 1.2],  // front left
+                [0.8, 0.3, 1.2],   // front right
+                [-0.8, 0.3, -1.2], // back left
+                [0.8, 0.3, -1.2]   // back right
+            ];
             
-            playerCar.position.set(0, 0.5, 0);
-            playerCar.castShadow = true;
-            scene.add(playerCar);
+            positions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.castShadow = true;
+                carGroup.add(wheel);
+            });
+            
+            // Headlights
+            const headlightGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const headlightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffcc,
+                emissive: 0xffffcc,
+                emissiveIntensity: 0.5
+            });
+            
+            const headlight1 = new THREE.Mesh(headlightGeometry, headlightMaterial);
+            headlight1.position.set(0.5, 0.5, 1.5);
+            carGroup.add(headlight1);
+            
+            const headlight2 = new THREE.Mesh(headlightGeometry, headlightMaterial);
+            headlight2.position.set(-0.5, 0.5, 1.5);
+            carGroup.add(headlight2);
+            
+            // Brake lights
+            const brakeLightGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const brakeLightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff4444,
+                emissive: 0xff4444,
+                emissiveIntensity: 0.3
+            });
+            
+            const brakeLight1 = new THREE.Mesh(brakeLightGeometry, brakeLightMaterial);
+            brakeLight1.position.set(0.4, 0.4, -1.4);
+            carGroup.add(brakeLight1);
+            
+            const brakeLight2 = new THREE.Mesh(brakeLightGeometry, brakeLightMaterial);
+            brakeLight2.position.set(-0.4, 0.4, -1.4);
+            carGroup.add(brakeLight2);
+            
+            carGroup.position.y = 0.5;
+            carGroup.position.z = 3;
+            scene.add(carGroup);
+            playerCar = carGroup;
         }
         
-        function createTrafficCars(count) {
-            const carColors = [0xe74c3c, 0x2ecc71, 0xf1c40f, 0x9b59b6];
+        function createStreetLights() {
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 8);
+            const poleMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x888888,
+                roughness: 0.8
+            });
             
-            for (let i = 0; i < count; i++) {
-                // Car body
-                const carBodyGeometry = new THREE.BoxGeometry(2, 0.5, 4);
-                const randomColor = carColors[Math.floor(Math.random() * carColors.length)];
-                const carBodyMaterial = new THREE.MeshLambertMaterial({ color: randomColor });
-                const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
-                carBody.castShadow = true;
+            const lightGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const lightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffaa,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            for (let i = 0; i < 10; i++) {
+                const lightGroup = new THREE.Group();
                 
-                // Car roof
-                const carRoofGeometry = new THREE.BoxGeometry(1.5, 0.5, 2);
-                const carRoofMaterial = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
-                const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
-                carRoof.position.y = 0.5;
-                carRoof.castShadow = true;
+                // Pole
+                const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+                pole.position.y = 4;
+                pole.castShadow = true;
+                lightGroup.add(pole);
                 
-                // Create car group
-                const trafficCar = new THREE.Group();
-                trafficCar.add(carBody);
-                trafficCar.add(carRoof);
+                // Light
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                light.position.y = 8;
+                lightGroup.add(light);
                 
-                // Position the car on the road
-                const lane = Math.random() > 0.5 ? 1 : -1;
-                const laneOffset = lane * 4;
-                const zPosition = -50 - (i * 30);
+                // Point light for illumination
+                const pointLight = new THREE.PointLight(0xffffaa, 0.8, 20);
+                pointLight.position.y = 7.5;
+                lightGroup.add(pointLight);
                 
-                trafficCar.position.set(laneOffset, 0.5, zPosition);
-                trafficCar.userData = {
-                    speed: 5 + Math.random() * 10,
-                    lane: lane,
-                    originalZ: zPosition
-                };
+                // Alternate sides
+                const side = i % 2 === 0 ? -1 : 1;
+                lightGroup.position.set(side * 9, 0, -i * 20);
                 
-                trafficCar.castShadow = true;
-                scene.add(trafficCar);
-                trafficCars.push(trafficCar);
+                scene.add(lightGroup);
+                streetLights.push(lightGroup);
             }
         }
         
-        function createTrees(count) {
-            const treeGeometry = new THREE.ConeGeometry(1.5, 5, 8);
-            const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x27ae60 });
-            const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        function createTrafficCar() {
+            const carGroup = new THREE.Group();
             
-            for (let i = 0; i < count; i++) {
-                const tree = new THREE.Group();
-                
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.y = 1;
-                trunk.castShadow = true;
-                
-                const crown = new THREE.Mesh(treeGeometry, treeMaterial);
-                crown.position.y = 4;
-                crown.castShadow = true;
-                
-                tree.add(trunk);
-                tree.add(crown);
-                
-                // Position trees on the sides of the road
-                const side = Math.random() > 0.5 ? 1 : -1;
-                const xPosition = side * (30 + Math.random() * 20);
-                const zPosition = -Math.random() * 500;
-                
-                tree.position.set(xPosition, 0, zPosition);
-                tree.castShadow = true;
-                
-                scene.add(tree);
-                trees.push(tree);
-            }
+            // Random car color
+            const colors = [0xff4444, 0x44ff44, 0xffaa44, 0xaa44ff, 0xff44aa];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Car body
+            const bodyGeometry = new THREE.BoxGeometry(1.5, 0.6, 3);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                roughness: 0.4,
+                metalness: 0.5
+            });
+            const carBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            carBody.castShadow = true;
+            carBody.position.y = 0.3;
+            carGroup.add(carBody);
+            
+            // Car top
+            const topGeometry = new THREE.BoxGeometry(1.2, 0.4, 1.8);
+            const topMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                roughness: 0.5,
+                metalness: 0.4
+            });
+            const carTop = new THREE.Mesh(topGeometry, topMaterial);
+            carTop.castShadow = true;
+            carTop.position.y = 0.8;
+            carTop.position.z = -0.2;
+            carGroup.add(carTop);
+            
+            // Wheels (simplified)
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 8);
+            wheelGeometry.rotateZ(Math.PI / 2);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x222222,
+                roughness: 0.8
+            });
+            
+            const wheelPositions = [
+                [-0.8, 0.3, 1.2], [0.8, 0.3, 1.2],
+                [-0.8, 0.3, -1.2], [0.8, 0.3, -1.2]
+            ];
+            
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                carGroup.add(wheel);
+            });
+            
+            // Random lane position
+            const lane = Math.floor(Math.random() * 3);
+            carGroup.position.x = lanePositions[lane];
+            carGroup.position.y = 0.5;
+            carGroup.position.z = -40;
+            
+            scene.add(carGroup);
+            
+            // Add to traffic array
+            traffic.push({
+                mesh: carGroup,
+                lane: lane,
+                speed: baseSpeed * (0.8 + Math.random() * 0.4)
+            });
         }
         
-        function updatePlayerCar(deltaTime) {
-            const acceleration = 0.1;
-            const deceleration = 0.05;
-            const maxSpeed = 30;
-            const turnSpeed = 0.03;
-            const friction = 0.98;
-            
-            // Acceleration and braking
-            if (keys['w'] || keys['ArrowUp']) {
-                speed += acceleration;
-            } else if (keys['s'] || keys['ArrowDown']) {
-                speed -= deceleration;
-            } else {
-                // Slow down naturally
-                speed *= friction;
-            }
-            
-            // Limit speed
-            speed = Math.max(-5, Math.min(maxSpeed, speed));
-            
-            // Steering
-            let turnAngle = 0;
-            if (keys['a'] || keys['ArrowLeft']) {
-                turnAngle = turnSpeed;
-            } else if (keys['d'] || keys['ArrowRight']) {
-                turnAngle = -turnSpeed;
-            }
-            
-            // Apply turning based on speed
-            playerCar.rotation.y += turnAngle * (speed / maxSpeed);
-            
-            // Calculate movement based on rotation
-            const moveDistance = speed * deltaTime * 10;
-            playerCar.position.x += Math.sin(playerCar.rotation.y) * moveDistance;
-            playerCar.position.z += Math.cos(playerCar.rotation.y) * moveDistance;
-            
-            // Keep car on the road
-            playerCar.position.x = Math.max(-20, Math.min(20, playerCar.position.x));
-            
-            // Update camera to follow the car
-            const cameraDistance = 15;
-            const cameraHeight = 8;
-            camera.position.x = playerCar.position.x + Math.sin(playerCar.rotation.y) * cameraDistance;
-            camera.position.z = playerCar.position.z + Math.cos(playerCar.rotation.y) * cameraDistance - 5;
-            camera.position.y = cameraHeight;
-            camera.lookAt(playerCar.position.x, playerCar.position.y + 2, playerCar.position.z);
-            
-            // Update speed display
-            speedElement.textContent = Math.abs(Math.round(speed * 10)) + ' KM/H';
-        }
-        
-        function updateTrafficCars(deltaTime) {
-            trafficCars.forEach(car => {
-                // Move traffic cars forward
-                car.position.z += car.userData.speed * deltaTime * 10;
+        function updateTraffic() {
+            for (let i = traffic.length - 1; i >= 0; i--) {
+                const car = traffic[i];
+                car.mesh.position.z += car.speed;
                 
-                // Reset position if car goes too far
-                if (car.position.z > 50) {
-                    car.position.z = -300 - Math.random() * 200;
-                    car.userData.speed = 5 + Math.random() * 10;
+                // Remove cars that are far behind
+                if (car.mesh.position.z > 20) {
+                    scene.remove(car.mesh);
+                    traffic.splice(i, 1);
+                    score += 10;
+                    scoreElement.textContent = score;
                 }
                 
-                // Occasionally change lanes
-                if (Math.random() < 0.005) {
-                    car.userData.lane = -car.userData.lane;
-                }
-                
-                // Smooth lane changing
-                const targetX = car.userData.lane * 4;
-                car.position.x += (targetX - car.position.x) * 0.05;
-                
-                // Check for collisions with player
-                if (!gameOver) {
+                // Check for collisions
+                if (gameActive && !gamePaused) {
+                    const playerPos = playerCar.position;
+                    const carPos = car.mesh.position;
+                    
                     const distance = Math.sqrt(
-                        Math.pow(playerCar.position.x - car.position.x, 2) +
-                        Math.pow(playerCar.position.z - car.position.z, 2)
+                        Math.pow(playerPos.x - carPos.x, 2) + 
+                        Math.pow(playerPos.z - carPos.z, 2)
                     );
                     
-                    if (distance < 3) {
-                        gameOver = true;
+                    if (distance < 2) {
                         endGame();
                     }
                 }
-            });
+            }
         }
         
-        function updateRoadLines(deltaTime) {
-            // Move road lines to simulate motion
-            roadLines.forEach(line => {
-                line.position.z += speed * deltaTime * 10;
+        function updateStreetLights() {
+            streetLights.forEach(light => {
+                light.position.z += baseSpeed;
                 
-                // Reset position if line goes too far
-                if (line.position.z > 50) {
-                    line.position.z = -750;
+                // Reset position when too far
+                if (light.position.z > 20) {
+                    light.position.z -= 200;
                 }
             });
         }
         
-        function updateTrees(deltaTime) {
-            trees.forEach(tree => {
-                // Move trees based on player speed
-                tree.position.z += speed * deltaTime * 10;
+        function updatePlayerCar() {
+            // Smooth movement to target lane
+            if (Math.abs(playerCar.position.x - carTargetX) > 0.01) {
+                const dir = carTargetX > playerCar.position.x ? 1 : -1;
+                playerCar.position.x += carMoveSpeed * dir;
                 
-                // Reset position if tree goes too far
-                if (tree.position.z > 100) {
-                    tree.position.z = -500 - Math.random() * 300;
-                    tree.position.x = (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 20);
-                }
-            });
+                // Tilt car while turning
+                const tiltAmount = 0.05 * dir;
+                playerCar.rotation.z = -tiltAmount;
+            } else {
+                playerCar.rotation.z *= 0.9; // Return to upright position
+            }
+            
+            // Bobbing animation
+            playerCar.position.y = 0.5 + Math.sin(Date.now() * 0.005) * 0.03;
         }
         
-        function updateScore() {
-            if (!gameOver && gameStarted) {
-                // Increase score based on speed
-                score += Math.abs(speed) * 0.1;
-                scoreElement.textContent = Math.round(score);
+        function moveCar(direction) {
+            if (!gameActive || gamePaused) return;
+            
+            const newLane = currentLane + direction;
+            if (newLane >= 0 && newLane <= 2) {
+                currentLane = newLane;
+                carTargetX = lanePositions[currentLane];
+            }
+        }
+        
+        function brake() {
+            if (!gameActive || gamePaused || isBraking) return;
+            
+            isBraking = true;
+            originalSpeed = baseSpeed;
+            baseSpeed *= 0.4;
+            
+            // Show brake indicator
+            brakeIndicator.style.display = 'block';
+            
+            // Enhance brake lights
+            playerCar.children.forEach(child => {
+                if (child.material && child.material.emissive) {
+                    if (child.material.emissive.r > 0.5) { // Brake lights
+                        child.material.emissiveIntensity = 1.0;
+                        child.material.emissive.setHex(0xff0000);
+                    }
+                }
+            });
+            
+            setTimeout(() => {
+                isBraking = false;
+                baseSpeed = originalSpeed;
+                brakeIndicator.style.display = 'none';
                 
-                // Update lap time
-                lapTime += 0.016; // Assuming 60 FPS
-                const minutes = Math.floor(lapTime / 60);
-                const seconds = Math.floor(lapTime % 60);
-                const milliseconds = Math.floor((lapTime % 1) * 100);
-                lapTimeElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+                // Reset brake lights
+                playerCar.children.forEach(child => {
+                    if (child.material && child.material.emissive) {
+                        if (child.material.emissive.r > 0.5) { // Brake lights
+                            child.material.emissiveIntensity = 0.3;
+                            child.material.emissive.setHex(0xff4444);
+                        }
+                    }
+                });
+            }, 800);
+        }
+        
+        function updateGameSpeed() {
+            baseSpeed = speed / 100;
+            speedElement.textContent = speed;
+        }
+        
+        function updateDifficulty() {
+            switch(difficulty) {
+                case 'easy':
+                    trafficFrequency = 180;
+                    break;
+                case 'medium':
+                    trafficFrequency = 120;
+                    break;
+                case 'hard':
+                    trafficFrequency = 80;
+                    break;
+            }
+            difficultyDisplay.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        }
+        
+        // Tilt Control Functions
+        function checkTiltSupport() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ devices
+                tiltStatus.textContent = "Tap to enable";
+                tiltStatus.style.color = "#ffaa44";
+                
+                // Add click handler to request permission
+                tiltStatus.parentElement.style.cursor = "pointer";
+                tiltStatus.parentElement.addEventListener('click', requestTiltPermission);
+            } else if ('DeviceOrientationEvent' in window) {
+                // Other devices with DeviceOrientation support
+                tiltEnabled = true;
+                tiltStatus.textContent = "Enabled";
+                tiltStatus.style.color = "#6f6";
+                window.addEventListener('deviceorientation', handleOrientation);
+            } else {
+                // No tilt support
+                tiltEnabled = false;
+                tiltStatus.textContent = "Not supported";
+                tiltStatus.style.color = "#f44";
+            }
+        }
+        
+        function requestTiltPermission() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            tiltEnabled = true;
+                            tiltStatus.textContent = "Enabled";
+                            tiltStatus.style.color = "#6f6";
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            
+                            // Remove click handler
+                            tiltStatus.parentElement.style.cursor = "default";
+                            tiltStatus.parentElement.removeEventListener('click', requestTiltPermission);
+                        }
+                    })
+                    .catch(console.error);
+            }
+        }
+        
+        function handleOrientation(event) {
+            if (!tiltEnabled || !gameActive || gamePaused) return;
+            
+            // Use gamma (left-right tilt) for steering
+            let tilt = event.gamma;
+            
+            // Calibrate on first reading
+            if (tiltCalibration === 0 && tilt !== null) {
+                tiltCalibration = tilt;
+            }
+            
+            if (tilt !== null) {
+                // Adjust with calibration
+                tilt = tilt - tiltCalibration;
+                
+                // Show tilt indicator during gameplay
+                if (gameActive) {
+                    tiltIndicator.style.display = 'block';
+                    tiltValue.textContent = Math.round(tilt) + "°";
+                }
+                
+                // Determine lane based on tilt
+                if (tilt > 15) {
+                    // Tilted right, move right
+                    if (currentLane < 2) {
+                        currentLane = 2;
+                        carTargetX = lanePositions[currentLane];
+                    }
+                } else if (tilt < -15) {
+                    // Tilted left, move left
+                    if (currentLane > 0) {
+                        currentLane = 0;
+                        carTargetX = lanePositions[currentLane];
+                    }
+                } else {
+                    // Centered, move to center lane
+                    if (currentLane !== 1) {
+                        currentLane = 1;
+                        carTargetX = lanePositions[currentLane];
+                    }
+                }
             }
         }
         
         function startGame() {
-            gameStarted = true;
-            gameOver = false;
-            startScreen.style.opacity = '0';
-            
-            setTimeout(() => {
-                startScreen.style.display = 'none';
-            }, 500);
-            
-            // Reset game stats
+            gameActive = true;
+            gamePaused = false;
             score = 0;
-            lapTime = 0;
-            speed = 0;
+            scoreElement.textContent = score;
             
-            // Reset player car position
-            playerCar.position.set(0, 0.5, 0);
-            playerCar.rotation.y = 0;
+            // Reset player position
+            playerCar.position.x = 0;
+            playerCar.position.z = 3;
+            currentLane = 1;
+            carTargetX = 0;
             
-            // Reset traffic cars
-            trafficCars.forEach((car, i) => {
-                const lane = Math.random() > 0.5 ? 1 : -1;
-                car.position.set(lane * 4, 0.5, -50 - (i * 30));
-                car.userData.lane = lane;
-                car.userData.speed = 5 + Math.random() * 10;
-            });
+            // Clear existing traffic
+            traffic.forEach(car => scene.remove(car.mesh));
+            traffic = [];
+            
+            // Show touch indicator briefly
+            touchIndicator.style.display = 'block';
+            setTimeout(() => {
+                touchIndicator.style.display = 'none';
+            }, 3000);
+            
+            // Hide menu
+            document.getElementById('menu').style.display = 'none';
+            
+            // Reset camera
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            
+            // Show tilt indicator if enabled
+            if (tiltEnabled) {
+                tiltIndicator.style.display = 'block';
+            }
         }
         
         function endGame() {
-            gameOver = true;
-            finalScoreElement.textContent = `Score: ${Math.round(score)}`;
-            gameOverScreen.style.display = 'flex';
-        }
-        
-        function restartGame() {
-            gameOverScreen.style.display = 'none';
-            startGame();
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
+            gameActive = false;
             
-            // Calculate delta time for smooth animation
-            const deltaTime = 0.016; // Fixed time step for simplicity
+            // Hide indicators
+            tiltIndicator.style.display = 'none';
+            brakeIndicator.style.display = 'none';
             
-            if (gameStarted && !gameOver) {
-                updatePlayerCar(deltaTime);
-                updateTrafficCars(deltaTime);
-                updateRoadLines(deltaTime);
-                updateTrees(deltaTime);
-                updateScore();
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreElement.textContent = highScore;
             }
             
-            renderer.render(scene, camera);
+            // Show game over screen
+            finalScoreElement.textContent = score;
+            gameOverMenu.style.display = 'block';
+            mainMenu.style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+        }
+        
+        function setupEventListeners() {
+            // Start game button
+            startBtn.addEventListener('click', startGame);
+            
+            // Restart game button
+            restartBtn.addEventListener('click', startGame);
+            
+            // Menu button
+            menuBtn.addEventListener('click', () => {
+                gameOverMenu.style.display = 'none';
+                mainMenu.style.display = 'block';
+            });
+            
+            // Speed slider
+            speedSlider.addEventListener('input', () => {
+                speed = parseInt(speedSlider.value);
+                speedValue.textContent = speed;
+                updateGameSpeed();
+            });
+            
+            // Difficulty buttons
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    difficultyButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    difficulty = btn.dataset.difficulty;
+                    updateDifficulty();
+                });
+            });
+            
+            // Touch controls
+            leftTouchArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                moveCar(-1);
+                leftTouchArea.style.background = 'rgba(74, 175, 255, 0.3)';
+            });
+            
+            leftTouchArea.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                leftTouchArea.style.background = '';
+            });
+            
+            rightTouchArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                moveCar(1);
+                rightTouchArea.style.background = 'rgba(255, 74, 74, 0.3)';
+            });
+            
+            rightTouchArea.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                rightTouchArea.style.background = '';
+            });
+            
+            // Swipe down to brake (on whole screen)
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!gameActive || gamePaused) return;
+                
+                const touchY = e.touches[0].clientY;
+                const deltaY = touchY - touchStartY;
+                
+                // If swiping down significantly, brake
+                if (deltaY > 50) {
+                    brake();
+                    touchStartY = touchY; // Reset to prevent continuous braking
+                }
+            });
+            
+            // Pause button
+            pauseBtn.addEventListener('click', () => {
+                if (gameActive) {
+                    gamePaused = !gamePaused;
+                    pauseBtn.textContent = gamePaused ? '▶' : '⏸';
+                }
+            });
+
+            // Keyboard controls (PC)
+            document.addEventListener('keydown', (e) => {
+                if (!gameActive) return;
+                if (e.key === 'ArrowLeft' || e.key === 'a') {
+                    moveCar(-1);
+                } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                    moveCar(1);
+                } else if (e.key === ' ' || e.key === 'Spacebar') {
+                    gamePaused = !gamePaused;
+                    pauseBtn.textContent = gamePaused ? '▶' : '⏸';
+                }
+            });
+            
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Prevent touch scroll
+            document.addEventListener('touchmove', (e) => {
+                if (gameActive) e.preventDefault();
+            }, { passive: false });
         }
         
         function onWindowResize() {
@@ -703,21 +1206,38 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
         
-        function onKeyDown(event) {
-            keys[event.key.toLowerCase()] = true;
+        function animate(timestamp) {
+            requestAnimationFrame(animate);
             
-            // Prevent arrow key scrolling
-            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                event.preventDefault();
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+            
+            if (gameActive && !gamePaused) {
+                // Update game elements
+                updatePlayerCar();
+                updateTraffic();
+                updateStreetLights();
+                updateRoadLines(); // NEW: Update road lines for movement illusion
+                
+                // Spawn new traffic
+                frameCount++;
+                if (frameCount >= trafficFrequency) {
+                    createTrafficCar();
+                    frameCount = 0;
+                }
+                
+                // Update camera to follow player
+                camera.position.z = playerCar.position.z + 10;
+                camera.position.x = playerCar.position.x * 0.5;
+                camera.lookAt(playerCar.position.x, playerCar.position.y + 1, playerCar.position.z - 5);
             }
+            
+            renderer.render(scene, camera);
         }
         
-        function onKeyUp(event) {
-            keys[event.key.toLowerCase()] = false;
-        }
-        
-        // Start the game when the page loads
-        window.onload = init;
+        // Initialize the game when page loads
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
