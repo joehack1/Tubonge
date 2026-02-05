@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Space Invaders</title>
+    <title>Space Invaders</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
         }
         
         body {
-            font-family: monospace;
+            font-family: 'Arial Narrow', Arial, sans-serif;
             background: #000;
             color: #ff00ff;
             height: 100vh;
@@ -21,13 +21,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 5px;
         }
         
         .game-container {
-            width: 95vmin;
-            height: 95vmin;
+            width: 100%;
+            height: 100%;
             max-width: 500px;
-            max-height: 500px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -35,54 +35,66 @@
         
         .header {
             text-align: center;
-            padding: 4px 0;
-            font-size: 1.2vmin;
+            padding: 5px 0;
+            font-size: 14px;
             letter-spacing: 1px;
             color: #ff66cc;
+            height: 25px;
+        }
+        
+        .game-area {
+            flex: 1;
+            position: relative;
+            background: #110011;
+            border: 1px solid #ff00ff;
         }
         
         #gameCanvas {
-            flex: 1;
-            background: #110011;
-            border: 1px solid #ff00ff;
-            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+            display: block;
         }
         
         .stats {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
-            font-size: 1.4vmin;
+            padding: 8px 5px;
+            font-size: 12px;
+            height: 35px;
+            background: #000;
         }
         
         .stat {
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 60px;
         }
         
         .stat-value {
-            font-size: 1.8vmin;
+            font-size: 16px;
             font-weight: bold;
             color: #ff00ff;
+            line-height: 1;
         }
         
         .controls {
             display: flex;
-            gap: 6px;
-            padding: 6px 0;
+            gap: 5px;
+            padding: 5px;
             justify-content: center;
+            height: 40px;
         }
         
         button {
             background: #ff00ff;
             color: black;
             border: 0.5px solid #ff66cc;
-            padding: 4px 10px;
-            font-size: 1.2vmin;
-            font-family: monospace;
+            padding: 4px 8px;
+            font-size: 11px;
             cursor: pointer;
-            min-width: 60px;
+            min-width: 70px;
+            font-weight: bold;
         }
         
         button:hover {
@@ -97,23 +109,39 @@
         
         .mobile-controls {
             display: none;
-            justify-content: center;
-            gap: 10px;
-            padding: 8px 0;
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            right: 0;
+            justify-content: space-between;
+            padding: 0 10px;
+            pointer-events: none;
         }
         
         .mobile-btn {
-            width: 10vmin;
-            height: 10vmin;
+            width: 50px;
+            height: 50px;
             background: rgba(255, 0, 255, 0.3);
-            border: 0.5px solid #ff66cc;
+            border: 1px solid #ff66cc;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2vmin;
+            font-size: 20px;
             color: #ff00ff;
             cursor: pointer;
             touch-action: manipulation;
+            pointer-events: auto;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        
+        .mobile-btn:active {
+            background: rgba(255, 0, 255, 0.6);
+        }
+        
+        .left-right-controls {
+            display: flex;
+            gap: 60px;
         }
         
         .instructions {
@@ -121,60 +149,103 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             padding: 15px;
-            border: 0.5px solid #ff00ff;
-            font-size: 1.2vmin;
+            border: 1px solid #ff00ff;
+            font-size: 12px;
             line-height: 1.4;
             color: #ff66cc;
             text-align: center;
-            max-width: 80%;
+            max-width: 90%;
+            z-index: 10;
         }
         
         .instructions h3 {
             color: #ff00ff;
-            margin-bottom: 6px;
-            font-size: 1.4vmin;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
         
+        /* Mobile-specific styles */
         @media (max-width: 768px) {
             .mobile-controls {
                 display: flex;
             }
             
             .game-container {
-                width: 100vw;
-                height: 100vh;
-                max-width: none;
-                max-height: none;
+                max-width: 100%;
+                padding: 0;
             }
             
             .header {
-                font-size: 10px;
-                padding: 2px 0;
+                font-size: 12px;
+                padding: 3px 0;
+                height: 22px;
             }
             
             .stats {
+                font-size: 11px;
+                padding: 6px 5px;
+                height: 32px;
+            }
+            
+            .stat-value {
+                font-size: 14px;
+            }
+            
+            .controls {
+                padding: 4px;
+                height: 36px;
+            }
+            
+            button {
                 font-size: 10px;
-                padding: 4px 0;
+                padding: 3px 6px;
+                min-width: 65px;
+            }
+            
+            .instructions {
+                font-size: 11px;
+                padding: 12px;
+            }
+            
+            .instructions h3 {
+                font-size: 13px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-height: 600px) {
+            .header {
+                height: 20px;
+                font-size: 11px;
+            }
+            
+            .stats {
+                height: 28px;
+                font-size: 10px;
             }
             
             .stat-value {
                 font-size: 12px;
             }
             
-            button {
-                font-size: 10px;
-                padding: 3px 8px;
+            .controls {
+                height: 32px;
             }
             
-            .instructions {
-                font-size: 10px;
-                padding: 10px;
+            .mobile-controls {
+                bottom: 40px;
             }
             
-            .instructions h3 {
-                font-size: 11px;
+            .mobile-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            .left-right-controls {
+                gap: 50px;
             }
         }
         
@@ -187,13 +258,25 @@
             position: absolute;
             pointer-events: none;
             animation: explode 0.4s forwards;
+            z-index: 5;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="header">SPACE INVADERS</div>
-        <canvas id="gameCanvas"></canvas>
+        
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="mobile-controls">
+                <div class="left-right-controls">
+                    <div class="mobile-btn" id="leftBtn">←</div>
+                    <div class="mobile-btn" id="rightBtn">→</div>
+                </div>
+                <div class="mobile-btn" id="shootBtn">●</div>
+            </div>
+        </div>
         
         <div class="stats">
             <div class="stat">
@@ -216,15 +299,9 @@
             <button id="restartBtn">RESTART</button>
         </div>
         
-        <div class="mobile-controls">
-            <div class="mobile-btn" id="leftBtn">←</div>
-            <div class="mobile-btn" id="shootBtn">●</div>
-            <div class="mobile-btn" id="rightBtn">→</div>
-        </div>
-        
         <div class="instructions" id="instructions">
             <h3>HOW TO PLAY</h3>
-            <p>← → Move | SPACE Shoot</p>
+            <p>ARROWS: Move | SPACE: Shoot</p>
             <p>Destroy all invaders</p>
             <p>Press START to begin</p>
         </div>
@@ -247,10 +324,9 @@
         
         // Set canvas size
         function resizeCanvas() {
-            const container = document.querySelector('.game-container');
-            const canvasContainer = canvas.parentElement;
-            canvas.width = canvasContainer.clientWidth;
-            canvas.height = canvasContainer.clientHeight;
+            const gameArea = document.querySelector('.game-area');
+            canvas.width = gameArea.clientWidth;
+            canvas.height = gameArea.clientHeight;
         }
         
         // Initialize canvas
@@ -296,7 +372,7 @@
             game.player.width = canvas.width * 0.08;
             game.player.height = canvas.height * 0.04;
             game.player.x = canvas.width / 2 - game.player.width / 2;
-            game.player.y = canvas.height * 0.9;
+            game.player.y = canvas.height * 0.85;
             
             game.bullets = [];
             game.enemyBullets = [];
@@ -340,7 +416,13 @@
         // Draw player
         function drawPlayer() {
             ctx.fillStyle = '#ff00ff';
-            ctx.fillRect(game.player.x, game.player.y, game.player.width, game.player.height);
+            // Draw player as a triangle
+            ctx.beginPath();
+            ctx.moveTo(game.player.x + game.player.width / 2, game.player.y);
+            ctx.lineTo(game.player.x, game.player.y + game.player.height);
+            ctx.lineTo(game.player.x + game.player.width, game.player.y + game.player.height);
+            ctx.closePath();
+            ctx.fill();
         }
         
         // Draw bullets
@@ -393,13 +475,16 @@
             if (window.innerWidth <= 768) {
                 const explosion = document.createElement('div');
                 explosion.className = 'explosion';
+                const gameArea = document.querySelector('.game-area');
+                const rect = gameArea.getBoundingClientRect();
+                
                 explosion.style.left = (x / canvas.width * 100) + '%';
                 explosion.style.top = (y / canvas.height * 100) + '%';
                 explosion.style.width = '20px';
                 explosion.style.height = '20px';
                 explosion.style.backgroundColor = color;
                 explosion.style.borderRadius = '50%';
-                document.querySelector('.game-container').appendChild(explosion);
+                gameArea.appendChild(explosion);
                 
                 setTimeout(() => {
                     if (explosion.parentNode) {
@@ -530,16 +615,16 @@
             pauseBtn.disabled = true;
             startBtn.textContent = 'PLAY AGAIN';
             
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             ctx.fillStyle = '#ff00ff';
-            ctx.font = `bold ${canvas.width * 0.06}px monospace`;
+            ctx.font = `bold ${canvas.width * 0.06}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
             
             ctx.fillStyle = '#ff66cc';
-            ctx.font = `bold ${canvas.width * 0.03}px monospace`;
+            ctx.font = `bold ${canvas.width * 0.03}px Arial`;
             ctx.fillText(`SCORE: ${game.score}`, canvas.width / 2, canvas.height / 2 + 20);
         }
         
@@ -563,16 +648,16 @@
             
             // Start screen
             if (!game.running && game.lives > 0) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 ctx.fillStyle = '#ff00ff';
-                ctx.font = `bold ${canvas.width * 0.05}px monospace`;
+                ctx.font = `bold ${canvas.width * 0.05}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.fillText('SPACE INVADERS', canvas.width / 2, canvas.height / 2 - 15);
                 
                 ctx.fillStyle = '#ff66cc';
-                ctx.font = `bold ${canvas.width * 0.02}px monospace`;
+                ctx.font = `bold ${canvas.width * 0.025}px Arial`;
                 ctx.fillText('PRESS START', canvas.width / 2, canvas.height / 2 + 15);
             }
             
@@ -582,7 +667,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 ctx.fillStyle = '#ff00ff';
-                ctx.font = `bold ${canvas.width * 0.05}px monospace`;
+                ctx.font = `bold ${canvas.width * 0.05}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
             }
@@ -627,35 +712,27 @@
             }
         });
         
-        // Mobile controls
-        leftBtn.addEventListener('touchstart', () => {
-            if (!game.running || game.paused) return;
+        // Mobile controls with touch and mouse
+        function setupMobileControl(btn, action) {
+            const handleAction = (e) => {
+                e.preventDefault();
+                if (!game.running || game.paused) return;
+                action();
+            };
+            
+            btn.addEventListener('touchstart', handleAction);
+            btn.addEventListener('mousedown', handleAction);
+        }
+        
+        setupMobileControl(leftBtn, () => {
             game.player.x = Math.max(0, game.player.x - game.player.speed);
         });
         
-        rightBtn.addEventListener('touchstart', () => {
-            if (!game.running || game.paused) return;
+        setupMobileControl(rightBtn, () => {
             game.player.x = Math.min(canvas.width - game.player.width, game.player.x + game.player.speed);
         });
         
-        shootBtn.addEventListener('touchstart', () => {
-            if (!game.running || game.paused) return;
-            shoot();
-        });
-        
-        // Click for mobile
-        leftBtn.addEventListener('click', () => {
-            if (!game.running || game.paused) return;
-            game.player.x = Math.max(0, game.player.x - game.player.speed);
-        });
-        
-        rightBtn.addEventListener('click', () => {
-            if (!game.running || game.paused) return;
-            game.player.x = Math.min(canvas.width - game.player.width, game.player.x + game.player.speed);
-        });
-        
-        shootBtn.addEventListener('click', () => {
-            if (!game.running || game.paused) return;
+        setupMobileControl(shootBtn, () => {
             shoot();
         });
         
