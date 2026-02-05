@@ -1530,19 +1530,15 @@ body.chat-page {
 
 @media (max-width: 900px) {
     .app-shell {
-        flex-direction: row;
-        gap: 12px;
+        flex-direction: column;
     }
 
     .sidebar {
-        display: flex;
-        width: 200px;
-        height: auto;
-        min-height: 100%;
+        display: none;
     }
 
     .mobile-only {
-        display: none;
+        display: inline-flex;
     }
 
     .private-layout {
@@ -1550,7 +1546,7 @@ body.chat-page {
     }
 
     .message-container {
-        max-height: none;
+        max-height: 45vh;
     }
 }
 
@@ -1626,10 +1622,6 @@ body.chat-page {
 
     .app-shell {
         min-height: 100vh;
-    }
-
-    .sidebar {
-        height: 100dvh;
     }
 
     .chat-page .chat-card {
