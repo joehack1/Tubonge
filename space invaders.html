@@ -21,7 +21,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 5px;
+            padding: 10px;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            justify-content: center;
+            max-width: 1100px;
         }
         
         .game-container {
@@ -31,6 +41,83 @@
             display: flex;
             flex-direction: column;
             position: relative;
+        }
+
+        .scoreboard {
+            width: 100%;
+            max-width: 320px;
+            border: 1px solid #ff00ff;
+            background: #0b0010;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .scoreboard h2 {
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: #ff66cc;
+            text-align: center;
+        }
+
+        .score-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #ff66cc;
+        }
+
+        .score-meta span {
+            color: #ff00ff;
+            font-weight: bold;
+        }
+
+        .name-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .name-row input {
+            flex: 1;
+            background: #120012;
+            border: 1px solid #ff66cc;
+            color: #ff00ff;
+            padding: 6px;
+            font-size: 12px;
+        }
+
+        .name-row button {
+            min-width: 80px;
+        }
+
+        .leaderboard {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .leaderboard li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            border: 1px solid #330033;
+            background: #08000b;
+        }
+
+        .leaderboard .rank {
+            color: #ff66cc;
+        }
+
+        .score-status {
+            min-height: 16px;
+            font-size: 11px;
+            color: #ff66cc;
+            text-align: center;
         }
         
         .header {
@@ -166,6 +253,24 @@
             font-size: 14px;
         }
         
+        /* Layout stacking */
+        @media (max-width: 900px) {
+            body {
+                height: auto;
+                overflow: auto;
+            }
+
+            .page {
+                flex-direction: column;
+                height: auto;
+                max-width: 520px;
+            }
+
+            .scoreboard {
+                max-width: 100%;
+            }
+        }
+
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             .mobile-controls {
@@ -263,7 +368,8 @@
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <div class="page">
+        <div class="game-container">
         <div class="header">SPACE INVADERS</div>
         
         <div class="game-area">
@@ -305,7 +411,170 @@
             <p>Destroy all invaders</p>
             <p>Press START to begin</p>
         </div>
+        </div>
+
+        <aside class="scoreboard">
+            <h2>HIGH SCORES</h2>
+            <div class="score-meta">
+                <div>PLAYER: <span id="player-name">Guest</span></div>
+                <div>BEST: <span id="player-best">--</span></div>
+            </div>
+            <div class="name-row">
+                <input id="player-input" type="text" maxlength="20" placeholder="Set display name">
+                <button id="save-player">SAVE</button>
+            </div>
+            <ol class="leaderboard" id="leaderboard"></ol>
+            <div class="score-status" id="score-status"></div>
+        </aside>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, query, orderByChild, limitToLast, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
+            authDomain: "dtubonge.firebaseapp.com",
+            databaseURL: "https://dtubonge-default-rtdb.firebaseio.com",
+            projectId: "dtubonge",
+            storageBucket: "dtubonge.firebasestorage.app",
+            messagingSenderId: "194637518723",
+            appId: "1:194637518723:web:891227e82ea2817e6888b6",
+            measurementId: "G-5NPT1KM5DR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const leaderboardEl = document.getElementById('leaderboard');
+        const playerNameEl = document.getElementById('player-name');
+        const playerBestEl = document.getElementById('player-best');
+        const playerInput = document.getElementById('player-input');
+        const savePlayerBtn = document.getElementById('save-player');
+        const scoreStatus = document.getElementById('score-status');
+
+        const sessionRaw = localStorage.getItem('dtubonge_session');
+        const session = sessionRaw ? JSON.parse(sessionRaw) : null;
+        const storedName = localStorage.getItem('space_invaders_player');
+        let playerName = storedName || session?.username || 'Guest';
+
+        function encodeKey(value) {
+            return btoa(unescape(encodeURIComponent(value)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/g, '');
+        }
+
+        function setStatus(text) {
+            scoreStatus.textContent = text || '';
+        }
+
+        function updatePlayerUI() {
+            playerNameEl.textContent = playerName;
+            playerInput.value = playerName === 'Guest' ? '' : playerName;
+        }
+
+        async function loadPlayerBest() {
+            if (!playerName || playerName === 'Guest') {
+                playerBestEl.textContent = '--';
+                return;
+            }
+            const key = encodeKey(playerName);
+            const bestRef = ref(db, `scores/space_invaders_best/${key}`);
+            const snapshot = await get(bestRef);
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                playerBestEl.textContent = data.score || 0;
+            } else {
+                playerBestEl.textContent = '--';
+            }
+        }
+
+        function renderLeaderboard(scores) {
+            leaderboardEl.innerHTML = '';
+            if (scores.length === 0) {
+                leaderboardEl.innerHTML = '<li>No scores yet</li>';
+                return;
+            }
+            scores.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="rank">#${index + 1} ${entry.username || 'Guest'}</span>
+                    <span>${entry.score}</span>
+                `;
+                leaderboardEl.appendChild(li);
+            });
+        }
+
+        function loadLeaderboard() {
+            const scoresRef = query(ref(db, 'scores/space_invaders'), orderByChild('score'), limitToLast(10));
+            onValue(scoresRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                const scores = Object.values(data)
+                    .map(item => ({
+                        username: item.username,
+                        score: item.score || 0,
+                        timestamp: item.timestamp || 0
+                    }))
+                    .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp);
+                renderLeaderboard(scores);
+            });
+        }
+
+        async function saveBestScore(score) {
+            if (!playerName || playerName === 'Guest') return;
+            const key = encodeKey(playerName);
+            const bestRef = ref(db, `scores/space_invaders_best/${key}`);
+            const snapshot = await get(bestRef);
+            const currentBest = snapshot.exists() ? snapshot.val().score || 0 : 0;
+            if (score > currentBest) {
+                await set(bestRef, {
+                    username: playerName,
+                    score,
+                    timestamp: Date.now()
+                });
+                playerBestEl.textContent = score;
+            }
+        }
+
+        async function submitScore(score) {
+            if (!score || score <= 0) return;
+            setStatus('Saving score...');
+            const scoreRef = ref(db, 'scores/space_invaders');
+            const newScore = push(scoreRef);
+            await set(newScore, {
+                username: playerName,
+                score,
+                timestamp: Date.now()
+            });
+            await saveBestScore(score);
+            setStatus('Score saved!');
+            setTimeout(() => setStatus(''), 2000);
+        }
+
+        savePlayerBtn.addEventListener('click', async () => {
+            const value = playerInput.value.trim();
+            if (!value) {
+                playerName = 'Guest';
+                localStorage.removeItem('space_invaders_player');
+                updatePlayerUI();
+                await loadPlayerBest();
+                return;
+            }
+            playerName = value.slice(0, 20);
+            localStorage.setItem('space_invaders_player', playerName);
+            updatePlayerUI();
+            await loadPlayerBest();
+        });
+
+        updatePlayerUI();
+        loadLeaderboard();
+        loadPlayerBest();
+
+        window.ScoreBoard = {
+            submitScore
+        };
+    </script>
 
     <script>
         // Game variables
@@ -367,6 +636,7 @@
             game.score = 0;
             game.lives = 3;
             game.level = 1;
+            game.submittedScore = false;
             
             // Player dimensions based on canvas size
             game.player.width = canvas.width * 0.08;
@@ -626,6 +896,11 @@
             ctx.fillStyle = '#ff66cc';
             ctx.font = `bold ${canvas.width * 0.03}px Arial`;
             ctx.fillText(`SCORE: ${game.score}`, canvas.width / 2, canvas.height / 2 + 20);
+
+            if (!game.submittedScore && window.ScoreBoard?.submitScore) {
+                game.submittedScore = true;
+                window.ScoreBoard.submitScore(game.score);
+            }
         }
         
         // Update display
