@@ -453,6 +453,7 @@
         <div class="instructions" id="instructions">
             <h3>HOW TO PLAY</h3>
             <p>ARROWS: Move | SPACE: Shoot</p>
+            <p>TILT: Move | TAP: Shoot (mobile)</p>
             <p>Destroy all invaders</p>
             <p>Press START to begin</p>
         </div>
@@ -674,6 +675,8 @@
         const rightBtn = document.getElementById('rightBtn');
         const shootBtn = document.getElementById('shootBtn');
         const instructions = document.getElementById('instructions');
+        let tiltEnabled = false;
+        let tiltGamma = 0;
         
         // Set canvas size
         function resizeCanvas() {
@@ -686,6 +689,30 @@
         window.addEventListener('load', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        function handleTilt(event) {
+            if (!tiltEnabled || !game.running || game.paused) return;
+            if (typeof event.gamma !== 'number') return;
+            tiltGamma = Math.max(-45, Math.min(45, event.gamma));
+            const normalized = (tiltGamma + 45) / 90;
+            const targetX = normalized * (canvas.width - game.player.width);
+            game.player.x = Math.max(0, Math.min(canvas.width - game.player.width, targetX));
+        }
+
+        async function enableTiltControls() {
+            if (tiltEnabled) return;
+            if (!('DeviceOrientationEvent' in window)) return;
+            try {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    const response = await DeviceOrientationEvent.requestPermission();
+                    if (response !== 'granted') return;
+                }
+                window.addEventListener('deviceorientation', handleTilt);
+                tiltEnabled = true;
+            } catch (error) {
+                // ignore tilt errors
+            }
+        }
         
         // Game state
         let game = {
@@ -1102,6 +1129,17 @@
         setupMobileControl(shootBtn, () => {
             shoot();
         });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!game.running || game.paused) return;
+            shoot();
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', () => {
+            if (!game.running || game.paused) return;
+            shoot();
+        });
         
         // Button controls
         startBtn.addEventListener('click', () => {
@@ -1115,6 +1153,7 @@
                 pauseBtn.disabled = false;
                 pauseBtn.textContent = 'PAUSE';
                 instructions.style.display = 'none';
+                enableTiltControls();
             }
         });
         
@@ -1132,6 +1171,7 @@
             pauseBtn.disabled = false;
             pauseBtn.textContent = 'PAUSE';
             instructions.style.display = 'none';
+            enableTiltControls();
         });
         
         // Initialize game
