@@ -61,7 +61,6 @@ const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
 const headerAvatar = document.getElementById('header-avatar');
-const headerToggle = document.getElementById('header-toggle');
 const viewProfileModal = document.getElementById('view-profile-modal');
 const closeViewProfileBtn = document.getElementById('close-view-profile');
 const viewProfileAvatar = document.getElementById('view-profile-avatar');
@@ -132,14 +131,6 @@ tabs.forEach(tab => {
         });
     });
 });
-
-if (headerToggle) {
-    headerToggle.addEventListener('click', () => {
-        if (window.matchMedia('(max-width: 900px)').matches) {
-            document.body.classList.toggle('header-collapsed');
-        }
-    });
-}
 
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
@@ -459,6 +450,9 @@ function loadPrivateMessages(chatId) {
         messages.forEach(msg => {
             renderMessage(privateMessages, msg, msg.username === currentUser, false, false, false, false);
         });
+        setTimeout(() => {
+            privateMessages.scrollTop = privateMessages.scrollHeight;
+        }, 0);
     });
 }
 
@@ -496,8 +490,20 @@ function renderUserList() {
     userList.innerHTML = '';
     userListMobile.innerHTML = '';
 
-    Object.keys(onlineUsers).forEach(username => {
-        if (username === currentUser) return;
+    const users = Object.keys(userProfiles || {}).sort((a, b) => {
+        const aOnline = userProfiles[a]?.online ? 0 : 1;
+        const bOnline = userProfiles[b]?.online ? 0 : 1;
+        return aOnline - bOnline || a.localeCompare(b);
+    });
+
+    users.forEach(username => {
+        if (!username) return;
+        const isSelf = username === currentUser;
+        const displayName = isSelf ? `${getDisplayName(username)} (You)` : getDisplayName(username);
+        const isOnline = !!userProfiles[username]?.online;
+        const statusText = isOnline ? 'Online' : 'Offline';
+        const statusClass = isOnline ? 'status-online' : 'status-offline';
+
         const item = document.createElement('div');
         item.className = 'user-item';
         const avatar = buildAvatarElement(username, 'user-avatar');
@@ -505,17 +511,31 @@ function renderUserList() {
             event.stopPropagation();
             openUserProfile(username);
         });
-        item.innerHTML = `
-            <div class="user-info">
-                <div class="user-name">${getDisplayName(username)}</div>
-                <div class="user-status">Online</div>
-            </div>
+
+        const info = document.createElement('div');
+        info.className = 'user-info';
+        info.innerHTML = `
+            <div class="user-name">${displayName}</div>
+            <div class="user-status ${statusClass}">${statusText}</div>
         `;
-        item.prepend(avatar);
-        item.addEventListener('click', () => selectPrivateUser(username));
+
+        item.appendChild(avatar);
+        item.appendChild(info);
+        if (!isSelf) {
+            item.addEventListener('click', () => selectPrivateUser(username));
+        }
 
         const mobileItem = item.cloneNode(true);
-        mobileItem.addEventListener('click', () => selectPrivateUser(username));
+        const mobileAvatar = mobileItem.querySelector('.user-avatar');
+        if (mobileAvatar) {
+            mobileAvatar.addEventListener('click', (event) => {
+                event.stopPropagation();
+                openUserProfile(username);
+            });
+        }
+        if (!isSelf) {
+            mobileItem.addEventListener('click', () => selectPrivateUser(username));
+        }
         userList.appendChild(item);
         userListMobile.appendChild(mobileItem);
     });
