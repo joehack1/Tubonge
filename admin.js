@@ -19,6 +19,7 @@ const adminStatus = document.getElementById('admin-status');
 const adminLogout = document.getElementById('admin-logout');
 const adminMessages = document.getElementById('admin-messages');
 const adminEmpty = document.getElementById('admin-empty');
+const reloadBtn = document.getElementById('reload-btn');
 
 const adminSession = localStorage.getItem('dtubonge_admin');
 if (adminSession !== 'true') {
@@ -26,6 +27,12 @@ if (adminSession !== 'true') {
 }
 
 adminStatus.textContent = 'Admin mode active';
+
+if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 
 adminLogout.addEventListener('click', () => {
     localStorage.removeItem('dtubonge_admin');
@@ -66,3 +73,6 @@ onValue(messagesRef, snapshot => {
         adminMessages.appendChild(row);
     });
 });
+
+
+

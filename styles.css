@@ -1647,6 +1647,39 @@ body.chat-page {
     color: #ffffff;
 }
 
+/* Reload button */
+.reload-btn {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.reload-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.reload-btn:active {
+    transform: scale(0.96);
+}
+
 /* Professional card polish */
 .chat-card,
 .auth-card,

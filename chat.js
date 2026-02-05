@@ -69,6 +69,7 @@ const viewProfileName = document.getElementById('view-profile-name');
 const viewProfileBio = document.getElementById('view-profile-bio');
 const viewProfileStatus = document.getElementById('view-profile-status');
 const viewProfileJoin = document.getElementById('view-profile-join');
+const reloadBtn = document.getElementById('reload-btn');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
@@ -121,6 +122,12 @@ const panels = {
     private: document.getElementById('panel-private'),
     users: document.getElementById('panel-users')
 };
+
+if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 
 function getReadKey(chatId) {
     return `dtubonge_read_${chatId}`;

@@ -34,10 +34,17 @@ const adminPanel = document.getElementById('admin-panel');
 const adminPassword = document.getElementById('admin-password');
 const adminLoginBtn = document.getElementById('admin-login-btn');
 const authStatus = document.getElementById('auth-status');
+const reloadBtn = document.getElementById('reload-btn');
 
 function setStatus(message, isError = false) {
     authStatus.textContent = message;
     authStatus.className = isError ? 'auth-status error' : 'auth-status';
+}
+
+if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
 }
 
 function setActiveTab(tab) {
