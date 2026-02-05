@@ -134,6 +134,7 @@
             position: relative;
             background: #110011;
             border: 1px solid #ff00ff;
+            min-height: 360px;
         }
         
         #gameCanvas {
@@ -269,6 +270,14 @@
             .scoreboard {
                 max-width: 100%;
             }
+
+            .game-container {
+                max-width: 100%;
+            }
+
+            .game-area {
+                min-height: 420px;
+            }
         }
 
         /* Mobile-specific styles */
@@ -317,6 +326,10 @@
             .instructions h3 {
                 font-size: 13px;
             }
+
+            .game-area {
+                min-height: 480px;
+            }
         }
         
         /* Very small screens */
@@ -351,6 +364,10 @@
             
             .left-right-controls {
                 gap: 50px;
+            }
+
+            .game-area {
+                min-height: 320px;
             }
         }
         
@@ -419,6 +436,7 @@
                 <div>PLAYER: <span id="player-name">Guest</span></div>
                 <div>BEST: <span id="player-best">--</span></div>
             </div>
+            <button id="back-btn">BACK TO APP</button>
             <div class="name-row">
                 <input id="player-input" type="text" maxlength="20" placeholder="Set display name">
                 <button id="save-player">SAVE</button>
@@ -452,6 +470,7 @@
         const playerInput = document.getElementById('player-input');
         const savePlayerBtn = document.getElementById('save-player');
         const scoreStatus = document.getElementById('score-status');
+        const backBtn = document.getElementById('back-btn');
 
         const sessionRaw = localStorage.getItem('dtubonge_session');
         const session = sessionRaw ? JSON.parse(sessionRaw) : null;
@@ -479,13 +498,17 @@
                 playerBestEl.textContent = '--';
                 return;
             }
-            const key = encodeKey(playerName);
-            const bestRef = ref(db, `scores/space_invaders_best/${key}`);
-            const snapshot = await get(bestRef);
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                playerBestEl.textContent = data.score || 0;
-            } else {
+            try {
+                const key = encodeKey(playerName);
+                const bestRef = ref(db, `scores/space_invaders_best/${key}`);
+                const snapshot = await get(bestRef);
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    playerBestEl.textContent = data.score || 0;
+                } else {
+                    playerBestEl.textContent = '--';
+                }
+            } catch (error) {
                 playerBestEl.textContent = '--';
             }
         }
@@ -518,38 +541,49 @@
                     }))
                     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp);
                 renderLeaderboard(scores);
+            }, () => {
+                leaderboardEl.innerHTML = '<li>Unable to load scores</li>';
             });
         }
 
         async function saveBestScore(score) {
             if (!playerName || playerName === 'Guest') return;
-            const key = encodeKey(playerName);
-            const bestRef = ref(db, `scores/space_invaders_best/${key}`);
-            const snapshot = await get(bestRef);
-            const currentBest = snapshot.exists() ? snapshot.val().score || 0 : 0;
-            if (score > currentBest) {
-                await set(bestRef, {
-                    username: playerName,
-                    score,
-                    timestamp: Date.now()
-                });
-                playerBestEl.textContent = score;
+            try {
+                const key = encodeKey(playerName);
+                const bestRef = ref(db, `scores/space_invaders_best/${key}`);
+                const snapshot = await get(bestRef);
+                const currentBest = snapshot.exists() ? snapshot.val().score || 0 : 0;
+                if (score > currentBest) {
+                    await set(bestRef, {
+                        username: playerName,
+                        score,
+                        timestamp: Date.now()
+                    });
+                    playerBestEl.textContent = score;
+                }
+            } catch (error) {
+                // ignore best update failures
             }
         }
 
         async function submitScore(score) {
             if (!score || score <= 0) return;
-            setStatus('Saving score...');
-            const scoreRef = ref(db, 'scores/space_invaders');
-            const newScore = push(scoreRef);
-            await set(newScore, {
-                username: playerName,
-                score,
-                timestamp: Date.now()
-            });
-            await saveBestScore(score);
-            setStatus('Score saved!');
-            setTimeout(() => setStatus(''), 2000);
+            try {
+                setStatus('Saving score...');
+                const scoreRef = ref(db, 'scores/space_invaders');
+                const newScore = push(scoreRef);
+                await set(newScore, {
+                    username: playerName,
+                    score,
+                    timestamp: Date.now()
+                });
+                await saveBestScore(score);
+                setStatus('Score saved!');
+            } catch (error) {
+                setStatus('Save failed. Check connection or rules.');
+            } finally {
+                setTimeout(() => setStatus(''), 2500);
+            }
         }
 
         savePlayerBtn.addEventListener('click', async () => {
@@ -565,6 +599,10 @@
             localStorage.setItem('space_invaders_player', playerName);
             updatePlayerUI();
             await loadPlayerBest();
+        });
+
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'chat.html';
         });
 
         updatePlayerUI();
@@ -659,15 +697,23 @@
         // Create enemies
         function createEnemies() {
             game.enemies = [];
-            const enemyWidth = canvas.width * 0.05;
-            const enemyHeight = canvas.height * 0.03;
-            const horizontalSpacing = canvas.width * 0.08;
-            const verticalSpacing = canvas.height * 0.05;
-            const startX = canvas.width * 0.1;
-            const startY = canvas.height * 0.1;
+            const rows = 2 * Math.pow(2, game.level - 1);
+            game.enemyRows = rows;
+            const cols = 2 * Math.pow(2, game.level - 1);
+            game.enemyCols = cols;
+
+            const formationHeight = canvas.height * 0.35;
+            const enemyHeight = Math.min(canvas.height * 0.03, formationHeight / (rows * 1.6));
+            const enemyWidth = Math.max(canvas.width * 0.05, enemyHeight * 1.6);
+            const verticalSpacing = enemyHeight * 1.6;
+            const desiredGap = enemyWidth * 0.2;
+            const formationWidth = cols * enemyWidth + (cols - 1) * desiredGap;
+            const startX = (canvas.width - formationWidth) / 2;
+            const horizontalSpacing = enemyWidth + desiredGap;
+            const startY = canvas.height * 0.08;
             
-            for (let row = 0; row < game.enemyRows; row++) {
-                for (let col = 0; col < game.enemyCols; col++) {
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
                     const x = startX + col * horizontalSpacing;
                     const y = startY + row * verticalSpacing;
                     const color = row < game.enemyRows - 1 ? '#ff00ff' : '#333';
