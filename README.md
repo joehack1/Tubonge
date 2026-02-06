@@ -20,5 +20,3 @@
 - Sticky message composer with mobile keyboard visibility handling.
 - Responsive, glassmorphism-styled UI with tabs and mobile optimizations.
 - Manual reload button on key pages.
-- Space Invaders game with Firebase leaderboard, local fallback, player name, tilt/touch controls, pause and restart.
-- 3D Mobile Racer game with touch/tilt controls, speed slider, score/high score, pause and restart.
