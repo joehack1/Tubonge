@@ -81,6 +81,9 @@ let selectedAvatarUrl = null;
 let mediaRecorder = null;
 let recordingTimeout = null;
 let recordingInterval = null;
+let currentPrivateMessages = [];
+let currentPrivateRead = {};
+let privateReadUnsub = null;
 const MAX_MEDIA_BYTES = 10_000_000;
 const USER_COLORS = ['#e91e63', '#00bcd4', '#8bc34a', '#ff9800', '#9c27b0', '#3f51b5', '#795548'];
 const DEFAULT_AVATARS = [
@@ -129,6 +132,23 @@ if (reloadBtn) {
     });
 }
 
+function updateViewportHeight() {
+    const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${height}px`);
+}
+
+updateViewportHeight();
+window.addEventListener('resize', updateViewportHeight);
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateViewportHeight);
+    window.visualViewport.addEventListener('scroll', updateViewportHeight);
+}
+
+messageInput.addEventListener('focus', () => {
+    setTimeout(() => {
+        messageInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 150);
+});
 
 function getReadKey(chatId) {
     return `dtubonge_read_${chatId}`;
@@ -338,7 +358,7 @@ function stopRecordingTimer() {
     recordingTimer.textContent = '0:00';
 }
 
-function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton, useUserColors) {
+function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton, useUserColors, statusText) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''}`;
     if (useUserColors && msg.username) {
@@ -420,14 +440,22 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         messageDiv.appendChild(textDiv);
     }
 
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'message-time';
-    timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     header.appendChild(senderWrap);
     header.appendChild(actionWrap);
     messageDiv.appendChild(header);
-    messageDiv.appendChild(timeDiv);
+    const metaRow = document.createElement('div');
+    metaRow.className = 'message-meta';
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time';
+    timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    metaRow.appendChild(timeDiv);
+    if (statusText) {
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'message-status';
+        statusDiv.textContent = statusText;
+        metaRow.appendChild(statusDiv);
+    }
+    messageDiv.appendChild(metaRow);
 
     container.appendChild(messageDiv);
 }
@@ -452,12 +480,55 @@ function loadGroupMessages() {
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
         messages.forEach(msg => {
-            renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false, true);
+            renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false, true, null);
         });
         // Default to bottom on group chat
         setTimeout(() => {
             groupMessages.scrollTop = groupMessages.scrollHeight;
         }, 0);
+    });
+}
+
+function renderPrivateMessages() {
+    privateMessages.innerHTML = '';
+    if (!currentPrivateMessages.length) {
+        privateEmpty.style.display = 'block';
+        return;
+    }
+    privateEmpty.style.display = 'none';
+    const otherRead = selectedPrivateName ? (currentPrivateRead?.[selectedPrivateName] || 0) : 0;
+    currentPrivateMessages.forEach(msg => {
+        const isOwn = msg.username === currentUser;
+        const statusText = isOwn ? (otherRead >= msg.timestamp ? 'Read' : 'Sent') : null;
+        renderMessage(privateMessages, msg, isOwn, false, false, false, false, statusText);
+    });
+    const latest = currentPrivateMessages[currentPrivateMessages.length - 1];
+    if (latest?.timestamp) {
+        setLastRead(selectedPrivateId, latest.timestamp);
+    }
+    setTimeout(() => {
+        privateMessages.scrollTop = privateMessages.scrollHeight;
+    }, 0);
+}
+
+function watchPrivateRead(chatId) {
+    if (privateReadUnsub) {
+        privateReadUnsub();
+        privateReadUnsub = null;
+    }
+    if (!chatId) return;
+    const readRef = ref(db, `private_reads/${chatId}`);
+    privateReadUnsub = onValue(readRef, snapshot => {
+        currentPrivateRead = snapshot.val() || {};
+        renderPrivateMessages();
+    });
+}
+
+function markPrivateRead(chatId) {
+    if (!chatId) return;
+    const readRef = ref(db, `private_reads/${chatId}`);
+    update(readRef, {
+        [currentUser]: Date.now()
     });
 }
 
@@ -472,25 +543,16 @@ function loadPrivateMessages(chatId) {
     const recentMessages = query(messagesRef, limitToLast(200));
 
     onValue(recentMessages, snapshot => {
-        privateMessages.innerHTML = '';
         const data = snapshot.val();
         if (!data) {
+            currentPrivateMessages = [];
             privateEmpty.style.display = 'block';
             return;
         }
-        privateEmpty.style.display = 'none';
-        const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
+        currentPrivateMessages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
-        messages.forEach(msg => {
-            renderMessage(privateMessages, msg, msg.username === currentUser, false, false, false, false);
-        });
-        const latest = messages[messages.length - 1];
-        if (latest?.timestamp) {
-            setLastRead(chatId, latest.timestamp);
-        }
-        setTimeout(() => {
-            privateMessages.scrollTop = privateMessages.scrollHeight;
-        }, 0);
+        renderPrivateMessages();
+        markPrivateRead(chatId);
     });
 }
 
@@ -621,6 +683,8 @@ function selectPrivateUser(username) {
     selectedPrivateName = username;
     selectedPrivateId = getChatId(currentUser, username);
     setLastRead(selectedPrivateId, Date.now());
+    markPrivateRead(selectedPrivateId);
+    watchPrivateRead(selectedPrivateId);
     loadPrivateMessages(selectedPrivateId);
     if (currentTab !== 'private') {
         document.querySelector('[data-tab="private"]').click();
