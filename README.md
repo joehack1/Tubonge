@@ -1,4 +1,4 @@
-![Screenshot](shcreenshot.gif)
+![Screenshot](screenshot.gif)
 
 # Tubonge
 
