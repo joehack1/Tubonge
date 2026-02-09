@@ -36,6 +36,8 @@ const messageInput = document.getElementById('message-input');
 const imageInput = document.getElementById('image-input');
 const imageBtn = document.getElementById('image-btn');
 const voiceBtn = document.getElementById('voice-btn');
+const stickerBtn = document.getElementById('sticker-btn');
+const stickerPanel = document.getElementById('sticker-panel');
 const groupMessages = document.getElementById('group-messages');
 const privateMessages = document.getElementById('private-messages');
 const groupEmpty = document.getElementById('group-empty');
@@ -118,6 +120,7 @@ const DEFAULT_AVATARS = [
     'https://api.dicebear.com/9.x/fun-emoji/png?seed=Hype&size=128',
     'https://api.dicebear.com/9.x/fun-emoji/png?seed=Smirk&size=128'
 ];
+const DEFAULT_STICKERS = ['😀', '😂', '😍', '🥳', '😎', '🤯', '😭', '🙏', '🔥', '💯', '🎉', '❤️', '👍', '🙌', '🤝', '🤖'];
 
 const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
@@ -370,7 +373,7 @@ function stopRecordingTimer() {
 
 function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton, useUserColors, statusText) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''} ${msg.type === 'video' ? 'video-message' : ''}`;
+    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''} ${msg.type === 'video' ? 'video-message' : ''} ${msg.type === 'sticker' ? 'sticker-message' : ''}`;
     if (useUserColors && msg.username) {
         const colorIndex = Math.abs(msg.username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % USER_COLORS.length;
         const color = USER_COLORS[colorIndex];
@@ -408,7 +411,13 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'Delete';
-        deleteBtn.addEventListener('click', () => deleteGroupMessage(msg.id));
+        deleteBtn.addEventListener('click', () => {
+            if (msg._scope === 'private') {
+                deletePrivateMessage(msg.id);
+            } else {
+                deleteGroupMessage(msg.id);
+            }
+        });
         actionWrap.appendChild(deleteBtn);
     }
 
@@ -438,6 +447,11 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         video.className = 'shared-video';
         video.playsInline = true;
         messageDiv.appendChild(video);
+    } else if (msg.type === 'sticker' && msg.sticker) {
+        const sticker = document.createElement('div');
+        sticker.className = 'sticker-display';
+        sticker.textContent = msg.sticker;
+        messageDiv.appendChild(sticker);
     } else if (msg.type === 'voice' && msg.audioData) {
         const audio = document.createElement('audio');
         audio.controls = true;
@@ -482,6 +496,12 @@ function deleteGroupMessage(messageId) {
     remove(messageRef);
 }
 
+function deletePrivateMessage(messageId) {
+    if (!selectedPrivateId) return;
+    const messageRef = ref(db, `private_messages/${selectedPrivateId}/${messageId}`);
+    remove(messageRef);
+}
+
 function loadGroupMessages() {
     const messagesRef = ref(db, 'messages');
     const recentMessages = query(messagesRef, limitToLast(200));
@@ -497,7 +517,7 @@ function loadGroupMessages() {
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
         messages.forEach(msg => {
-            renderMessage(groupMessages, msg, msg.username === currentUser, true, true, false, true, null);
+            renderMessage(groupMessages, { ...msg, _scope: 'group' }, msg.username === currentUser, true, true, msg.username === currentUser, true, null);
         });
         // Default to bottom on group chat
         setTimeout(() => {
@@ -517,7 +537,7 @@ function renderPrivateMessages() {
     currentPrivateMessages.forEach(msg => {
         const isOwn = msg.username === currentUser;
         const statusText = isOwn ? (otherRead >= msg.timestamp ? 'Read' : 'Sent') : null;
-        renderMessage(privateMessages, msg, isOwn, false, false, false, false, statusText);
+        renderMessage(privateMessages, { ...msg, _scope: 'private' }, isOwn, false, false, isOwn, false, statusText);
     });
     const latest = currentPrivateMessages[currentPrivateMessages.length - 1];
     if (latest?.timestamp) {
@@ -838,6 +858,42 @@ imageInput.addEventListener('change', async (e) => {
     };
     reader.readAsDataURL(file);
 });
+
+function renderStickers() {
+    if (!stickerPanel) return;
+    stickerPanel.innerHTML = '';
+    DEFAULT_STICKERS.forEach(sticker => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sticker-btn';
+        btn.textContent = sticker;
+        btn.addEventListener('click', async () => {
+            if (currentTab === 'private' && !selectedPrivateId) {
+                alert('Select a private chat first.');
+                return;
+            }
+            const message = {
+                username: currentUser,
+                timestamp: Date.now(),
+                type: 'sticker',
+                sticker
+            };
+            const messagesRef = currentTab === 'private'
+                ? ref(db, `private_messages/${selectedPrivateId}`)
+                : ref(db, 'messages');
+            const newMessageRef = push(messagesRef);
+            await set(newMessageRef, message);
+        });
+        stickerPanel.appendChild(btn);
+    });
+}
+
+if (stickerBtn) {
+    renderStickers();
+    stickerBtn.addEventListener('click', () => {
+        stickerPanel.classList.toggle('active');
+    });
+}
 
 voiceBtn.addEventListener('click', async () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {

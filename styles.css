@@ -1334,6 +1334,37 @@ body.chat-page {
     min-width: 70px;
 }
 
+.sticker-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sticker-panel.active {
+    display: flex;
+}
+
+.sticker-btn {
+    border: none;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.message.sticker-message {
+    padding: 8px 10px;
+}
+
+.sticker-display {
+    font-size: 2.2rem;
+    line-height: 1;
+}
+
 .shared-image {
     width: 100%;
     max-width: 320px;
@@ -1349,6 +1380,25 @@ body.chat-page {
     display: block;
     margin-bottom: 8px;
     background: #000;
+}
+
+@media (max-width: 900px) {
+    .private-item .user-info {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+    }
+
+    .private-item .user-name {
+        display: flex;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+    .private-item .user-status {
+        text-align: right;
+        white-space: nowrap;
+    }
 }
 
 .voice-audio {
