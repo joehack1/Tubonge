@@ -103,17 +103,22 @@
                 <h2>Profile</h2>
                 <button class="close-btn" id="close-profile">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="field">
-                    <label for="profile-display">Display Name (optional)</label>
-                    <input id="profile-display" type="text" maxlength="24" placeholder="How others see you">
+                <div class="modal-body">
+                    <div class="field">
+                        <label for="profile-display">Display Name (optional)</label>
+                        <input id="profile-display" type="text" maxlength="24" placeholder="How others see you">
+                    </div>
+                    <div class="field">
+                        <label for="profile-bio">Bio (optional)</label>
+                        <textarea id="profile-bio" rows="3" maxlength="120" placeholder="Short bio"></textarea>
+                    </div>
+                    <div class="avatar-grid" id="avatar-grid"></div>
+                    <div class="field theme-field">
+                        <label>Theme</label>
+                        <div class="theme-options" id="theme-options"></div>
+                        <p class="theme-hint">Choose a color theme for your chat UI.</p>
+                    </div>
                 </div>
-                <div class="field">
-                    <label for="profile-bio">Bio (optional)</label>
-                    <textarea id="profile-bio" rows="3" maxlength="120" placeholder="Short bio"></textarea>
-                </div>
-                <div class="avatar-grid" id="avatar-grid"></div>
-            </div>
             <div class="modal-footer">
                 <button class="ghost-btn" id="cancel-profile">Cancel</button>
                 <button class="primary-btn" id="save-profile">Save</button>

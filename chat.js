@@ -60,6 +60,7 @@ const profileModal = document.getElementById('profile-modal');
 const profileDisplay = document.getElementById('profile-display');
 const profileBio = document.getElementById('profile-bio');
 const avatarGrid = document.getElementById('avatar-grid');
+const themeOptions = document.getElementById('theme-options');
 const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
@@ -123,6 +124,17 @@ const DEFAULT_AVATARS = [
     'https://api.dicebear.com/9.x/fun-emoji/png?seed=Smirk&size=128'
 ];
 const DEFAULT_STICKERS = ['😀', '😂', '😍', '🥳', '😎', '🤯', '😭', '🙏', '🔥', '💯', '🎉', '❤️', '👍', '🙌', '🤝', '🤖'];
+const THEME_STORAGE_KEY = 'dtubonge_theme';
+const THEMES = [
+    { key: 'rose', label: 'Rose', swatch: 'linear-gradient(135deg, #e91e63, #ff69b4)' },
+    { key: 'teal', label: 'Teal', swatch: 'linear-gradient(135deg, #00bcd4, #3ddbd9)' },
+    { key: 'blue', label: 'Blue', swatch: 'linear-gradient(135deg, #3b82f6, #60a5fa)' },
+    { key: 'green', label: 'Green', swatch: 'linear-gradient(135deg, #10b981, #34d399)' },
+    { key: 'orange', label: 'Orange', swatch: 'linear-gradient(135deg, #f97316, #fb923c)' },
+    { key: 'purple', label: 'Purple', swatch: 'linear-gradient(135deg, #a855f7, #c084fc)' },
+    { key: 'gold', label: 'Gold', swatch: 'linear-gradient(135deg, #eab308, #facc15)' },
+    { key: 'rainbow', label: 'Rainbow', swatch: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #a855f7)' }
+];
 
 const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
@@ -204,6 +216,9 @@ tabs.forEach(tab => {
         }
     });
 });
+
+renderThemeOptions();
+applyTheme(getSavedTheme());
 
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
@@ -305,12 +320,45 @@ function renderAvatarGrid() {
     });
 }
 
+function getSavedTheme() {
+    return localStorage.getItem(THEME_STORAGE_KEY) || 'rose';
+}
+
+function applyTheme(themeKey) {
+    const theme = THEMES.find(item => item.key === themeKey) ? themeKey : 'rose';
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    if (themeOptions) {
+        themeOptions.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.toggle('active', option.dataset.theme === theme);
+        });
+    }
+}
+
+function renderThemeOptions() {
+    if (!themeOptions) return;
+    themeOptions.innerHTML = '';
+    const activeTheme = getSavedTheme();
+    THEMES.forEach(theme => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'theme-option';
+        option.dataset.theme = theme.key;
+        option.style.setProperty('--swatch', theme.swatch);
+        option.innerHTML = `<span class="theme-swatch"></span><span>${theme.label}</span>`;
+        option.classList.toggle('active', theme.key === activeTheme);
+        option.addEventListener('click', () => applyTheme(theme.key));
+        themeOptions.appendChild(option);
+    });
+}
+
 function openProfileModal() {
     const profile = userProfiles[currentUser] || {};
     profileDisplay.value = profile.displayName || '';
     profileBio.value = profile.bio || '';
     selectedAvatarUrl = profile.avatarUrl || DEFAULT_AVATARS[0];
     renderAvatarGrid();
+    renderThemeOptions();
     profileModal.style.display = 'flex';
 }
 

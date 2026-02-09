@@ -9,6 +9,9 @@
     --bg-dark: #1a1a1a;
     --bg-darker: #121212;
     --keyboard-inset: 0px;
+    --accent-color: #ff69b4;
+    --accent-strong: #e91e63;
+    --accent-gradient: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
 }
 
 * {
@@ -571,7 +574,7 @@ body {
 }
 
 .tab-btn.active {
-    color: #ff69b4;
+    color: var(--accent-color);
     background-color: #1a1a1a;
 }
 
@@ -582,7 +585,7 @@ body {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(135deg, #e91e63, #ff69b4);
+    background: var(--accent-gradient);
 }
 
 .tab-btn:hover:not(.active) {
@@ -1097,7 +1100,7 @@ body.chat-page {
 .field label {
     display: block;
     margin-bottom: 6px;
-    color: #ff69b4;
+    color: var(--accent-color);
     font-weight: 600;
 }
 
@@ -1121,14 +1124,14 @@ body.chat-page {
 }
 
 .primary-btn {
-    background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    background: var(--accent-gradient);
     color: white;
     width: 100%;
 }
 
 .ghost-btn {
     background: rgba(255, 255, 255, 0.08);
-    color: #ff69b4;
+    color: var(--accent-color);
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -1267,7 +1270,7 @@ body.chat-page {
 .delete-btn {
     border: none;
     background: rgba(255, 255, 255, 0.1);
-    color: #ff69b4;
+    color: var(--accent-color);
     padding: 4px 10px;
     border-radius: 10px;
     cursor: pointer;
@@ -1449,7 +1452,7 @@ body.chat-page {
 .upload-bar-fill {
     width: 0%;
     height: 100%;
-    background: linear-gradient(135deg, #e91e63, #ff69b4);
+    background: var(--accent-gradient);
     transition: width 0.2s ease;
 }
 
@@ -1805,6 +1808,55 @@ body.chat-page {
         display: flex;
     }
 }
+
+/* Theme presets */
+html[data-theme="rose"] {
+    --accent-color: #ff69b4;
+    --accent-strong: #e91e63;
+    --accent-gradient: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+}
+
+html[data-theme="teal"] {
+    --accent-color: #3ddbd9;
+    --accent-strong: #00bcd4;
+    --accent-gradient: linear-gradient(135deg, #00bcd4 0%, #3ddbd9 100%);
+}
+
+html[data-theme="blue"] {
+    --accent-color: #60a5fa;
+    --accent-strong: #3b82f6;
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+html[data-theme="green"] {
+    --accent-color: #34d399;
+    --accent-strong: #10b981;
+    --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+html[data-theme="orange"] {
+    --accent-color: #fb923c;
+    --accent-strong: #f97316;
+    --accent-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+}
+
+html[data-theme="purple"] {
+    --accent-color: #c084fc;
+    --accent-strong: #a855f7;
+    --accent-gradient: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+}
+
+html[data-theme="gold"] {
+    --accent-color: #facc15;
+    --accent-strong: #eab308;
+    --accent-gradient: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+}
+
+html[data-theme="rainbow"] {
+    --accent-color: #f97316;
+    --accent-strong: #e11d48;
+    --accent-gradient: linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #10b981 50%, #3b82f6 75%, #a855f7 100%);
+}
 .tagline {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.95rem;
@@ -1957,6 +2009,52 @@ body.chat-page {
     overflow-y: auto;
 }
 
+.theme-field {
+    margin-top: 16px;
+}
+
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 10px;
+}
+
+.theme-option {
+    display: grid;
+    gap: 6px;
+    align-items: center;
+    justify-items: center;
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    color: #ddd;
+    font-size: 0.75rem;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-option:hover {
+    transform: translateY(-2px);
+}
+
+.theme-option.active {
+    border-color: var(--accent-color);
+}
+
+.theme-swatch {
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--swatch, #ff69b4);
+}
+
+.theme-hint {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: #aaa;
+}
+
 .avatar-option {
     width: 64px;
     height: 64px;
@@ -1973,7 +2071,7 @@ body.chat-page {
 }
 
 .avatar-option.selected {
-    border-color: #ff69b4;
+    border-color: var(--accent-color);
 }
 
 /* Ensure avatars fully visible */
@@ -2025,7 +2123,7 @@ body.chat-page {
     background: rgba(255, 255, 255, 0.08);
     background-size: cover;
     background-position: center;
-    border: 3px solid rgba(255, 105, 180, 0.6);
+    border: 3px solid var(--accent-color);
 }
 
 .profile-view-name {
