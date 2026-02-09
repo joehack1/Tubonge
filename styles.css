@@ -1342,6 +1342,15 @@ body.chat-page {
     margin-bottom: 8px;
 }
 
+.shared-video {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 12px;
+    display: block;
+    margin-bottom: 8px;
+    background: #000;
+}
+
 .voice-audio {
     width: 100%;
     margin: 6px 0 8px;

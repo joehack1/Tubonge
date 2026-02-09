@@ -370,7 +370,7 @@ function stopRecordingTimer() {
 
 function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDeleteButton, useUserColors, statusText) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''}`;
+    messageDiv.className = `message ${isOwn ? 'user-message' : 'other-message'} ${msg.type === 'image' ? 'image-message' : ''} ${msg.type === 'voice' ? 'voice-message' : ''} ${msg.type === 'video' ? 'video-message' : ''}`;
     if (useUserColors && msg.username) {
         const colorIndex = Math.abs(msg.username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % USER_COLORS.length;
         const color = USER_COLORS[colorIndex];
@@ -431,6 +431,13 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
             caption.textContent = msg.caption;
             messageDiv.appendChild(caption);
         }
+    } else if (msg.type === 'video' && msg.videoData) {
+        const video = document.createElement('video');
+        video.controls = true;
+        video.src = msg.videoData;
+        video.className = 'shared-video';
+        video.playsInline = true;
+        messageDiv.appendChild(video);
     } else if (msg.type === 'voice' && msg.audioData) {
         const audio = document.createElement('audio');
         audio.controls = true;
@@ -797,28 +804,36 @@ imageInput.addEventListener('change', async (e) => {
         return;
     }
     if (file.size > MAX_MEDIA_BYTES) {
-        alert('Image too large. Please use a smaller image (about 1.5MB max).');
+        alert('Media too large. Please use a smaller image/video (about 10MB max).');
         imageInput.value = '';
         return;
     }
 
     const reader = new FileReader();
-    showUploadProgress('Preparing photo...', 20);
+    const isVideo = file.type && file.type.startsWith('video/');
+    showUploadProgress(isVideo ? 'Preparing video...' : 'Preparing photo...', 20);
     reader.onload = async () => {
-        const imageData = reader.result;
-        const message = {
-            username: currentUser,
-            timestamp: Date.now(),
-            type: 'image',
-            imageData
-        };
+        const mediaData = reader.result;
+        const message = isVideo
+            ? {
+                username: currentUser,
+                timestamp: Date.now(),
+                type: 'video',
+                videoData: mediaData
+            }
+            : {
+                username: currentUser,
+                timestamp: Date.now(),
+                type: 'image',
+                imageData: mediaData
+            };
 
         const messagesRef = currentTab === 'private'
             ? ref(db, `private_messages/${selectedPrivateId}`)
             : ref(db, 'messages');
         const newMessageRef = push(messagesRef);
         await set(newMessageRef, message);
-        showUploadProgress('Uploaded photo', 100);
+        showUploadProgress(isVideo ? 'Uploaded video' : 'Uploaded photo', 100);
         imageInput.value = '';
     };
     reader.readAsDataURL(file);
