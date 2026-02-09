@@ -135,6 +135,16 @@ if (reloadBtn) {
 function updateViewportHeight() {
     const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     document.documentElement.style.setProperty('--app-height', `${height}px`);
+    const keyboardInset = window.visualViewport
+        ? Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)
+        : 0;
+    document.documentElement.style.setProperty('--keyboard-inset', `${keyboardInset}px`);
+    document.body.classList.toggle('keyboard-open', keyboardInset > 0);
+    if (document.activeElement === messageInput) {
+        requestAnimationFrame(() => {
+            messageInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
+    }
 }
 
 updateViewportHeight();

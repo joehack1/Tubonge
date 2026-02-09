@@ -8,6 +8,7 @@
     --other-msg-color: #424242;
     --bg-dark: #1a1a1a;
     --bg-darker: #121212;
+    --keyboard-inset: 0px;
 }
 
 * {
@@ -1299,6 +1300,22 @@ body.chat-page {
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
 
+.chat-page .chat-footer {
+    transition: transform 0.2s ease;
+}
+
+.chat-page.keyboard-open .chat-footer {
+    transform: translateY(calc(-1 * var(--keyboard-inset, 0px)));
+}
+
+.chat-page.keyboard-open .chat-body {
+    padding-bottom: calc(10px + var(--keyboard-inset, 0px));
+}
+
+.chat-page.keyboard-open .message-container {
+    scroll-padding-bottom: calc(16px + var(--keyboard-inset, 0px));
+}
+
 .composer {
     display: flex;
     gap: 10px;
@@ -1715,6 +1732,12 @@ body.chat-page {
 
 .reload-btn:active {
     transform: scale(0.96);
+}
+
+.chat-page .reload-btn {
+    top: calc(16px + env(safe-area-inset-top));
+    right: 16px;
+    bottom: auto;
 }
 
 /* Professional card polish */
