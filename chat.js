@@ -72,6 +72,8 @@ const viewProfileBio = document.getElementById('view-profile-bio');
 const viewProfileStatus = document.getElementById('view-profile-status');
 const viewProfileJoin = document.getElementById('view-profile-join');
 const reloadBtn = document.getElementById('reload-btn');
+const privateBackBtn = document.getElementById('private-back');
+const privateChatTitle = document.getElementById('private-chat-title');
 
 let currentTab = 'group';
 let selectedPrivateId = null;
@@ -128,6 +130,7 @@ const panels = {
     private: document.getElementById('panel-private'),
     users: document.getElementById('panel-users')
 };
+const privateLayout = document.querySelector('#panel-private .private-layout');
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -196,6 +199,9 @@ tabs.forEach(tab => {
         Object.keys(panels).forEach(key => {
             panels[key].classList.toggle('active', key === currentTab);
         });
+        if (currentTab !== 'private' && privateLayout) {
+            privateLayout.classList.remove('split');
+        }
     });
 });
 
@@ -723,6 +729,12 @@ function selectPrivateUser(username) {
     markPrivateRead(selectedPrivateId);
     watchPrivateRead(selectedPrivateId);
     loadPrivateMessages(selectedPrivateId);
+    if (privateChatTitle) {
+        privateChatTitle.textContent = getDisplayName(username);
+    }
+    if (privateLayout) {
+        privateLayout.classList.add('split');
+    }
     if (currentTab !== 'private') {
         document.querySelector('[data-tab="private"]').click();
     }
@@ -986,3 +998,11 @@ await loadUserColor();
 updatePresence();
 loadGroupMessages();
 refreshPrivateList();
+
+if (privateBackBtn) {
+    privateBackBtn.addEventListener('click', () => {
+        if (privateLayout) {
+            privateLayout.classList.remove('split');
+        }
+    });
+}

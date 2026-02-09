@@ -1569,6 +1569,30 @@ body.chat-page {
     min-height: 0;
 }
 
+.private-chat-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 10px;
+}
+
+.private-chat-title {
+    font-weight: 600;
+    color: #ff69b4;
+    font-size: 0.9rem;
+}
+
+.private-back {
+    min-width: auto;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+}
+
 .private-chat .message-container {
     flex: 1;
     min-height: 0;
@@ -1739,6 +1763,46 @@ body.chat-page {
     .message-status {
         font-size: 0.62rem;
         letter-spacing: 0.02em;
+    }
+}
+
+@media (max-width: 900px) {
+    .private-layout {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .private-list,
+    .private-chat {
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+
+    .private-list {
+        width: 100%;
+    }
+
+    .private-chat {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 70%;
+        transform: translateX(100%);
+        background: transparent;
+    }
+
+    .private-layout.split .private-list {
+        width: 30%;
+        transform: translateX(0);
+    }
+
+    .private-layout.split .private-chat {
+        transform: translateX(0);
+    }
+
+    .private-chat-header {
+        display: flex;
     }
 }
 .tagline {
