@@ -1,17 +1,20 @@
 :root {
-    --primary-color: #e91e63;
-    --secondary-color: #ff69b4;
-    --light-color: #fce4ec;
+    --primary-color: #0ea5a6;
+    --secondary-color: #2ec4b6;
+    --light-color: #e0f7f5;
     --dark-color: #212529;
-    --success-color: #f8bbd9;
-    --user-msg-color: #e91e63;
+    --success-color: rgba(46, 196, 182, 0.25);
+    --user-msg-color: #0ea5a6;
     --other-msg-color: #424242;
     --bg-dark: #1a1a1a;
     --bg-darker: #121212;
     --keyboard-inset: 0px;
-    --accent-color: #ff69b4;
-    --accent-strong: #e91e63;
-    --accent-gradient: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    --accent-color: #2ec4b6;
+    --accent-strong: #0ea5a6;
+    --accent-rgb: 46, 196, 182;
+    --accent-strong-rgb: 14, 165, 166;
+    --accent-soft: rgba(var(--accent-rgb), 0.18);
+    --accent-gradient: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-color) 100%);
 }
 
 * {
@@ -22,7 +25,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #000000 0%, #e91e63 100%);
+    background: linear-gradient(135deg, #000000 0%, var(--accent-strong) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -44,7 +47,7 @@ body {
 }
 
 .chat-header {
-    background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    background: var(--accent-gradient);
     color: white;
     padding: 20px;
     text-align: center;
@@ -94,7 +97,7 @@ body {
 
 .user-message {
     align-self: flex-end;
-    background-color: rgba(233, 30, 99, 0.5);
+    background-color: rgba(var(--accent-strong-rgb), 0.5);
     color: white;
     border-bottom-right-radius: 5px;
 }
@@ -104,7 +107,7 @@ body {
     background-color: rgba(45, 45, 45, 0.55);
     color: white;
     border-bottom-left-radius: 5px;
-    border-left: 3px solid var(--secondary-color);
+    border-left: 3px solid var(--accent-color);
 }
 
 .message-sender {
@@ -121,7 +124,7 @@ body {
 }
 
 .other-message .message-sender {
-    color: var(--secondary-color);
+    color: var(--accent-color);
 }
 
 .message-text {
@@ -147,7 +150,7 @@ body {
 .message-status {
     font-size: 0.7rem;
     font-weight: 600;
-    color: rgba(255, 179, 217, 0.9);
+    color: rgba(var(--accent-rgb), 0.9);
 }
 
 .chat-footer {
@@ -180,7 +183,7 @@ body {
 }
 
 #send-btn {
-    background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    background: var(--accent-gradient);
     color: white;
     border: none;
     width: 50px;
@@ -196,7 +199,7 @@ body {
 
 #send-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(233, 30, 99, 0.4);
+    box-shadow: 0 5px 15px rgba(var(--accent-strong-rgb), 0.4);
 }
 
 #send-btn:disabled {
@@ -246,7 +249,7 @@ body {
 #logout-btn,
 #save-username {
     padding: 12px 24px;
-    background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    background: var(--accent-gradient);
     color: white;
     border: none;
     border-radius: 20px;
@@ -275,7 +278,7 @@ body {
     text-align: center;
     padding: 10px;
     font-size: 0.9rem;
-    color: #ff69b4;
+    color: var(--accent-color);
     background-color: var(--bg-dark);
     border-top: 1px solid #333;
 }
@@ -288,7 +291,7 @@ body {
 }
 
 .clear-chat-btn {
-    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+    background: var(--accent-gradient);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -399,12 +402,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #e91e63;
+    background: var(--accent-strong);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #ff69b4;
+    background: var(--accent-color);
 }
 
 /* App container and sidebar */
@@ -429,7 +432,7 @@ body {
 
 .sidebar h3 {
     padding: 20px;
-    color: #ff69b4;
+    color: var(--accent-color);
     border-bottom: 1px solid #444;
     margin: 0;
     font-size: 1.2rem;
@@ -466,21 +469,21 @@ body {
 
 .user-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 105, 180, 0.35);
+    border-color: rgba(var(--accent-rgb), 0.35);
     transform: translateX(4px);
 }
 
 .user-item.active {
-    background: rgba(255, 105, 180, 0.2);
+    background: rgba(var(--accent-rgb), 0.2);
     color: white;
-    border-color: rgba(255, 105, 180, 0.6);
+    border-color: rgba(var(--accent-rgb), 0.6);
 }
 
 .user-avatar {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ff69b4, #e91e63);
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-strong));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -558,7 +561,7 @@ body {
     height: 18px;
     padding: 0 6px;
     border-radius: 999px;
-    background: #ff69b4;
+    background: var(--accent-color);
     color: #121212;
     font-size: 0.7rem;
     font-weight: 700;
@@ -599,7 +602,7 @@ body {
     top: 20px;
     right: 20px;
     padding: 15px 20px;
-    background: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-color) 100%);
     color: white;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -673,7 +676,7 @@ body {
 }
 
 .modal-header h2 {
-    color: #ff69b4;
+    color: var(--accent-color);
     margin: 0;
     font-size: 1.5rem;
 }
@@ -720,7 +723,7 @@ body {
     border-radius: 50%;
     overflow: hidden;
     margin-bottom: 15px;
-    border: 3px solid #ff69b4;
+    border: 3px solid var(--accent-color);
     position: relative;
 }
 
@@ -733,7 +736,7 @@ body {
 .avatar-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #ff69b4, #e91e63);
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-strong));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -743,7 +746,7 @@ body {
 }
 
 .upload-btn {
-    background: linear-gradient(135deg, #e91e63, #ff69b4);
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent-color));
     color: white;
     border: none;
     padding: 10px 20px;
@@ -767,7 +770,7 @@ body {
 
 .form-group label {
     display: block;
-    color: #ff69b4;
+    color: var(--accent-color);
     margin-bottom: 5px;
     font-weight: 600;
 }
@@ -786,7 +789,7 @@ body {
 
 .form-group input:focus,
 .form-group textarea:focus {
-    border-color: #ff69b4;
+    border-color: var(--accent-color);
     outline: none;
 }
 
@@ -814,7 +817,7 @@ body {
     display: block;
     font-size: 1.5rem;
     font-weight: bold;
-    color: #ff69b4;
+    color: var(--accent-color);
     margin-bottom: 5px;
 }
 
@@ -837,7 +840,7 @@ body {
 }
 
 .image-preview:hover {
-    border-color: #ff69b4;
+    border-color: var(--accent-color);
 }
 
 .image-placeholder {
@@ -862,7 +865,7 @@ body {
 }
 
 .image-caption input:focus {
-    border-color: #ff69b4;
+    border-color: var(--accent-color);
     outline: none;
 }
 
@@ -884,7 +887,7 @@ body {
 
 .save-btn,
 .share-btn {
-    background: linear-gradient(135deg, #e91e63, #ff69b4);
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent-color));
     color: white;
     border: none;
     padding: 10px 20px;
@@ -909,9 +912,9 @@ body {
 }
 
 .profile-btn {
-    background: rgba(247, 10, 10, 0.911);
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ff69b4;
+    color: var(--accent-color);
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -931,7 +934,7 @@ body {
 .image-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ff69b4;
+    color: var(--accent-color);
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -985,7 +988,7 @@ body {
 }
 
 .chat-header.glass {
-    background: rgba(233, 30, 99, 0.8);
+    background: rgba(var(--accent-strong-rgb), 0.8);
 }
 
 /* Responsive Design for Modals */
@@ -1048,7 +1051,7 @@ body.chat-page {
 }
 
 .primary-link {
-    color: #ff69b4;
+    color: var(--accent-color);
     text-decoration: none;
     font-weight: 600;
 }
@@ -1279,7 +1282,7 @@ body.chat-page {
 
 .reply-block {
     background: rgba(255, 255, 255, 0.1);
-    border-left: 3px solid #ff69b4;
+    border-left: 3px solid var(--accent-color);
     padding: 6px 10px;
     border-radius: 10px;
     margin-bottom: 8px;
@@ -1461,8 +1464,8 @@ body.chat-page {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    background: rgba(255, 105, 180, 0.15);
-    border: 1px solid rgba(255, 105, 180, 0.4);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
     padding: 10px 14px;
     border-radius: 14px;
 }
@@ -1480,7 +1483,7 @@ body.chat-page {
 .waveform span {
     width: 6px;
     height: 10px;
-    background: #ff69b4;
+    background: var(--accent-color);
     border-radius: 4px;
     animation: wave 0.8s infinite ease-in-out;
 }
@@ -1531,7 +1534,7 @@ body.chat-page {
 }
 
 .private-item.active {
-    background: rgba(255, 105, 180, 0.2);
+    background: rgba(var(--accent-rgb), 0.2);
 }
 
 .user-avatar {
@@ -1541,7 +1544,7 @@ body.chat-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #ff69b4, #e91e63);
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-strong));
     color: #fff;
     font-weight: 700;
 }
@@ -1586,7 +1589,7 @@ body.chat-page {
 
 .private-chat-title {
     font-weight: 600;
-    color: #ff69b4;
+    color: var(--accent-color);
     font-size: 0.9rem;
 }
 
@@ -1641,7 +1644,7 @@ body.chat-page {
 .admin-message-header {
     font-weight: 600;
     margin-bottom: 6px;
-    color: #ff69b4;
+    color: var(--accent-color);
 }
 
 .mobile-only {
@@ -1709,7 +1712,7 @@ body.chat-page {
 .private-list,
 .admin-messages {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 105, 180, 0.6) rgba(255, 255, 255, 0.08);
+    scrollbar-color: rgba(var(--accent-rgb), 0.6) rgba(255, 255, 255, 0.08);
     scrollbar-gutter: stable;
 }
 
@@ -1729,7 +1732,7 @@ body.chat-page {
 .message-container::-webkit-scrollbar-thumb,
 .private-list::-webkit-scrollbar-thumb,
 .admin-messages::-webkit-scrollbar-thumb {
-    background: rgba(255, 105, 180, 0.6);
+    background: rgba(var(--accent-rgb), 0.6);
     border-radius: 999px;
 }
 
@@ -1810,52 +1813,217 @@ body.chat-page {
 }
 
 /* Theme presets */
-html[data-theme="rose"] {
-    --accent-color: #ff69b4;
-    --accent-strong: #e91e63;
-    --accent-gradient: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
-}
-
 html[data-theme="teal"] {
     --accent-color: #3ddbd9;
     --accent-strong: #00bcd4;
+    --accent-rgb: 61, 219, 217;
+    --accent-strong-rgb: 0, 188, 212;
     --accent-gradient: linear-gradient(135deg, #00bcd4 0%, #3ddbd9 100%);
 }
 
 html[data-theme="blue"] {
     --accent-color: #60a5fa;
     --accent-strong: #3b82f6;
+    --accent-rgb: 96, 165, 250;
+    --accent-strong-rgb: 59, 130, 246;
     --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
 }
 
 html[data-theme="green"] {
     --accent-color: #34d399;
     --accent-strong: #10b981;
+    --accent-rgb: 52, 211, 153;
+    --accent-strong-rgb: 16, 185, 129;
     --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
 }
 
 html[data-theme="orange"] {
     --accent-color: #fb923c;
     --accent-strong: #f97316;
+    --accent-rgb: 251, 146, 60;
+    --accent-strong-rgb: 249, 115, 22;
     --accent-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
 }
 
 html[data-theme="purple"] {
     --accent-color: #c084fc;
     --accent-strong: #a855f7;
+    --accent-rgb: 192, 132, 252;
+    --accent-strong-rgb: 168, 85, 247;
     --accent-gradient: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
 }
 
 html[data-theme="gold"] {
     --accent-color: #facc15;
     --accent-strong: #eab308;
+    --accent-rgb: 250, 204, 21;
+    --accent-strong-rgb: 234, 179, 8;
     --accent-gradient: linear-gradient(135deg, #eab308 0%, #facc15 100%);
 }
 
 html[data-theme="rainbow"] {
     --accent-color: #f97316;
     --accent-strong: #e11d48;
+    --accent-rgb: 249, 115, 22;
+    --accent-strong-rgb: 225, 29, 72;
     --accent-gradient: linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #10b981 50%, #3b82f6 75%, #a855f7 100%);
+}
+
+html[data-theme="whatsapp"] {
+    --accent-color: #25d366;
+    --accent-strong: #075e54;
+    --accent-rgb: 37, 211, 102;
+    --accent-strong-rgb: 7, 94, 84;
+    --accent-gradient: linear-gradient(135deg, #075e54 0%, #128c7e 50%, #25d366 100%);
+}
+
+html[data-theme="instagram"] {
+    --accent-color: #dd2a7b;
+    --accent-strong: #8134af;
+    --accent-rgb: 221, 42, 123;
+    --accent-strong-rgb: 129, 52, 175;
+    --accent-gradient: linear-gradient(135deg, #f58529 0%, #dd2a7b 40%, #8134af 70%, #515bd4 100%);
+}
+
+/* Instagram UI tuning */
+html[data-theme="instagram"] body.chat-page,
+html[data-theme="instagram"] body.auth-page,
+html[data-theme="instagram"] body.admin-page,
+html[data-theme="instagram"] body.redirect-page {
+    background:
+        radial-gradient(circle at top right, rgba(245, 133, 41, 0.35), transparent 55%),
+        radial-gradient(circle at bottom left, rgba(81, 91, 212, 0.25), transparent 55%),
+        linear-gradient(180deg, rgba(18, 16, 24, 0.9), rgba(10, 10, 12, 0.95)),
+        url("2580.jpg") center / cover no-repeat fixed;
+}
+
+html[data-theme="instagram"] .chat-card {
+    background: rgba(24, 16, 28, 0.9);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="instagram"] .sidebar {
+    background: rgba(24, 16, 28, 0.86);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="instagram"] .chat-page .chat-header {
+    background: linear-gradient(135deg, #8134af 0%, #dd2a7b 55%, #f58529 100%);
+}
+
+html[data-theme="instagram"] .chat-tabs {
+    background-color: rgba(18, 12, 22, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="instagram"] .tab-btn.active {
+    background-color: rgba(12, 8, 16, 0.9);
+}
+
+html[data-theme="instagram"] .chat-body {
+    background: rgba(12, 8, 16, 0.6);
+}
+
+html[data-theme="instagram"] .chat-page .chat-footer {
+    background: rgba(18, 12, 22, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="instagram"] .composer input {
+    background: #120b16;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="instagram"] .ghost-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="instagram"] .message.other-message {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="instagram"] .message.user-message {
+    background-color: rgba(221, 42, 123, 0.28);
+}
+
+html[data-theme="instagram"] .reply-preview,
+html[data-theme="instagram"] .upload-status,
+html[data-theme="instagram"] .sticker-panel,
+html[data-theme="instagram"] .private-chat-header,
+html[data-theme="instagram"] .private-list {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* WhatsApp UI tuning */
+html[data-theme="whatsapp"] body.chat-page,
+html[data-theme="whatsapp"] body.auth-page,
+html[data-theme="whatsapp"] body.admin-page,
+html[data-theme="whatsapp"] body.redirect-page {
+    background:
+        linear-gradient(180deg, rgba(7, 94, 84, 0.65), rgba(7, 94, 84, 0.85)),
+        url("2580.jpg") center / cover no-repeat fixed;
+}
+
+html[data-theme="whatsapp"] .chat-card {
+    background: rgba(18, 28, 25, 0.92);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="whatsapp"] .sidebar {
+    background: rgba(18, 28, 25, 0.88);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="whatsapp"] .chat-page .chat-header {
+    background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+}
+
+html[data-theme="whatsapp"] .chat-tabs {
+    background-color: rgba(18, 28, 25, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="whatsapp"] .tab-btn.active {
+    background-color: rgba(10, 20, 18, 0.9);
+}
+
+html[data-theme="whatsapp"] .chat-body {
+    background: rgba(10, 20, 18, 0.6);
+}
+
+html[data-theme="whatsapp"] .chat-page .chat-footer {
+    background: rgba(12, 22, 20, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="whatsapp"] .composer input {
+    background: #0e1a17;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="whatsapp"] .ghost-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="whatsapp"] .message.other-message {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="whatsapp"] .message.user-message {
+    background-color: rgba(37, 211, 102, 0.25);
+}
+
+html[data-theme="whatsapp"] .reply-preview,
+html[data-theme="whatsapp"] .upload-status,
+html[data-theme="whatsapp"] .sticker-panel,
+html[data-theme="whatsapp"] .private-chat-header,
+html[data-theme="whatsapp"] .private-list {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 .tagline {
     color: rgba(255, 255, 255, 0.8);
@@ -2009,8 +2177,22 @@ html[data-theme="rainbow"] {
     overflow-y: auto;
 }
 
+.theme-section {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-section h3 {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: var(--accent-color);
+}
+
 .theme-field {
-    margin-top: 16px;
+    margin-top: 8px;
 }
 
 .theme-options {
@@ -2046,7 +2228,7 @@ html[data-theme="rainbow"] {
     width: 42px;
     height: 24px;
     border-radius: 999px;
-    background: var(--swatch, #ff69b4);
+    background: var(--swatch, var(--accent-color));
 }
 
 .theme-hint {
@@ -2326,20 +2508,20 @@ html[data-theme="rainbow"] {
 }
 
 .private-item.active {
-    background: rgba(255, 105, 180, 0.14);
-    border-color: rgba(255, 105, 180, 0.5);
+    background: rgba(var(--accent-rgb), 0.14);
+    border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .private-item.unread {
-    border: 1px solid rgba(255, 105, 180, 0.45);
-    background: rgba(255, 105, 180, 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+    background: rgba(var(--accent-rgb), 0.12);
 }
 
 .private-item .unread-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #ff69b4;
+    background: var(--accent-color);
     display: inline-block;
     margin-left: 6px;
 }
