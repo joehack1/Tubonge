@@ -61,6 +61,7 @@ const profileDisplay = document.getElementById('profile-display');
 const profileBio = document.getElementById('profile-bio');
 const avatarGrid = document.getElementById('avatar-grid');
 const themeOptions = document.getElementById('theme-options');
+const themeResetBtn = document.getElementById('theme-reset');
 const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
@@ -90,7 +91,7 @@ let currentPrivateMessages = [];
 let currentPrivateRead = {};
 let privateReadUnsub = null;
 const MAX_MEDIA_BYTES = 10_000_000;
-const USER_COLORS = ['#0ea5a6', '#3b82f6', '#10b981', '#f97316', '#a855f7', '#facc15', '#22c55e'];
+const USER_COLORS = ['#e91e63', '#00bcd4', '#3b82f6', '#10b981', '#f97316', '#a855f7', '#facc15'];
 const DEFAULT_AVATARS = [
     'https://api.dicebear.com/9.x/avataaars/png?seed=Azuri&size=128',
     'https://api.dicebear.com/9.x/avataaars/png?seed=Kairo&size=128',
@@ -126,6 +127,7 @@ const DEFAULT_AVATARS = [
 const DEFAULT_STICKERS = ['😀', '😂', '😍', '🥳', '😎', '🤯', '😭', '🙏', '🔥', '💯', '🎉', '❤️', '👍', '🙌', '🤝', '🤖'];
 const THEME_STORAGE_KEY = 'dtubonge_theme';
 const THEMES = [
+    { key: 'rose', label: 'Rose', swatch: 'linear-gradient(135deg, #e91e63, #ff69b4)' },
     { key: 'teal', label: 'Teal', swatch: 'linear-gradient(135deg, #00bcd4, #3ddbd9)' },
     { key: 'blue', label: 'Blue', swatch: 'linear-gradient(135deg, #3b82f6, #60a5fa)' },
     { key: 'green', label: 'Green', swatch: 'linear-gradient(135deg, #10b981, #34d399)' },
@@ -220,6 +222,10 @@ tabs.forEach(tab => {
 
 renderThemeOptions();
 applyTheme(getSavedTheme());
+
+if (themeResetBtn) {
+    themeResetBtn.addEventListener('click', () => applyTheme('rose'));
+}
 
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
@@ -322,11 +328,11 @@ function renderAvatarGrid() {
 }
 
 function getSavedTheme() {
-    return localStorage.getItem(THEME_STORAGE_KEY) || 'teal';
+    return localStorage.getItem(THEME_STORAGE_KEY) || 'rose';
 }
 
 function applyTheme(themeKey) {
-    const theme = THEMES.find(item => item.key === themeKey) ? themeKey : 'teal';
+    const theme = THEMES.find(item => item.key === themeKey) ? themeKey : 'rose';
     document.documentElement.dataset.theme = theme;
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     if (themeOptions) {
@@ -1036,7 +1042,7 @@ async function loadUserColor() {
     if (!snapshot.exists()) {
         await update(userRef, {
             username: currentUser,
-            color: '#0ea5a6',
+            color: '#e91e63',
             joinDate: Date.now(),
             online: true
         });

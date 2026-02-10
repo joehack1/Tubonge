@@ -1,20 +1,28 @@
 :root {
-    --primary-color: #0ea5a6;
-    --secondary-color: #2ec4b6;
-    --light-color: #e0f7f5;
+    --primary-color: #e91e63;
+    --secondary-color: #ff69b4;
+    --light-color: #fce4ec;
     --dark-color: #212529;
-    --success-color: rgba(46, 196, 182, 0.25);
-    --user-msg-color: #0ea5a6;
+    --success-color: rgba(233, 30, 99, 0.25);
+    --user-msg-color: #e91e63;
     --other-msg-color: #424242;
     --bg-dark: #1a1a1a;
     --bg-darker: #121212;
     --keyboard-inset: 0px;
-    --accent-color: #2ec4b6;
-    --accent-strong: #0ea5a6;
-    --accent-rgb: 46, 196, 182;
-    --accent-strong-rgb: 14, 165, 166;
+    --accent-color: #ff69b4;
+    --accent-strong: #e91e63;
+    --accent-rgb: 255, 105, 180;
+    --accent-strong-rgb: 233, 30, 99;
     --accent-soft: rgba(var(--accent-rgb), 0.18);
     --accent-gradient: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-color) 100%);
+    --surface-page: linear-gradient(180deg, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.85)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(255, 255, 255, 0.06);
+    --surface-card-strong: rgba(18, 18, 18, 0.92);
+    --surface-panel: rgba(255, 255, 255, 0.06);
+    --surface-panel-strong: rgba(18, 18, 18, 0.9);
+    --surface-input: #0f0f0f;
+    --surface-border: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -72,7 +80,7 @@ body {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    background-color: var(--bg-dark);
+    background-color: var(--surface-panel);
 }
 
 .message-container {
@@ -155,8 +163,8 @@ body {
 
 .chat-footer {
     padding: 20px;
-    background-color: #2d2d2d;
-    border-top: 1px solid #444;
+    background-color: var(--surface-panel-strong);
+    border-top: 1px solid var(--surface-border);
     display: flex;
     gap: 10px;
 }
@@ -424,8 +432,8 @@ body {
 
 .sidebar {
     width: 300px;
-    background-color: #2d2d2d;
-    border-right: 1px solid #444;
+    background-color: var(--surface-panel-strong);
+    border-right: 1px solid var(--surface-border);
     display: flex;
     flex-direction: column;
 }
@@ -538,8 +546,8 @@ body {
 
 .chat-tabs {
     display: flex;
-    background-color: #2d2d2d;
-    border-bottom: 1px solid #444;
+    background-color: var(--surface-panel);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .tab-btn {
@@ -578,7 +586,7 @@ body {
 
 .tab-btn.active {
     color: var(--accent-color);
-    background-color: #1a1a1a;
+    background-color: var(--surface-panel-strong);
 }
 
 .tab-btn.active::after {
@@ -1012,9 +1020,7 @@ body.auth-page,
 body.chat-page,
 body.admin-page,
 body.redirect-page {
-    background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.85)),
-        url("2580.jpg") center / cover no-repeat fixed;
+    background: var(--surface-page);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -1041,8 +1047,8 @@ body.chat-page {
 }
 
 .redirect-card {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 20px;
     padding: 30px 40px;
     text-align: center;
@@ -1059,8 +1065,8 @@ body.chat-page {
 .auth-card {
     width: 100%;
     max-width: 480px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 24px;
     padding: 30px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
@@ -1079,7 +1085,7 @@ body.chat-page {
     margin: 20px 0;
     display: flex;
     gap: 10px;
-    background: #1d1d1d;
+    background: var(--surface-panel-strong);
     border-radius: 16px;
     padding: 6px;
 }
@@ -1148,8 +1154,8 @@ body.chat-page {
     margin-top: 16px;
     padding: 16px;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-panel);
+    border: 1px solid var(--surface-border);
     display: none;
 }
 
@@ -1177,10 +1183,10 @@ body.chat-page {
 
 .chat-card {
     flex: 1;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-card);
     border-radius: 22px;
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--surface-border);
     min-height: 100%;
     display: flex;
     flex-direction: column;
@@ -1196,7 +1202,7 @@ body.chat-page {
 }
 
 .chat-page .chat-header {
-    background: linear-gradient(135deg, #1f1f1f 0%, #0e0e0e 100%);
+    background: linear-gradient(135deg, rgba(var(--accent-strong-rgb), 0.35) 0%, var(--surface-panel-strong) 70%);
     padding: 10px 14px;
 }
 
@@ -1300,7 +1306,7 @@ body.chat-page {
 .chat-page .chat-footer {
     position: sticky;
     bottom: 0;
-    background: rgba(18, 18, 18, 0.9);
+    background: var(--surface-panel-strong);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
@@ -1331,8 +1337,8 @@ body.chat-page {
     flex: 1;
     padding: 12px 16px;
     border-radius: 14px;
-    border: 1px solid #333;
-    background: #0f0f0f;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-input);
     color: #fff;
 }
 
@@ -1346,7 +1352,7 @@ body.chat-page {
     gap: 8px;
     padding: 10px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-panel);
 }
 
 .sticker-panel.active {
@@ -1417,7 +1423,7 @@ body.chat-page {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-panel);
     padding: 10px 14px;
     border-radius: 14px;
 }
@@ -1430,7 +1436,7 @@ body.chat-page {
     display: none;
     flex-direction: column;
     gap: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-panel);
     padding: 10px 14px;
     border-radius: 14px;
 }
@@ -1506,10 +1512,10 @@ body.chat-page {
 
 .sidebar {
     width: 260px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-panel);
     border-radius: 20px;
     padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--surface-border);
     height: 80vh;
     display: flex;
     flex-direction: column;
@@ -1559,7 +1565,7 @@ body.chat-page {
 }
 
 .private-list {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-panel);
     border-radius: 12px;
     padding: 10px;
     overflow-y: auto;
@@ -1582,7 +1588,7 @@ body.chat-page {
     gap: 10px;
     padding: 8px 10px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-panel);
     border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
 }
@@ -1611,10 +1617,10 @@ body.chat-page {
 }
 
 .admin-card {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-card);
     border-radius: 22px;
     padding: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--surface-border);
 }
 
 .admin-controls {
@@ -1813,12 +1819,36 @@ body.chat-page {
 }
 
 /* Theme presets */
+html[data-theme="rose"] {
+    --accent-color: #ff69b4;
+    --accent-strong: #e91e63;
+    --accent-rgb: 255, 105, 180;
+    --accent-strong-rgb: 233, 30, 99;
+    --accent-gradient: linear-gradient(135deg, #e91e63 0%, #ff69b4 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(120, 10, 60, 0.65), rgba(20, 10, 18, 0.9)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(26, 16, 24, 0.9);
+    --surface-panel: rgba(26, 16, 24, 0.84);
+    --surface-panel-strong: rgba(20, 12, 18, 0.95);
+    --surface-input: #140c12;
+    --surface-border: rgba(255, 255, 255, 0.1);
+}
+
 html[data-theme="teal"] {
     --accent-color: #3ddbd9;
     --accent-strong: #00bcd4;
     --accent-rgb: 61, 219, 217;
     --accent-strong-rgb: 0, 188, 212;
     --accent-gradient: linear-gradient(135deg, #00bcd4 0%, #3ddbd9 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(0, 50, 60, 0.7), rgba(0, 20, 28, 0.9)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(9, 24, 28, 0.88);
+    --surface-panel: rgba(9, 24, 28, 0.8);
+    --surface-panel-strong: rgba(6, 18, 21, 0.94);
+    --surface-input: #0b171a;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="blue"] {
@@ -1827,6 +1857,14 @@ html[data-theme="blue"] {
     --accent-rgb: 96, 165, 250;
     --accent-strong-rgb: 59, 130, 246;
     --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(12, 28, 60, 0.7), rgba(6, 12, 28, 0.9)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(10, 16, 32, 0.9);
+    --surface-panel: rgba(10, 16, 32, 0.82);
+    --surface-panel-strong: rgba(8, 12, 24, 0.94);
+    --surface-input: #0d1324;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="green"] {
@@ -1835,6 +1873,14 @@ html[data-theme="green"] {
     --accent-rgb: 52, 211, 153;
     --accent-strong-rgb: 16, 185, 129;
     --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(6, 50, 36, 0.7), rgba(4, 22, 16, 0.9)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(10, 22, 18, 0.9);
+    --surface-panel: rgba(10, 22, 18, 0.82);
+    --surface-panel-strong: rgba(8, 18, 14, 0.94);
+    --surface-input: #0b1712;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="orange"] {
@@ -1843,6 +1889,14 @@ html[data-theme="orange"] {
     --accent-rgb: 251, 146, 60;
     --accent-strong-rgb: 249, 115, 22;
     --accent-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(70, 32, 12, 0.75), rgba(28, 14, 6, 0.9)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(22, 14, 8, 0.92);
+    --surface-panel: rgba(22, 14, 8, 0.84);
+    --surface-panel-strong: rgba(16, 10, 6, 0.95);
+    --surface-input: #160d08;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="purple"] {
@@ -1851,6 +1905,14 @@ html[data-theme="purple"] {
     --accent-rgb: 192, 132, 252;
     --accent-strong-rgb: 168, 85, 247;
     --accent-gradient: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(48, 20, 72, 0.75), rgba(20, 10, 30, 0.92)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(22, 12, 30, 0.9);
+    --surface-panel: rgba(22, 12, 30, 0.84);
+    --surface-panel-strong: rgba(16, 8, 24, 0.95);
+    --surface-input: #150b1c;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="gold"] {
@@ -1859,6 +1921,14 @@ html[data-theme="gold"] {
     --accent-rgb: 250, 204, 21;
     --accent-strong-rgb: 234, 179, 8;
     --accent-gradient: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(64, 48, 8, 0.75), rgba(22, 18, 6, 0.92)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(20, 16, 8, 0.92);
+    --surface-panel: rgba(20, 16, 8, 0.84);
+    --surface-panel-strong: rgba(16, 12, 6, 0.95);
+    --surface-input: #15110a;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="rainbow"] {
@@ -1867,6 +1937,14 @@ html[data-theme="rainbow"] {
     --accent-rgb: 249, 115, 22;
     --accent-strong-rgb: 225, 29, 72;
     --accent-gradient: linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #10b981 50%, #3b82f6 75%, #a855f7 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(18, 18, 24, 0.75), rgba(8, 8, 12, 0.92)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(18, 14, 22, 0.92);
+    --surface-panel: rgba(18, 14, 22, 0.84);
+    --surface-panel-strong: rgba(14, 10, 18, 0.95);
+    --surface-input: #120c16;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="whatsapp"] {
@@ -1875,6 +1953,14 @@ html[data-theme="whatsapp"] {
     --accent-rgb: 37, 211, 102;
     --accent-strong-rgb: 7, 94, 84;
     --accent-gradient: linear-gradient(135deg, #075e54 0%, #128c7e 50%, #25d366 100%);
+    --surface-page:
+        linear-gradient(180deg, rgba(7, 94, 84, 0.65), rgba(7, 94, 84, 0.85)),
+        url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(18, 28, 25, 0.92);
+    --surface-panel: rgba(18, 28, 25, 0.88);
+    --surface-panel-strong: rgba(12, 22, 20, 0.95);
+    --surface-input: #0e1a17;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="instagram"] {
@@ -1883,148 +1969,18 @@ html[data-theme="instagram"] {
     --accent-rgb: 221, 42, 123;
     --accent-strong-rgb: 129, 52, 175;
     --accent-gradient: linear-gradient(135deg, #f58529 0%, #dd2a7b 40%, #8134af 70%, #515bd4 100%);
-}
-
-/* Instagram UI tuning */
-html[data-theme="instagram"] body.chat-page,
-html[data-theme="instagram"] body.auth-page,
-html[data-theme="instagram"] body.admin-page,
-html[data-theme="instagram"] body.redirect-page {
-    background:
+    --surface-page:
         radial-gradient(circle at top right, rgba(245, 133, 41, 0.35), transparent 55%),
         radial-gradient(circle at bottom left, rgba(81, 91, 212, 0.25), transparent 55%),
         linear-gradient(180deg, rgba(18, 16, 24, 0.9), rgba(10, 10, 12, 0.95)),
         url("2580.jpg") center / cover no-repeat fixed;
+    --surface-card: rgba(24, 16, 28, 0.9);
+    --surface-panel: rgba(24, 16, 28, 0.86);
+    --surface-panel-strong: rgba(18, 12, 22, 0.95);
+    --surface-input: #120b16;
+    --surface-border: rgba(255, 255, 255, 0.08);
 }
 
-html[data-theme="instagram"] .chat-card {
-    background: rgba(24, 16, 28, 0.9);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme="instagram"] .sidebar {
-    background: rgba(24, 16, 28, 0.86);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="instagram"] .chat-page .chat-header {
-    background: linear-gradient(135deg, #8134af 0%, #dd2a7b 55%, #f58529 100%);
-}
-
-html[data-theme="instagram"] .chat-tabs {
-    background-color: rgba(18, 12, 22, 0.95);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="instagram"] .tab-btn.active {
-    background-color: rgba(12, 8, 16, 0.9);
-}
-
-html[data-theme="instagram"] .chat-body {
-    background: rgba(12, 8, 16, 0.6);
-}
-
-html[data-theme="instagram"] .chat-page .chat-footer {
-    background: rgba(18, 12, 22, 0.95);
-    border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="instagram"] .composer input {
-    background: #120b16;
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="instagram"] .ghost-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-html[data-theme="instagram"] .message.other-message {
-    background-color: rgba(255, 255, 255, 0.06);
-}
-
-html[data-theme="instagram"] .message.user-message {
-    background-color: rgba(221, 42, 123, 0.28);
-}
-
-html[data-theme="instagram"] .reply-preview,
-html[data-theme="instagram"] .upload-status,
-html[data-theme="instagram"] .sticker-panel,
-html[data-theme="instagram"] .private-chat-header,
-html[data-theme="instagram"] .private-list {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-/* WhatsApp UI tuning */
-html[data-theme="whatsapp"] body.chat-page,
-html[data-theme="whatsapp"] body.auth-page,
-html[data-theme="whatsapp"] body.admin-page,
-html[data-theme="whatsapp"] body.redirect-page {
-    background:
-        linear-gradient(180deg, rgba(7, 94, 84, 0.65), rgba(7, 94, 84, 0.85)),
-        url("2580.jpg") center / cover no-repeat fixed;
-}
-
-html[data-theme="whatsapp"] .chat-card {
-    background: rgba(18, 28, 25, 0.92);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="whatsapp"] .sidebar {
-    background: rgba(18, 28, 25, 0.88);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="whatsapp"] .chat-page .chat-header {
-    background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
-}
-
-html[data-theme="whatsapp"] .chat-tabs {
-    background-color: rgba(18, 28, 25, 0.95);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="whatsapp"] .tab-btn.active {
-    background-color: rgba(10, 20, 18, 0.9);
-}
-
-html[data-theme="whatsapp"] .chat-body {
-    background: rgba(10, 20, 18, 0.6);
-}
-
-html[data-theme="whatsapp"] .chat-page .chat-footer {
-    background: rgba(12, 22, 20, 0.95);
-    border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="whatsapp"] .composer input {
-    background: #0e1a17;
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme="whatsapp"] .ghost-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-html[data-theme="whatsapp"] .message.other-message {
-    background-color: rgba(255, 255, 255, 0.06);
-}
-
-html[data-theme="whatsapp"] .message.user-message {
-    background-color: rgba(37, 211, 102, 0.25);
-}
-
-html[data-theme="whatsapp"] .reply-preview,
-html[data-theme="whatsapp"] .upload-status,
-html[data-theme="whatsapp"] .sticker-panel,
-html[data-theme="whatsapp"] .private-chat-header,
-html[data-theme="whatsapp"] .private-list {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-}
 .tagline {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.95rem;
@@ -2189,6 +2145,19 @@ html[data-theme="whatsapp"] .private-list {
     margin-bottom: 8px;
     font-size: 0.95rem;
     color: var(--accent-color);
+}
+
+.theme-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.theme-reset {
+    padding: 6px 10px;
+    font-size: 0.75rem;
 }
 
 .theme-field {
