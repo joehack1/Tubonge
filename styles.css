@@ -1015,6 +1015,58 @@ body {
     }
 }
 
+/* Compact composer icons */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+.btn-label {
+    line-height: 1;
+}
+
+@media (max-width: 900px) {
+    .chat-page .composer {
+        gap: 8px;
+    }
+    .chat-page .composer input {
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+    }
+    .chat-page .composer .ghost-btn {
+        min-width: auto;
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+    #voice-btn .btn-label,
+    #sticker-btn .btn-label {
+        display: none;
+    }
+    #voice-btn.icon-btn,
+    #sticker-btn.icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        padding: 0;
+        justify-content: center;
+    }
+    #voice-btn .btn-icon,
+    #sticker-btn .btn-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
 /* New layout styles */
 body.auth-page,
 body.chat-page,
@@ -2053,6 +2105,290 @@ html[data-theme="instagram"] {
 }
 
 /* Reload button */
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--surface-panel);
+    border: 1px solid var(--surface-border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.status-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-actions input[type="text"] {
+    width: 220px;
+    padding: 8px 12px;
+    background: var(--surface-input);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    color: #fff;
+}
+
+.my-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.status-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+}
+
+.status-meta .status-title {
+    font-weight: 600;
+}
+
+.status-meta .status-subtitle {
+    font-size: 0.8rem;
+    color: #bbb;
+}
+
+.status-section-title {
+    margin: 6px 4px 10px;
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 10px;
+    align-content: start;
+    overflow-y: auto;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+.status-name {
+    font-size: 0.8rem;
+    color: #ddd;
+    text-align: center;
+}
+
+.status-avatar-ring {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.status-item.unread .status-avatar-ring {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.25);
+}
+
+.story-viewer {
+    width: 96%;
+    max-width: 420px;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(18, 18, 18, 0.95);
+}
+
+.story-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.story-viewer-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    background-size: cover;
+    background-position: center;
+}
+
+.story-viewer-name {
+    flex: 1;
+    margin-left: 8px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.story-progress {
+    height: 3px;
+    width: 0%;
+    background: var(--accent-gradient);
+    transition: width 0.1s linear;
+}
+
+.story-media {
+    width: 100%;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.story-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.story-video {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+}
+
+.story-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 1.4rem;
+    line-height: 1.3;
+    color: #fff;
+    min-height: 50vh;
+}
+
+.story-audio {
+    width: 100%;
+    padding: 20px;
+}
+
+.story-unsupported {
+    padding: 20px;
+    color: #bbb;
+}
+
+.story-controls {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px 14px;
+}
+
+@media (max-width: 900px) {
+    .status-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .status-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .status-actions input[type="text"] {
+        width: 100%;
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+    .status-actions .primary-btn,
+    .status-actions .ghost-btn {
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        min-width: auto;
+    }
+    .status-avatar {
+        width: 36px;
+        height: 36px;
+    }
+    .status-avatar-ring {
+        width: 48px;
+        height: 48px;
+    }
+    .status-list {
+        grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+        gap: 8px;
+        max-height: 55vh;
+    }
+    .status-item {
+        padding: 8px 6px;
+        gap: 4px;
+    }
+    .status-name {
+        font-size: 0.72rem;
+    }
+    .story-viewer {
+        max-width: 96vw;
+    }
+    .story-media {
+        max-height: 60vh;
+    }
+    .story-video {
+        max-height: 60vh;
+    }
+    .story-text {
+        font-size: 1.1rem;
+        padding: 28px 16px;
+    }
+    .story-viewer-avatar {
+        width: 26px;
+        height: 26px;
+    }
+    .story-progress {
+        height: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-list {
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: 6px;
+    }
+    .status-avatar-ring {
+        width: 44px;
+        height: 44px;
+    }
+    .status-name {
+        font-size: 0.68rem;
+    }
+    .status-actions .primary-btn,
+    .status-actions .ghost-btn {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+    }
+    .story-text {
+        font-size: 1rem;
+    }
+}
+
 .reload-btn {
     position: fixed;
     right: 16px;
@@ -2089,6 +2425,27 @@ html[data-theme="instagram"] {
     top: calc(16px + env(safe-area-inset-top));
     right: 16px;
     bottom: auto;
+}
+
+@media (max-width: 900px) {
+    .chat-header .header-actions {
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    #logout-btn {
+        display: none;
+    }
+    .chat-page .reload-btn {
+        display: none;
+    }
+    .ghost-btn#profile-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    #session-user.pill {
+        font-size: 0.72rem;
+        padding: 3px 8px;
+    }
 }
 
 /* Professional card polish */

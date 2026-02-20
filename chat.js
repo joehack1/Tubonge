@@ -65,6 +65,8 @@ const themeResetBtn = document.getElementById('theme-reset');
 const closeProfileBtn = document.getElementById('close-profile');
 const cancelProfileBtn = document.getElementById('cancel-profile');
 const saveProfileBtn = document.getElementById('save-profile');
+const modalLogoutBtn = document.getElementById('modal-logout-btn');
+const modalRefreshBtn = document.getElementById('modal-refresh-btn');
 const headerAvatar = document.getElementById('header-avatar');
 const viewProfileModal = document.getElementById('view-profile-modal');
 const closeViewProfileBtn = document.getElementById('close-view-profile');
@@ -143,9 +145,37 @@ const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
     group: document.getElementById('panel-group'),
     private: document.getElementById('panel-private'),
+    status: document.getElementById('panel-status'),
     users: document.getElementById('panel-users')
 };
 const privateLayout = document.querySelector('#panel-private .private-layout');
+const statusList = document.getElementById('status-list');
+const statusEmpty = document.getElementById('status-empty');
+const addStoryBtn = document.getElementById('add-story-btn');
+const storyInput = document.getElementById('story-input');
+const myStatusAvatar = document.getElementById('my-status-avatar');
+const storyViewerModal = document.getElementById('story-viewer-modal');
+const storyMedia = document.getElementById('story-media');
+const storyPrev = document.getElementById('story-prev');
+const storyNext = document.getElementById('story-next');
+const closeStoryViewerBtn = document.getElementById('close-story-viewer');
+const storyViewerName = document.getElementById('story-viewer-name');
+const storyDeleteBtn = document.getElementById('story-delete');
+const storyProgress = document.getElementById('story-progress');
+const storyViewerAvatar = document.getElementById('story-viewer-avatar');
+const myStatusEl = document.querySelector('.my-status');
+const addTextStatusBtn = document.getElementById('add-text-status-btn');
+const textStatusInput = document.getElementById('text-status-input');
+const recordVoiceStatusBtn = document.getElementById('record-voice-status-btn');
+let statusRecorder = null;
+let statusRecordingTimeout = null;
+
+let storiesByUser = {};
+let storyUsers = [];
+let viewerUser = null;
+let viewerStories = [];
+let viewerIndex = 0;
+let viewerTimer = null;
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -235,6 +265,20 @@ logoutBtn.addEventListener('click', () => {
     window.location.href = 'login.html';
 });
 
+if (modalLogoutBtn) {
+    modalLogoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('dtubonge_session');
+        localStorage.removeItem('dtubonge_admin');
+        window.location.href = 'login.html';
+    });
+}
+
+if (modalRefreshBtn) {
+    modalRefreshBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+}
+
 function getChatId(userA, userB) {
     return [userA, userB].sort().join('_');
 }
@@ -267,6 +311,17 @@ function updateHeaderAvatar() {
         headerAvatar.style.backgroundImage = `url("${url}")`;
     } else {
         headerAvatar.style.backgroundImage = '';
+    }
+    if (myStatusAvatar) {
+        if (url) {
+            myStatusAvatar.style.backgroundImage = `url("${url}")`;
+            myStatusAvatar.classList.add('has-image');
+            myStatusAvatar.textContent = '';
+        } else {
+            myStatusAvatar.style.backgroundImage = '';
+            myStatusAvatar.classList.remove('has-image');
+            myStatusAvatar.textContent = currentUser ? currentUser.charAt(0).toUpperCase() : '';
+        }
     }
 }
 
@@ -1036,6 +1091,368 @@ voiceBtn.addEventListener('click', async () => {
     }, { once: true });
 });
 
+function getStoryReadKey(username) {
+    return `dtubonge_story_read_${username}`;
+}
+
+function getStoryRead(username) {
+    return Number(localStorage.getItem(getStoryReadKey(username))) || 0;
+}
+
+function setStoryRead(username, ts) {
+    if (!username || !ts) return;
+    localStorage.setItem(getStoryReadKey(username), String(ts));
+}
+
+function renderStoriesList() {
+    if (!statusList) return;
+    statusList.innerHTML = '';
+    const now = Date.now();
+    const usersWithStories = storyUsers.filter(u => {
+        const items = storiesByUser[u] || [];
+        return items.some(s => now - s.timestamp < 24 * 60 * 60 * 1000);
+    });
+    if (usersWithStories.length === 0) {
+        statusEmpty.style.display = 'block';
+        return;
+    }
+    statusEmpty.style.display = 'none';
+    usersWithStories.forEach(username => {
+        const items = (storiesByUser[username] || [])
+            .filter(s => now - s.timestamp < 24 * 60 * 60 * 1000)
+            .sort((a, b) => a.timestamp - b.timestamp);
+        if (items.length === 0) return;
+        const lastTs = items[items.length - 1].timestamp;
+        const readTs = getStoryRead(username);
+        const unread = lastTs > readTs;
+        const item = document.createElement('div');
+        item.className = `status-item ${unread ? 'unread' : ''}`;
+        const avatar = buildAvatarElement(username, 'status-avatar-ring');
+        const name = document.createElement('div');
+        name.className = 'status-name';
+        name.textContent = getDisplayName(username);
+        item.appendChild(avatar);
+        item.appendChild(name);
+        item.addEventListener('click', () => openStoryViewer(username, items));
+        statusList.appendChild(item);
+    });
+}
+
+function openStoryViewer(username, items) {
+    viewerUser = username;
+    viewerStories = items || storiesByUser[username] || [];
+    viewerIndex = 0;
+    const displayName = getDisplayName(username);
+    storyViewerName.textContent = displayName;
+    const url = getAvatarUrl(username);
+    if (url) {
+        storyViewerAvatar.style.backgroundImage = `url("${url}")`;
+        storyViewerAvatar.classList.add('has-image');
+    } else {
+        storyViewerAvatar.style.backgroundImage = '';
+        storyViewerAvatar.classList.remove('has-image');
+        storyViewerAvatar.textContent = username ? username.charAt(0).toUpperCase() : '';
+    }
+    storyDeleteBtn.style.display = username === currentUser ? 'inline-block' : 'none';
+    storyViewerModal.style.display = 'flex';
+    showCurrentStory();
+}
+
+function closeStoryViewer() {
+    if (viewerTimer) {
+        clearTimeout(viewerTimer);
+        viewerTimer = null;
+    }
+    storyMedia.innerHTML = '';
+    storyViewerModal.style.display = 'none';
+    viewerUser = null;
+    viewerStories = [];
+    viewerIndex = 0;
+}
+
+function showCurrentStory() {
+    if (!viewerStories || viewerStories.length === 0) {
+        closeStoryViewer();
+        return;
+    }
+    if (viewerIndex < 0) viewerIndex = 0;
+    if (viewerIndex >= viewerStories.length) {
+        closeStoryViewer();
+        return;
+    }
+    if (viewerTimer) {
+        clearTimeout(viewerTimer);
+        viewerTimer = null;
+    }
+    const data = viewerStories[viewerIndex];
+    storyMedia.innerHTML = '';
+    storyProgress.style.width = '0%';
+    if (data.type === 'image' && data.imageData) {
+        const img = document.createElement('img');
+        img.className = 'story-image';
+        img.src = data.imageData;
+        storyMedia.appendChild(img);
+        const duration = 6000;
+        const started = Date.now();
+        function tick() {
+            const p = Math.min(100, ((Date.now() - started) / duration) * 100);
+            storyProgress.style.width = `${p}%`;
+            if (p < 100) {
+                viewerTimer = setTimeout(tick, 50);
+            } else {
+                viewerIndex += 1;
+                setStoryRead(viewerUser, data.timestamp);
+                renderStoriesList();
+                showCurrentStory();
+            }
+        }
+        tick();
+    } else if (data.type === 'video' && data.videoData) {
+        const video = document.createElement('video');
+        video.className = 'story-video';
+        video.src = data.videoData;
+        video.autoplay = true;
+        video.controls = true;
+        storyMedia.appendChild(video);
+        function syncProgress() {
+            if (!video.duration || isNaN(video.duration)) {
+                storyProgress.style.width = '0%';
+            } else {
+                const p = Math.min(100, (video.currentTime / video.duration) * 100);
+                storyProgress.style.width = `${p}%`;
+            }
+            if (!video.paused && !video.ended) {
+                viewerTimer = setTimeout(syncProgress, 50);
+            }
+        }
+        syncProgress();
+        video.addEventListener('ended', () => {
+            setStoryRead(viewerUser, data.timestamp);
+            renderStoriesList();
+            viewerIndex += 1;
+            showCurrentStory();
+        });
+    } else if ((data.type === 'audio' || data.type === 'voice') && data.audioData) {
+        const audio = document.createElement('audio');
+        audio.className = 'story-audio';
+        audio.controls = true;
+        audio.src = data.audioData;
+        storyMedia.appendChild(audio);
+        function syncAudioProgress() {
+            if (!audio.duration || isNaN(audio.duration)) {
+                storyProgress.style.width = '0%';
+            } else {
+                const p = Math.min(100, (audio.currentTime / audio.duration) * 100);
+                storyProgress.style.width = `${p}%`;
+            }
+            if (!audio.paused && !audio.ended) {
+                viewerTimer = setTimeout(syncAudioProgress, 50);
+            }
+        }
+        syncAudioProgress();
+        audio.addEventListener('ended', () => {
+            setStoryRead(viewerUser, data.timestamp);
+            renderStoriesList();
+            viewerIndex += 1;
+            showCurrentStory();
+        });
+    } else if (data.type === 'text' && data.text) {
+        const div = document.createElement('div');
+        div.className = 'story-text';
+        div.textContent = data.text;
+        storyMedia.appendChild(div);
+        const duration = Math.max(3000, Math.min(10000, data.text.length * 150));
+        const started = Date.now();
+        function tickText() {
+            const p = Math.min(100, ((Date.now() - started) / duration) * 100);
+            storyProgress.style.width = `${p}%`;
+            if (p < 100) {
+                viewerTimer = setTimeout(tickText, 50);
+            } else {
+                viewerIndex += 1;
+                setStoryRead(viewerUser, data.timestamp);
+                renderStoriesList();
+                showCurrentStory();
+            }
+        }
+        tickText();
+    } else {
+        const div = document.createElement('div');
+        div.className = 'story-unsupported';
+        div.textContent = 'Unsupported story';
+        storyMedia.appendChild(div);
+        viewerTimer = setTimeout(() => {
+            viewerIndex += 1;
+            showCurrentStory();
+        }, 2000);
+    }
+}
+
+if (closeStoryViewerBtn) {
+    closeStoryViewerBtn.addEventListener('click', closeStoryViewer);
+}
+if (storyPrev) {
+    storyPrev.addEventListener('click', () => {
+        viewerIndex = Math.max(0, viewerIndex - 1);
+        showCurrentStory();
+    });
+}
+if (storyNext) {
+    storyNext.addEventListener('click', () => {
+        viewerIndex += 1;
+        showCurrentStory();
+    });
+}
+if (storyDeleteBtn) {
+    storyDeleteBtn.addEventListener('click', async () => {
+        if (!viewerStories[viewerIndex]) return;
+        const current = viewerStories[viewerIndex];
+        if (viewerUser !== currentUser) return;
+        const nodeRef = ref(db, `stories/${currentUser}/${current.id}`);
+        await remove(nodeRef);
+        viewerStories.splice(viewerIndex, 1);
+        if (viewerIndex >= viewerStories.length) viewerIndex = viewerStories.length - 1;
+        if (viewerStories.length === 0) {
+            closeStoryViewer();
+        } else {
+            showCurrentStory();
+        }
+    });
+}
+
+function subscribeStories() {
+    const storiesRef = ref(db, 'stories');
+    onValue(storiesRef, snapshot => {
+        const raw = snapshot.val() || {};
+        const now = Date.now();
+        const mapped = {};
+        Object.entries(raw).forEach(([username, items]) => {
+            if (!items) return;
+            const list = Object.entries(items).map(([id, v]) => ({ id, ...v }))
+                .filter(s => s && s.timestamp && now - s.timestamp < 24 * 60 * 60 * 1000)
+                .sort((a, b) => a.timestamp - b.timestamp);
+            if (list.length > 0) {
+                mapped[username] = list;
+            }
+        });
+        storiesByUser = mapped;
+        const users = Object.keys(mapped);
+        users.sort((a, b) => {
+            const aTs = mapped[a][mapped[a].length - 1].timestamp;
+            const bTs = mapped[b][mapped[b].length - 1].timestamp;
+            if (a === currentUser) return -1;
+            if (b === currentUser) return 1;
+            return bTs - aTs;
+        });
+        storyUsers = users;
+        renderStoriesList();
+    });
+}
+
+if (addStoryBtn && storyInput) {
+    addStoryBtn.addEventListener('click', () => {
+        storyInput.click();
+    });
+    if (myStatusEl) {
+        myStatusEl.addEventListener('click', () => {
+            storyInput.click();
+        });
+    }
+    storyInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > MAX_MEDIA_BYTES) {
+            alert('Media too large. Use a smaller file.');
+            storyInput.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        const isVideo = file.type && file.type.startsWith('video/');
+        const isAudio = file.type && file.type.startsWith('audio/');
+        showUploadProgress(isVideo ? 'Preparing status video...' : isAudio ? 'Preparing status audio...' : 'Preparing status photo...', 20);
+        reader.onload = async () => {
+            const mediaData = reader.result;
+            let payload;
+            if (isVideo) {
+                payload = { username: currentUser, timestamp: Date.now(), type: 'video', videoData: mediaData };
+            } else if (isAudio) {
+                payload = { username: currentUser, timestamp: Date.now(), type: 'audio', audioData: mediaData };
+            } else {
+                payload = { username: currentUser, timestamp: Date.now(), type: 'image', imageData: mediaData };
+            }
+            const userStoriesRef = ref(db, `stories/${currentUser}`);
+            const newRef = push(userStoriesRef);
+            await set(newRef, payload);
+            showUploadProgress(isVideo ? 'Added status video' : isAudio ? 'Added status audio' : 'Added status photo', 100);
+            storyInput.value = '';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+if (addTextStatusBtn && textStatusInput) {
+    addTextStatusBtn.addEventListener('click', async () => {
+        const text = (textStatusInput.value || '').trim();
+        if (!text) return;
+        const userStoriesRef = ref(db, `stories/${currentUser}`);
+        const newRef = push(userStoriesRef);
+        await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'text', text });
+        textStatusInput.value = '';
+    });
+}
+
+if (recordVoiceStatusBtn) {
+    recordVoiceStatusBtn.addEventListener('click', async () => {
+        if (statusRecorder && statusRecorder.state === 'recording') {
+            statusRecorder.stop();
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Voice recording is not supported on this device.');
+            return;
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const chunks = [];
+        statusRecorder = new MediaRecorder(stream);
+        const startedAt = startRecordingTimer();
+        statusRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                chunks.push(event.data);
+            }
+        };
+        statusRecorder.onstop = async () => {
+            clearTimeout(statusRecordingTimeout);
+            stopRecordingTimer();
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            stream.getTracks().forEach(track => track.stop());
+            if (blob.size > MAX_MEDIA_BYTES) {
+                alert('Voice status too large. Try a shorter clip.');
+                return;
+            }
+            const reader = new FileReader();
+            showUploadProgress('Preparing voice status...', 20);
+            reader.onload = async () => {
+                const audioData = reader.result;
+                const userStoriesRef = ref(db, `stories/${currentUser}`);
+                const newRef = push(userStoriesRef);
+                await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'voice', audioData });
+                showUploadProgress('Added voice status', 100);
+            };
+            reader.readAsDataURL(blob);
+        };
+        statusRecorder.start();
+        recordVoiceStatusBtn.textContent = 'Stop Voice';
+        statusRecordingTimeout = setTimeout(() => {
+            if (statusRecorder && statusRecorder.state === 'recording') {
+                statusRecorder.stop();
+            }
+        }, 15000);
+        statusRecorder.addEventListener('stop', () => {
+            recordVoiceStatusBtn.textContent = 'Voice Status';
+        }, { once: true });
+    });
+}
+
 async function loadUserColor() {
     const userRef = ref(db, `users/${currentUser}`);
     const snapshot = await get(userRef);
@@ -1053,6 +1470,7 @@ await loadUserColor();
 updatePresence();
 loadGroupMessages();
 refreshPrivateList();
+subscribeStories();
 
 if (privateBackBtn) {
     privateBackBtn.addEventListener('click', () => {

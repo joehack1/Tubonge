@@ -40,6 +40,7 @@
                     Private
                     <span class="tab-badge" id="private-badge"></span>
                 </button>
+                <button class="tab-btn" data-tab="status">Status</button>
                 <button class="tab-btn mobile-only" data-tab="users">Users</button>
             </nav>
 
@@ -61,6 +62,28 @@
                             <div class="empty-state" id="private-empty">Select a conversation to start chatting.</div>
                         </div>
                     </div>
+                </div>
+
+                <div class="tab-panel" id="panel-status">
+                    <div class="status-header">
+                        <div class="my-status">
+                            <div class="status-avatar" id="my-status-avatar"></div>
+                            <div class="status-meta">
+                                <div class="status-title">My Status</div>
+                                <div class="status-subtitle">Tap to add status</div>
+                            </div>
+                        </div>
+                        <input id="story-input" type="file" accept="image/*,video/*,audio/*" style="display: none;">
+                        <div class="status-actions">
+                            <button id="add-story-btn" class="primary-btn">Add Media</button>
+                            <input id="text-status-input" type="text" maxlength="240" placeholder="Type a status">
+                            <button id="add-text-status-btn" class="ghost-btn">Add Text</button>
+                            <button id="record-voice-status-btn" class="ghost-btn">Voice Status</button>
+                        </div>
+                    </div>
+                    <div class="status-section-title">Recent</div>
+                    <div class="status-list" id="status-list"></div>
+                    <div class="empty-state" id="status-empty">No recent status updates.</div>
                 </div>
 
                 <div class="tab-panel" id="panel-users">
@@ -88,8 +111,23 @@
                 <div class="composer">
                     <input id="image-input" type="file" accept="image/*,video/*" style="display: none;">
                     <button id="image-btn" class="ghost-btn" title="Share photo or video">Media</button>
-                    <button id="voice-btn" class="ghost-btn" title="Record voice">Voice</button>
-                    <button id="sticker-btn" class="ghost-btn" title="Send sticker">Sticker</button>
+                    <button id="voice-btn" class="ghost-btn icon-btn" title="Record voice" aria-label="Voice">
+                        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 11a7 7 0 0 1-14 0"></path>
+                            <path d="M12 19v2"></path>
+                        </svg>
+                        <span class="btn-label">Voice</span>
+                    </button>
+                    <button id="sticker-btn" class="ghost-btn icon-btn" title="Send sticker" aria-label="Sticker">
+                        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 14a7 7 0 0 1-7 7H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h7l7 7v4z"></path>
+                            <circle cx="9" cy="10" r="1.5"></circle>
+                            <circle cx="15" cy="10" r="1.5"></circle>
+                            <path d="M8 15c1.5 1 3.5 1 5 0"></path>
+                        </svg>
+                        <span class="btn-label">Sticker</span>
+                    </button>
                     <input id="message-input" type="text" placeholder="Type a message..." maxlength="500">
                     <button id="send-btn" class="primary-btn">Send</button>
                 </div>
@@ -124,6 +162,8 @@
                     </div>
                 </div>
             <div class="modal-footer">
+                <button class="ghost-btn" id="modal-refresh-btn">Refresh</button>
+                <button class="ghost-btn" id="modal-logout-btn">Log Out</button>
                 <button class="ghost-btn" id="cancel-profile">Cancel</button>
                 <button class="primary-btn" id="save-profile">Save</button>
             </div>
@@ -164,6 +204,23 @@
             <path d="M6 19v-4"></path>
         </svg>
     </button>
+
+    <div class="modal-overlay" id="story-viewer-modal">
+        <div class="modal-content story-viewer">
+            <div class="story-progress" id="story-progress"></div>
+            <div class="story-header">
+                <div class="story-viewer-avatar" id="story-viewer-avatar"></div>
+                <div class="story-viewer-name" id="story-viewer-name"></div>
+                <button class="close-btn" id="close-story-viewer">&times;</button>
+            </div>
+            <div class="story-media" id="story-media"></div>
+            <div class="story-controls">
+                <button class="ghost-btn" id="story-prev">Prev</button>
+                <button class="ghost-btn" id="story-next">Next</button>
+                <button class="ghost-btn" id="story-delete">Delete</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="chat.js"></script>
 </body>
