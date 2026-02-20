@@ -1490,7 +1490,7 @@ body.chat-page {
     display: none;
 }
 
-.composer-accordion {
+.composer-menu {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -1500,7 +1500,7 @@ body.chat-page {
     .tools-toggle {
         display: inline-flex;
     }
-    .composer-accordion {
+    .composer-menu {
         position: absolute;
         bottom: 44px;
         left: 0;
@@ -1511,23 +1511,46 @@ body.chat-page {
         border-radius: 12px;
         background: var(--surface-panel);
         border: 1px solid var(--surface-border);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35);
         z-index: 10;
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+        transform-origin: bottom left;
+        transition: opacity 0.15s ease, transform 0.15s ease;
     }
-    .composer-accordion.open {
+    .composer-menu.open {
         display: flex;
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
-    .composer-accordion .icon-btn {
+    .composer-menu .icon-btn {
         width: 40px;
         height: 40px;
         padding: 0;
         justify-content: center;
         border-radius: 12px;
     }
-    .composer-accordion .btn-label {
-        display: none;
+    .composer-menu .btn-label {
+        display: inline-block;
+        margin-left: 6px;
+        font-size: 0.82rem;
+        color: #eee;
     }
 }
 
+/* Menu overlay for visibility */
+@media (max-width: 900px) {
+    .composer-menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.2);
+        display: none;
+        z-index: 9;
+    }
+    .composer-menu-overlay.show {
+        display: block;
+    }
+}
 @media (max-width: 900px) {
     .private-item .user-info {
         display: grid;

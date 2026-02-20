@@ -39,7 +39,8 @@ const voiceBtn = document.getElementById('voice-btn');
 const stickerBtn = document.getElementById('sticker-btn');
 const stickerPanel = document.getElementById('sticker-panel');
 const toolsToggleBtn = document.getElementById('tools-toggle-btn');
-const composerAccordion = document.getElementById('composer-accordion');
+const composerMenu = document.getElementById('composer-menu');
+const composerMenuOverlay = document.getElementById('composer-menu-overlay');
 const groupMessages = document.getElementById('group-messages');
 const privateMessages = document.getElementById('private-messages');
 const groupEmpty = document.getElementById('group-empty');
@@ -213,20 +214,36 @@ messageInput.addEventListener('focus', () => {
     }, 150);
 });
 
-if (toolsToggleBtn && composerAccordion) {
+function closeComposerMenu() {
+    if (!composerMenu) return;
+    composerMenu.classList.remove('open');
+    toolsToggleBtn && toolsToggleBtn.setAttribute('aria-expanded', 'false');
+    composerMenu.setAttribute('aria-hidden', 'true');
+    if (composerMenuOverlay) {
+        composerMenuOverlay.classList.remove('show');
+        composerMenuOverlay.setAttribute('aria-hidden', 'true');
+    }
+}
+
+if (toolsToggleBtn && composerMenu) {
     toolsToggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const open = composerAccordion.classList.toggle('open');
+        const open = composerMenu.classList.toggle('open');
         toolsToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        composerAccordion.setAttribute('aria-hidden', open ? 'false' : 'true');
+        composerMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+        if (composerMenuOverlay) {
+            composerMenuOverlay.classList.toggle('show', open);
+            composerMenuOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+        }
     });
     document.addEventListener('click', (e) => {
-        if (!composerAccordion.classList.contains('open')) return;
-        if (composerAccordion.contains(e.target) || toolsToggleBtn.contains(e.target)) return;
-        composerAccordion.classList.remove('open');
-        toolsToggleBtn.setAttribute('aria-expanded', 'false');
-        composerAccordion.setAttribute('aria-hidden', 'true');
+        if (!composerMenu.classList.contains('open')) return;
+        if (composerMenu.contains(e.target) || toolsToggleBtn.contains(e.target)) return;
+        closeComposerMenu();
     });
+    if (composerMenuOverlay) {
+        composerMenuOverlay.addEventListener('click', closeComposerMenu);
+    }
 }
 
 function getReadKey(chatId) {
