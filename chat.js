@@ -38,6 +38,8 @@ const imageBtn = document.getElementById('image-btn');
 const voiceBtn = document.getElementById('voice-btn');
 const stickerBtn = document.getElementById('sticker-btn');
 const stickerPanel = document.getElementById('sticker-panel');
+const toolsToggleBtn = document.getElementById('tools-toggle-btn');
+const composerAccordion = document.getElementById('composer-accordion');
 const groupMessages = document.getElementById('group-messages');
 const privateMessages = document.getElementById('private-messages');
 const groupEmpty = document.getElementById('group-empty');
@@ -210,6 +212,22 @@ messageInput.addEventListener('focus', () => {
         messageInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 150);
 });
+
+if (toolsToggleBtn && composerAccordion) {
+    toolsToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = composerAccordion.classList.toggle('open');
+        toolsToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        composerAccordion.setAttribute('aria-hidden', open ? 'false' : 'true');
+    });
+    document.addEventListener('click', (e) => {
+        if (!composerAccordion.classList.contains('open')) return;
+        if (composerAccordion.contains(e.target) || toolsToggleBtn.contains(e.target)) return;
+        composerAccordion.classList.remove('open');
+        toolsToggleBtn.setAttribute('aria-expanded', 'false');
+        composerAccordion.setAttribute('aria-hidden', 'true');
+    });
+}
 
 function getReadKey(chatId) {
     return `dtubonge_read_${chatId}`;

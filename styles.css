@@ -194,11 +194,10 @@ body {
     background: var(--accent-gradient);
     color: white;
     border: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
     cursor: pointer;
-    font-size: 1.2rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1034,6 +1033,17 @@ body {
     line-height: 1;
 }
 
+/* Send paper plane icon */
+.send-icon {
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 @media (max-width: 900px) {
     .chat-page .composer {
         gap: 8px;
@@ -1383,6 +1393,7 @@ body.chat-page {
 .composer {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .composer input {
@@ -1392,6 +1403,7 @@ body.chat-page {
     border: 1px solid var(--surface-border);
     background: var(--surface-input);
     color: #fff;
+    min-width: 0;
 }
 
 .composer .ghost-btn {
@@ -1444,6 +1456,76 @@ body.chat-page {
     display: block;
     margin-bottom: 8px;
     background: #000;
+}
+
+/* Composer icon group */
+.composer-tools {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Compact composer icons */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+.btn-label {
+    line-height: 1;
+}
+
+/* Tools toggle + accordion */
+.tools-toggle {
+    display: none;
+}
+
+.composer-accordion {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+@media (max-width: 900px) {
+    .tools-toggle {
+        display: inline-flex;
+    }
+    .composer-accordion {
+        position: absolute;
+        bottom: 44px;
+        left: 0;
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 12px;
+        background: var(--surface-panel);
+        border: 1px solid var(--surface-border);
+        z-index: 10;
+    }
+    .composer-accordion.open {
+        display: flex;
+    }
+    .composer-accordion .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .composer-accordion .btn-label {
+        display: none;
+    }
 }
 
 @media (max-width: 900px) {
@@ -1919,6 +2001,58 @@ body.chat-page {
 
     .private-chat-header {
         display: flex;
+    }
+}
+
+/* Mobile composer layout: stack tools vertically and keep input contained */
+@media (max-width: 900px) {
+    .chat-page .composer {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 8px;
+    }
+    .composer-tools {
+        flex-direction: column;
+        gap: 6px;
+    }
+    #voice-btn .btn-label,
+    #sticker-btn .btn-label {
+        display: none;
+    }
+    #voice-btn.icon-btn,
+    #sticker-btn.icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        padding: 0;
+        justify-content: center;
+    }
+    #voice-btn .btn-icon,
+    #sticker-btn .btn-icon {
+        width: 18px;
+        height: 18px;
+    }
+    #send-btn {
+        width: 42px;
+        height: 42px;
+    }
+    .chat-page .composer input {
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #voice-btn.icon-btn,
+    #sticker-btn.icon-btn {
+        width: 34px;
+        height: 34px;
+    }
+    #send-btn {
+        width: 40px;
+        height: 40px;
     }
 }
 

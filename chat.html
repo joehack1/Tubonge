@@ -110,26 +110,50 @@
                 </div>
                 <div class="composer">
                     <input id="image-input" type="file" accept="image/*,video/*" style="display: none;">
-                    <button id="image-btn" class="ghost-btn" title="Share photo or video">Media</button>
-                    <button id="voice-btn" class="ghost-btn icon-btn" title="Record voice" aria-label="Voice">
-                        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"></path>
-                            <path d="M19 11a7 7 0 0 1-14 0"></path>
-                            <path d="M12 19v2"></path>
-                        </svg>
-                        <span class="btn-label">Voice</span>
-                    </button>
-                    <button id="sticker-btn" class="ghost-btn icon-btn" title="Send sticker" aria-label="Sticker">
-                        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M21 14a7 7 0 0 1-7 7H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h7l7 7v4z"></path>
-                            <circle cx="9" cy="10" r="1.5"></circle>
-                            <circle cx="15" cy="10" r="1.5"></circle>
-                            <path d="M8 15c1.5 1 3.5 1 5 0"></path>
-                        </svg>
-                        <span class="btn-label">Sticker</span>
-                    </button>
+                    <div class="composer-tools">
+                        <button id="tools-toggle-btn" class="ghost-btn icon-btn tools-toggle" aria-expanded="false" title="Tools" aria-label="Tools">
+                            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 8h16"></path>
+                                <path d="M4 16h16"></path>
+                                <circle cx="8" cy="8" r="2"></circle>
+                                <circle cx="16" cy="16" r="2"></circle>
+                            </svg>
+                        </button>
+                        <div class="composer-accordion" id="composer-accordion" role="menu" aria-hidden="true">
+                            <button id="image-btn" class="ghost-btn icon-btn" title="Share photo or video" aria-label="Media" role="menuitem">
+                                <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                                    <circle cx="8.5" cy="8.5" r="2"></circle>
+                                    <path d="M21 15l-4.5-4.5a2 2 0 0 0-2.8 0L5 19"></path>
+                                </svg>
+                                <span class="btn-label">Media</span>
+                            </button>
+                            <button id="sticker-btn" class="ghost-btn icon-btn" title="Send sticker" aria-label="Sticker" role="menuitem">
+                                <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M21 14a7 7 0 0 1-7 7H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h7l7 7v4z"></path>
+                                    <circle cx="9" cy="10" r="1.5"></circle>
+                                    <circle cx="15" cy="10" r="1.5"></circle>
+                                    <path d="M8 15c1.5 1 3.5 1 5 0"></path>
+                                </svg>
+                                <span class="btn-label">Sticker</span>
+                            </button>
+                            <button id="voice-btn" class="ghost-btn icon-btn" title="Record voice" aria-label="Voice" role="menuitem">
+                                <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 11a7 7 0 0 1-14 0"></path>
+                                    <path d="M12 19v2"></path>
+                                </svg>
+                                <span class="btn-label">Voice</span>
+                            </button>
+                        </div>
+                    </div>
                     <input id="message-input" type="text" placeholder="Type a message..." maxlength="500">
-                    <button id="send-btn" class="primary-btn">Send</button>
+                    <button id="send-btn" class="primary-btn icon-btn" title="Send" aria-label="Send">
+                        <svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M22 2L11 13" />
+                            <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                    </button>
                 </div>
                 <div class="sticker-panel" id="sticker-panel" aria-label="Sticker panel"></div>
             </footer>
