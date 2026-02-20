@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, onDisconnect, remove, limitToLast, query, update, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyC3iPABSvpTN5KHAFFYNlAIwEPR8XEddRY",
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
 const sessionRaw = localStorage.getItem('dtubonge_session');
 const adminSession = localStorage.getItem('dtubonge_admin');
@@ -234,6 +236,15 @@ if (toolsToggleBtn && composerMenu) {
         if (composerMenuOverlay) {
             composerMenuOverlay.classList.toggle('show', open);
             composerMenuOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+        }
+    });
+    // Close the menu after choosing an action
+    ['image-btn', 'sticker-btn', 'voice-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('click', () => {
+                closeComposerMenu();
+            });
         }
     });
     document.addEventListener('click', (e) => {
@@ -498,6 +509,32 @@ function showUploadProgress(label, percent) {
             uploadBarFill.style.width = '0%';
         }, 800);
     }
+}
+
+async function uploadToStorage(path, blobOrFile, startLabel) {
+    return new Promise((resolve, reject) => {
+        try {
+            const storageRef = sRef(storage, path);
+            const task = uploadBytesResumable(storageRef, blobOrFile);
+            showUploadProgress(startLabel || 'Uploading...', 5);
+            task.on('state_changed',
+                (snapshot) => {
+                    const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    showUploadProgress('Uploading...', Math.max(10, Math.min(99, percent)));
+                },
+                (error) => {
+                    reject(error);
+                },
+                async () => {
+                    const url = await getDownloadURL(task.snapshot.ref);
+                    showUploadProgress('Uploaded', 100);
+                    resolve({ url });
+                }
+            );
+        } catch (err) {
+            reject(err);
+        }
+    });
 }
 
 function startRecordingTimer() {
@@ -922,7 +959,7 @@ function refreshPrivateList() {
     });
 }
 
-sendBtn.addEventListener('click', async () => {
+if (sendBtn && messageInput) sendBtn.addEventListener('click', async () => {
     const text = messageInput.value.trim();
     if (!text) return;
 
@@ -962,17 +999,19 @@ sendBtn.addEventListener('click', async () => {
     messageInput.focus();
 });
 
-messageInput.addEventListener('keypress', (e) => {
+if (messageInput && sendBtn) messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         sendBtn.click();
     }
 });
 
-imageBtn.addEventListener('click', () => {
-    imageInput.click();
-});
+if (imageBtn && imageInput) {
+    imageBtn.addEventListener('click', () => {
+        imageInput.click();
+    });
+}
 
-imageInput.addEventListener('change', async (e) => {
+if (imageInput) imageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (currentTab === 'private' && !selectedPrivateId) {
@@ -1052,7 +1091,7 @@ if (stickerBtn) {
     });
 }
 
-voiceBtn.addEventListener('click', async () => {
+if (voiceBtn) voiceBtn.addEventListener('click', async () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
         return;
@@ -1122,7 +1161,7 @@ voiceBtn.addEventListener('click', async () => {
     }, 15000);
 
     mediaRecorder.addEventListener('stop', () => {
-        voiceBtn.textContent = 'Voice';
+        if (voiceBtn) voiceBtn.textContent = 'Voice';
     }, { once: true });
 });
 
@@ -1242,10 +1281,30 @@ function showCurrentStory() {
             }
         }
         tick();
-    } else if (data.type === 'video' && data.videoData) {
+    } else if (data.type === 'image' && data.imageUrl) {
+        const img = document.createElement('img');
+        img.className = 'story-image';
+        img.src = data.imageUrl;
+        storyMedia.appendChild(img);
+        const duration = 6000;
+        const started = Date.now();
+        function tickImg() {
+            const p = Math.min(100, ((Date.now() - started) / duration) * 100);
+            storyProgress.style.width = `${p}%`;
+            if (p < 100) {
+                viewerTimer = setTimeout(tickImg, 50);
+            } else {
+                viewerIndex += 1;
+                setStoryRead(viewerUser, data.timestamp);
+                renderStoriesList();
+                showCurrentStory();
+            }
+        }
+        tickImg();
+    } else if (data.type === 'video' && (data.videoData || data.videoUrl)) {
         const video = document.createElement('video');
         video.className = 'story-video';
-        video.src = data.videoData;
+        video.src = data.videoData || data.videoUrl;
         video.autoplay = true;
         video.controls = true;
         storyMedia.appendChild(video);
@@ -1267,11 +1326,11 @@ function showCurrentStory() {
             viewerIndex += 1;
             showCurrentStory();
         });
-    } else if ((data.type === 'audio' || data.type === 'voice') && data.audioData) {
+    } else if ((data.type === 'audio' || data.type === 'voice') && (data.audioData || data.audioUrl)) {
         const audio = document.createElement('audio');
         audio.className = 'story-audio';
         audio.controls = true;
-        audio.src = data.audioData;
+        audio.src = data.audioData || data.audioUrl;
         storyMedia.appendChild(audio);
         function syncAudioProgress() {
             if (!audio.duration || isNaN(audio.duration)) {
@@ -1381,6 +1440,10 @@ function subscribeStories() {
         });
         storyUsers = users;
         renderStoriesList();
+        // If viewer is open and the current user's stories changed, refresh viewer list
+        if (viewerUser && storiesByUser[viewerUser]) {
+            viewerStories = storiesByUser[viewerUser];
+        }
     });
 }
 
@@ -1394,45 +1457,64 @@ if (addStoryBtn && storyInput) {
         });
     }
     storyInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.size > MAX_MEDIA_BYTES) {
-            alert('Media too large. Use a smaller file.');
-            storyInput.value = '';
-            return;
-        }
-        const reader = new FileReader();
-        const isVideo = file.type && file.type.startsWith('video/');
-        const isAudio = file.type && file.type.startsWith('audio/');
-        showUploadProgress(isVideo ? 'Preparing status video...' : isAudio ? 'Preparing status audio...' : 'Preparing status photo...', 20);
-        reader.onload = async () => {
-            const mediaData = reader.result;
+        try {
+            if (!currentUser) {
+                alert('Session expired. Please log in again.');
+                window.location.href = 'login.html';
+                return;
+            }
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > MAX_MEDIA_BYTES) {
+                alert('Media too large. Use a smaller file.');
+                storyInput.value = '';
+                return;
+            }
+            const isVideo = file.type && file.type.startsWith('video/');
+            const isAudio = file.type && file.type.startsWith('audio/');
+            const ts = Date.now();
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            const path = `stories/${currentUser}/${ts}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const label = isVideo ? 'Uploading status video...' : isAudio ? 'Uploading status audio...' : 'Uploading status photo...';
+            const { url } = await uploadToStorage(path, file, label);
             let payload;
             if (isVideo) {
-                payload = { username: currentUser, timestamp: Date.now(), type: 'video', videoData: mediaData };
+                payload = { username: currentUser, timestamp: ts, type: 'video', videoUrl: url };
             } else if (isAudio) {
-                payload = { username: currentUser, timestamp: Date.now(), type: 'audio', audioData: mediaData };
+                payload = { username: currentUser, timestamp: ts, type: 'audio', audioUrl: url };
             } else {
-                payload = { username: currentUser, timestamp: Date.now(), type: 'image', imageData: mediaData };
+                payload = { username: currentUser, timestamp: ts, type: 'image', imageUrl: url };
             }
             const userStoriesRef = ref(db, `stories/${currentUser}`);
             const newRef = push(userStoriesRef);
             await set(newRef, payload);
             showUploadProgress(isVideo ? 'Added status video' : isAudio ? 'Added status audio' : 'Added status photo', 100);
             storyInput.value = '';
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Status upload error', err);
+            alert('Could not start status upload. Please try again.');
+        }
     });
 }
 
 if (addTextStatusBtn && textStatusInput) {
     addTextStatusBtn.addEventListener('click', async () => {
-        const text = (textStatusInput.value || '').trim();
-        if (!text) return;
-        const userStoriesRef = ref(db, `stories/${currentUser}`);
-        const newRef = push(userStoriesRef);
-        await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'text', text });
-        textStatusInput.value = '';
+        try {
+            if (!currentUser) {
+                alert('Session expired. Please log in again.');
+                window.location.href = 'login.html';
+                return;
+            }
+            const text = (textStatusInput.value || '').trim();
+            if (!text) return;
+            const userStoriesRef = ref(db, `stories/${currentUser}`);
+            const newRef = push(userStoriesRef);
+            await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'text', text });
+            textStatusInput.value = '';
+        } catch (err) {
+            console.error('Text status error', err);
+            alert('Failed to post text status.');
+        }
     });
 }
 
@@ -1456,24 +1538,26 @@ if (recordVoiceStatusBtn) {
             }
         };
         statusRecorder.onstop = async () => {
-            clearTimeout(statusRecordingTimeout);
-            stopRecordingTimer();
-            const blob = new Blob(chunks, { type: 'audio/webm' });
-            stream.getTracks().forEach(track => track.stop());
-            if (blob.size > MAX_MEDIA_BYTES) {
-                alert('Voice status too large. Try a shorter clip.');
-                return;
-            }
-            const reader = new FileReader();
-            showUploadProgress('Preparing voice status...', 20);
-            reader.onload = async () => {
-                const audioData = reader.result;
+            try {
+                clearTimeout(statusRecordingTimeout);
+                stopRecordingTimer();
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                stream.getTracks().forEach(track => track.stop());
+                if (blob.size > MAX_MEDIA_BYTES) {
+                    alert('Voice status too large. Try a shorter clip.');
+                    return;
+                }
+                const ts = Date.now();
+                const path = `stories/${currentUser}/${ts}_voice.webm`;
+                const { url } = await uploadToStorage(path, blob, 'Uploading voice status...');
                 const userStoriesRef = ref(db, `stories/${currentUser}`);
                 const newRef = push(userStoriesRef);
-                await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'voice', audioData });
+                await set(newRef, { username: currentUser, timestamp: ts, type: 'voice', audioUrl: url });
                 showUploadProgress('Added voice status', 100);
-            };
-            reader.readAsDataURL(blob);
+            } catch (err) {
+                console.error('Voice status error', err);
+                alert('Failed to process voice status.');
+            }
         };
         statusRecorder.start();
         recordVoiceStatusBtn.textContent = 'Stop Voice';
@@ -1505,7 +1589,6 @@ await loadUserColor();
 updatePresence();
 loadGroupMessages();
 refreshPrivateList();
-subscribeStories();
 
 if (privateBackBtn) {
     privateBackBtn.addEventListener('click', () => {

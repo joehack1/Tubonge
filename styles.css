@@ -1496,7 +1496,7 @@ body.chat-page {
     align-items: center;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
     .tools-toggle {
         display: inline-flex;
     }
@@ -1539,7 +1539,7 @@ body.chat-page {
 }
 
 /* Menu overlay for visibility */
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
     .composer-menu-overlay {
         position: fixed;
         inset: 0;

@@ -40,7 +40,6 @@
                     Private
                     <span class="tab-badge" id="private-badge"></span>
                 </button>
-                <button class="tab-btn" data-tab="status">Status</button>
                 <button class="tab-btn mobile-only" data-tab="users">Users</button>
             </nav>
 
@@ -64,27 +63,7 @@
                     </div>
                 </div>
 
-                <div class="tab-panel" id="panel-status">
-                    <div class="status-header">
-                        <div class="my-status">
-                            <div class="status-avatar" id="my-status-avatar"></div>
-                            <div class="status-meta">
-                                <div class="status-title">My Status</div>
-                                <div class="status-subtitle">Tap to add status</div>
-                            </div>
-                        </div>
-                        <input id="story-input" type="file" accept="image/*,video/*,audio/*" style="display: none;">
-                        <div class="status-actions">
-                            <button id="add-story-btn" class="primary-btn">Add Media</button>
-                            <input id="text-status-input" type="text" maxlength="240" placeholder="Type a status">
-                            <button id="add-text-status-btn" class="ghost-btn">Add Text</button>
-                            <button id="record-voice-status-btn" class="ghost-btn">Voice Status</button>
-                        </div>
-                    </div>
-                    <div class="status-section-title">Recent</div>
-                    <div class="status-list" id="status-list"></div>
-                    <div class="empty-state" id="status-empty">No recent status updates.</div>
-                </div>
+                
 
                 <div class="tab-panel" id="panel-users">
                     <div class="user-list" id="user-list-mobile"></div>
@@ -230,22 +209,7 @@
         </svg>
     </button>
 
-    <div class="modal-overlay" id="story-viewer-modal">
-        <div class="modal-content story-viewer">
-            <div class="story-progress" id="story-progress"></div>
-            <div class="story-header">
-                <div class="story-viewer-avatar" id="story-viewer-avatar"></div>
-                <div class="story-viewer-name" id="story-viewer-name"></div>
-                <button class="close-btn" id="close-story-viewer">&times;</button>
-            </div>
-            <div class="story-media" id="story-media"></div>
-            <div class="story-controls">
-                <button class="ghost-btn" id="story-prev">Prev</button>
-                <button class="ghost-btn" id="story-next">Next</button>
-                <button class="ghost-btn" id="story-delete">Delete</button>
-            </div>
-        </div>
-    </div>
+    
 
     <script type="module" src="chat.js"></script>
 </body>
