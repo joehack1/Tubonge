@@ -40,6 +40,7 @@
                     Private
                     <span class="tab-badge" id="private-badge"></span>
                 </button>
+                <button class="tab-btn" data-tab="market">Market</button>
                 <button class="tab-btn mobile-only" data-tab="users">Users</button>
             </nav>
 
@@ -64,6 +65,18 @@
                 </div>
 
                 
+
+                <div class="tab-panel" id="panel-market">
+                    <div class="market-toolbar">
+                        <input id="market-search" type="text" placeholder="Search products...">
+                        <div class="market-actions">
+                            <button id="add-product-btn" class="ghost-btn">Add Item</button>
+                            <button id="open-cart-btn" class="ghost-btn">Cart <span class="pill" id="cart-count"></span></button>
+                        </div>
+                    </div>
+                    <div class="market-grid" id="market-grid"></div>
+                    <div class="empty-state" id="market-empty">No products yet.</div>
+                </div>
 
                 <div class="tab-panel" id="panel-users">
                     <div class="user-list" id="user-list-mobile"></div>
@@ -90,15 +103,7 @@
                 <div class="composer">
                     <input id="image-input" type="file" accept="image/*,video/*" style="display: none;">
                     <div class="composer-tools">
-                        <button id="tools-toggle-btn" class="ghost-btn icon-btn tools-toggle" aria-expanded="false" title="Tools" aria-label="Tools">
-                            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 8h16"></path>
-                                <path d="M4 16h16"></path>
-                                <circle cx="8" cy="8" r="2"></circle>
-                                <circle cx="16" cy="16" r="2"></circle>
-                            </svg>
-                        </button>
-                        <div class="composer-menu" id="composer-menu" role="menu" aria-hidden="true">
+                        <div class="composer-menu" id="composer-menu" role="menu">
                             <button id="image-btn" class="ghost-btn icon-btn" title="Share photo or video" aria-label="Media" role="menuitem">
                                 <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <rect x="3" y="3" width="18" height="18" rx="4"></rect>
@@ -134,7 +139,6 @@
                         </svg>
                     </button>
                 </div>
-                <div class="composer-menu-overlay" id="composer-menu-overlay" aria-hidden="true"></div>
                 <div class="sticker-panel" id="sticker-panel" aria-label="Sticker panel"></div>
             </footer>
         </main>
@@ -209,8 +213,69 @@
         </svg>
     </button>
 
+    <div class="modal-overlay" id="market-add-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Product</h2>
+                <button class="close-btn" id="close-add-product">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label for="product-title">Title</label>
+                    <input id="product-title" type="text" maxlength="80" placeholder="Product title">
+                </div>
+                <div class="field">
+                    <label for="product-price">Price (USD)</label>
+                    <input id="product-price" type="number" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="field">
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" rows="3" maxlength="500" placeholder="Describe your product"></textarea>
+                </div>
+                <input id="product-image-input" type="file" accept="image/*" style="display:none;">
+                <button id="choose-product-image" class="ghost-btn">Choose Image</button>
+            </div>
+            <div class="modal-footer">
+                <button class="ghost-btn" id="cancel-add-product">Cancel</button>
+                <button class="primary-btn" id="save-product-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="market-view-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="view-product-title">Product</h2>
+                <button class="close-btn" id="close-view-product">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="view-product-image" class="market-view-image" alt="">
+                <div class="market-view-price" id="view-product-price"></div>
+                <div class="market-view-desc" id="view-product-desc"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" id="add-to-cart-btn">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="market-cart-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Your Cart</h2>
+                <button class="close-btn" id="close-cart">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="cart-list" id="cart-list"></div>
+                <div class="cart-total-row">Total: <span id="cart-total">$0.00</span></div>
+            </div>
+            <div class="modal-footer">
+                <button class="ghost-btn" id="clear-cart-btn">Clear</button>
+                <button class="primary-btn" id="checkout-btn">Checkout</button>
+            </div>
+        </div>
+    </div>
+
     
 
     <script type="module" src="chat.js"></script>
-</body>
-</html>
