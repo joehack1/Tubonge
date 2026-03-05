@@ -3136,24 +3136,24 @@ html[data-theme="instagram"] {
     .chat-page .composer {
         width: 100%;
         grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: 5px;
-        padding: 6px;
+        gap: 4px;
+        padding: 5px;
         border-radius: 14px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(10, 8, 16, 0.55);
     }
 
     .chat-page .composer-tools {
-        gap: 3px;
+        gap: 2px;
     }
 
     #message-input {
         min-width: 0;
-        height: 36px;
-        padding: 0 12px;
+        height: 40px;
+        padding: 0 14px;
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 999px;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         line-height: 1;
         background: rgba(8, 8, 12, 0.68);
     }
@@ -3170,32 +3170,52 @@ html[data-theme="instagram"] {
     #image-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
         padding: 0;
     }
 
     #image-btn .btn-icon,
     #voice-btn .btn-icon,
     #sticker-btn .btn-icon {
-        width: 15px;
-        height: 15px;
+        width: 14px;
+        height: 14px;
     }
 
     #send-btn {
-        width: 34px;
-        height: 34px;
+        width: 30px;
+        height: 30px;
         padding: 0;
         border-radius: 999px;
     }
 
-    .private-layout.split .private-list {
-        width: 36%;
+    .chat-page .message {
+        max-width: 70%;
+        padding: 6px 9px;
+        border-radius: 12px;
     }
 
-    .private-chat {
-        width: 64%;
+    .chat-page .message-text {
+        font-size: 0.82rem;
+    }
+
+    .chat-page .message-meta,
+    .chat-page .message-time,
+    .chat-page .message-status {
+        font-size: 0.58rem;
+    }
+
+    .private-layout.split {
+        --private-list-width: clamp(128px, 38%, 172px);
+    }
+
+    .private-layout.split .private-list {
+        width: var(--private-list-width);
+    }
+
+    .private-layout.split .private-chat {
+        width: calc(100% - var(--private-list-width));
     }
 
     .private-list {
@@ -3204,31 +3224,31 @@ html[data-theme="instagram"] {
     }
 
     .private-item {
-        grid-template-columns: 28px 1fr;
-        gap: 8px;
-        padding: 6px 8px;
-        margin-bottom: 5px;
+        grid-template-columns: 24px 1fr;
+        gap: 6px;
+        padding: 5px 6px;
+        margin-bottom: 4px;
         border-radius: 10px;
         overflow: hidden;
     }
 
     .private-item .user-avatar {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
     }
 
     .private-item .user-info {
         min-width: 0;
-        padding: 3px 5px;
-        gap: 3px;
+        padding: 2px 4px;
+        gap: 2px;
     }
 
     .private-item .user-name {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
         align-items: center;
-        font-size: 0.78rem;
-        gap: 5px;
+        font-size: 0.72rem;
+        gap: 4px;
         min-width: 0;
     }
 
@@ -3240,16 +3260,25 @@ html[data-theme="instagram"] {
     }
 
     .private-item .chat-time {
-        font-size: 0.62rem;
+        font-size: 0.56rem;
         white-space: nowrap;
     }
 
     .private-item .user-status {
-        font-size: 0.66rem;
+        font-size: 0.6rem;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .private-layout.split .private-item .user-status {
+        display: none;
+    }
+
+    .private-layout.split .private-item .user-name {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        font-size: 0.74rem;
     }
 
     .private-item .unread-dot {
@@ -3280,39 +3309,43 @@ html[data-theme="instagram"] {
 
 @media (max-width: 480px) {
     #message-input {
-        height: 34px;
-        padding: 0 10px;
-        font-size: 0.85rem;
+        height: 38px;
+        padding: 0 12px;
+        font-size: 0.82rem;
     }
 
     #image-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
-        width: 30px;
-        height: 30px;
+        width: 26px;
+        height: 26px;
     }
 
     #send-btn {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
+    }
+
+    .private-layout.split {
+        --private-list-width: clamp(120px, 40%, 162px);
     }
 
     .private-layout.split .private-list {
-        width: 38%;
+        width: var(--private-list-width);
     }
 
-    .private-chat {
-        width: 62%;
+    .private-layout.split .private-chat {
+        width: calc(100% - var(--private-list-width));
     }
 
     .private-item {
-        grid-template-columns: 26px 1fr;
-        padding: 5px 7px;
-        gap: 7px;
+        grid-template-columns: 22px 1fr;
+        padding: 4px 5px;
+        gap: 5px;
     }
 
     .private-item .user-avatar {
-        width: 26px;
-        height: 26px;
+        width: 22px;
+        height: 22px;
     }
 }
