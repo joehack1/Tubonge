@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.tubonge.mobile" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Tubonge</name>
+    <description>
+        Tubonge mobile chat app.
+    </description>
+    <author email="support@tubonge.app" href="https://tubonge.app">
+        Tubonge
+    </author>
+    <content src="index.html" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
+    <icon src="res/icon.png" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <platform name="android">
+        <icon density="ldpi" src="res/icon.png" />
+        <icon density="mdpi" src="res/icon.png" />
+        <icon density="hdpi" src="res/icon.png" />
+        <icon density="xhdpi" src="res/icon.png" />
+        <icon density="xxhdpi" src="res/icon.png" />
+        <icon density="xxxhdpi" src="res/icon.png" />
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon.png" />
+    </platform>
+</widget>
