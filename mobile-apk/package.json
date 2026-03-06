@@ -19,6 +19,14 @@
   "cordova": {
     "platforms": [
       "android"
-    ]
+    ],
+    "plugins": {
+      "cordova-plugin-firebasex": {
+        "ANDROID_FIREBASE_CONFIG_FILEPATH": "google-services.json"
+      }
+    }
+  },
+  "dependencies": {
+    "cordova-plugin-firebasex": "19.1.0"
   }
 }
