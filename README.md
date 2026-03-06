@@ -28,4 +28,13 @@ This repo now includes a GitHub Actions workflow at `.github/workflows/android-a
 
 - It builds a debug APK on pushes to `main` or `master`, on pull requests, and on manual `workflow_dispatch`.
 - Before building, it syncs the latest root web files into `mobile-apk/www` with `npm run sync:web`.
+- The workflow expects a GitHub secret named `ANDROID_GOOGLE_SERVICES_JSON` containing the raw contents of your Firebase Android `google-services.json`.
 - The generated artifact is uploaded to the workflow run as `tubonge-debug-apk`.
+
+## Android push notifications
+
+True Android background or closed-app notifications are wired through Firebase Cloud Messaging.
+
+- Place the real Firebase Android config file at `mobile-apk/google-services.json`. A template lives at `mobile-apk/google-services.json.example`.
+- Deploy the Firebase Functions in `functions/` to the `dtubonge` project so new group and private messages send FCM notifications.
+- The Android app registers its device token under `users/{username}/devices/{installationId}` and removes it on logout.

@@ -218,6 +218,14 @@ const groupAlertState = { lastId: null, lastTimestamp: 0 };
 const privateAlertState = new Map();
 let privateAlertsPrimed = false;
 let notificationPermissionRequested = false;
+const PUSH_CHANNEL_ID = 'tubonge_messages';
+const PUSH_USER_STORAGE_KEY = 'dtubonge_push_user';
+const PUSH_INSTALLATION_STORAGE_KEY = 'dtubonge_push_installation';
+const nativePushState = {
+    initialized: false,
+    installationId: null,
+    token: null
+};
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -506,6 +514,206 @@ async function sendMessageToTarget(target, message) {
     return newMessageRef.key;
 }
 
+function isCordovaPushAvailable() {
+    return typeof window !== 'undefined' && !!window.cordova && !!window.FirebasePlugin;
+}
+
+function firebaseGetInstallationId() {
+    return new Promise((resolve, reject) => {
+        window.FirebasePlugin.getInstallationId(resolve, reject);
+    });
+}
+
+function firebaseGetToken() {
+    return new Promise((resolve, reject) => {
+        window.FirebasePlugin.getToken(resolve, reject);
+    });
+}
+
+function firebaseHasPermission() {
+    return new Promise((resolve, reject) => {
+        window.FirebasePlugin.hasPermission(resolve, reject);
+    });
+}
+
+function firebaseGrantPermission() {
+    return new Promise((resolve, reject) => {
+        window.FirebasePlugin.grantPermission(resolve, reject);
+    });
+}
+
+function firebaseCreateChannel(channel) {
+    return new Promise((resolve, reject) => {
+        window.FirebasePlugin.createChannel(channel, resolve, reject);
+    });
+}
+
+function getPushPayloadValue(message, key) {
+    if (message && message[key] != null) return String(message[key]);
+    if (message && message.data && message.data[key] != null) return String(message.data[key]);
+    return '';
+}
+
+async function ensurePushPermission() {
+    if (!isCordovaPushAvailable()) return false;
+    try {
+        const hasPermission = await firebaseHasPermission();
+        if (hasPermission) return true;
+        await firebaseGrantPermission();
+        return await firebaseHasPermission();
+    } catch (error) {
+        console.warn('Push permission check failed', error);
+        return false;
+    }
+}
+
+async function ensurePushChannel() {
+    if (!isCordovaPushAvailable()) return;
+    try {
+        await firebaseCreateChannel({
+            id: PUSH_CHANNEL_ID,
+            name: 'Messages',
+            description: 'Tubonge message alerts',
+            sound: 'default',
+            importance: 4,
+            vibration: true
+        });
+    } catch (error) {
+        console.warn('Notification channel setup failed', error);
+    }
+}
+
+async function removeStoredPushRegistration(username = currentUser) {
+    const installationId = nativePushState.installationId || localStorage.getItem(PUSH_INSTALLATION_STORAGE_KEY);
+    if (!username || !installationId) return;
+    try {
+        await remove(ref(db, `users/${username}/devices/${installationId}`));
+    } catch (error) {
+        console.warn('Could not remove device token', error);
+    }
+    if (localStorage.getItem(PUSH_USER_STORAGE_KEY) === username) {
+        localStorage.removeItem(PUSH_USER_STORAGE_KEY);
+        localStorage.removeItem(PUSH_INSTALLATION_STORAGE_KEY);
+    }
+}
+
+async function cleanupPreviousPushUser(installationId) {
+    const previousUser = localStorage.getItem(PUSH_USER_STORAGE_KEY);
+    if (!installationId || !previousUser || previousUser === currentUser) return;
+    try {
+        await remove(ref(db, `users/${previousUser}/devices/${installationId}`));
+    } catch (error) {
+        console.warn('Could not clean up previous push user', error);
+    }
+}
+
+async function persistPushRegistration(token) {
+    if (!token || !currentUser) return;
+    let installationId = nativePushState.installationId;
+    if (!installationId) {
+        installationId = await firebaseGetInstallationId().catch(() => '');
+        nativePushState.installationId = installationId || null;
+    }
+    if (!installationId) {
+        console.warn('Missing Firebase installation ID; skipping token registration.');
+        return;
+    }
+
+    await cleanupPreviousPushUser(installationId);
+
+    nativePushState.token = token;
+    await set(ref(db, `users/${currentUser}/devices/${installationId}`), {
+        token,
+        platform: 'android',
+        channelId: PUSH_CHANNEL_ID,
+        updatedAt: Date.now()
+    });
+
+    localStorage.setItem(PUSH_USER_STORAGE_KEY, currentUser);
+    localStorage.setItem(PUSH_INSTALLATION_STORAGE_KEY, installationId);
+}
+
+async function registerPushToken() {
+    if (!isCordovaPushAvailable() || !currentUser) return;
+    const permissionGranted = await ensurePushPermission();
+    if (!permissionGranted) {
+        console.warn('Push permission not granted.');
+        return;
+    }
+
+    await ensurePushChannel();
+
+    try {
+        nativePushState.installationId = await firebaseGetInstallationId();
+    } catch (error) {
+        console.warn('Could not get Firebase installation ID', error);
+    }
+
+    try {
+        const token = await firebaseGetToken();
+        if (token) {
+            await persistPushRegistration(token);
+        }
+    } catch (error) {
+        console.warn('Could not get FCM token', error);
+    }
+}
+
+function routeFromPushNotification(message) {
+    const scope = getPushPayloadValue(message, 'scope');
+    const sender = getPushPayloadValue(message, 'sender');
+
+    if (scope === 'private' && sender) {
+        selectPrivateUser(sender);
+        return;
+    }
+
+    if (scope === 'group') {
+        document.querySelector('[data-tab="group"]')?.click();
+    }
+}
+
+function handleNativePushMessage(message) {
+    const tapped = message?.tap === true
+        || message?.tap === 'background'
+        || message?.wasTapped === true
+        || getPushPayloadValue(message, 'tap') === 'true';
+
+    if (tapped) {
+        routeFromPushNotification(message);
+    }
+}
+
+function initializeNativePush() {
+    if (nativePushState.initialized || !isCordovaPushAvailable() || !currentUser) return;
+    nativePushState.initialized = true;
+
+    registerPushToken();
+
+    window.FirebasePlugin.onTokenRefresh(async (token) => {
+        try {
+            await persistPushRegistration(token);
+        } catch (error) {
+            console.warn('Token refresh persistence failed', error);
+        }
+    }, (error) => {
+        console.warn('Token refresh listener failed', error);
+    });
+
+    window.FirebasePlugin.onMessageReceived((message) => {
+        handleNativePushMessage(message);
+    }, (error) => {
+        console.warn('Push message listener failed', error);
+    });
+}
+
+async function logoutCurrentSession() {
+    await removeStoredPushRegistration(currentUser);
+    localStorage.removeItem('dtubonge_session');
+    localStorage.removeItem('dtubonge_admin');
+    window.location.href = 'login.html';
+}
+
 function getReadKey(chatId) {
     return `dtubonge_read_${chatId}`;
 }
@@ -556,16 +764,12 @@ if (themeResetBtn) {
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
 
 logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('dtubonge_session');
-    localStorage.removeItem('dtubonge_admin');
-    window.location.href = 'login.html';
+    logoutCurrentSession();
 });
 
 if (modalLogoutBtn) {
     modalLogoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('dtubonge_session');
-        localStorage.removeItem('dtubonge_admin');
-        window.location.href = 'login.html';
+        logoutCurrentSession();
     });
 }
 
@@ -2090,6 +2294,10 @@ async function loadUserColor() {
             online: true
         });
     }
+}
+
+if (window.cordova) {
+    document.addEventListener('deviceready', initializeNativePush, false);
 }
 
 await loadUserColor();
