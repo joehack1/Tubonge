@@ -79,6 +79,7 @@ const viewProfileStatus = document.getElementById('view-profile-status');
 const viewProfileJoin = document.getElementById('view-profile-join');
 const reloadBtn = document.getElementById('reload-btn');
 const privateBackBtn = document.getElementById('private-back');
+const notificationStack = document.getElementById('notification-stack');
 // Market elements
 const marketGrid = document.getElementById('market-grid');
 const marketEmpty = document.getElementById('market-empty');
@@ -211,6 +212,12 @@ let viewerUser = null;
 let viewerStories = [];
 let viewerIndex = 0;
 let viewerTimer = null;
+let soundContext = null;
+let groupAlertsPrimed = false;
+const groupAlertState = { lastId: null, lastTimestamp: 0 };
+const privateAlertState = new Map();
+let privateAlertsPrimed = false;
+let notificationPermissionRequested = false;
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -245,6 +252,259 @@ messageInput.addEventListener('focus', () => {
         messageInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 150);
 });
+
+function getSoundContext() {
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) return null;
+    if (!soundContext) {
+        soundContext = new Context();
+    }
+    if (soundContext.state === 'suspended') {
+        soundContext.resume().catch(() => {});
+    }
+    return soundContext;
+}
+
+function primeRealtimeFeedback() {
+    getSoundContext();
+    if (!notificationPermissionRequested && 'Notification' in window && Notification.permission === 'default') {
+        notificationPermissionRequested = true;
+        Notification.requestPermission().catch(() => {});
+    }
+}
+
+['pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
+    window.addEventListener(eventName, primeRealtimeFeedback, { once: true });
+});
+
+function playToneSequence(sequence) {
+    const context = getSoundContext();
+    if (!context) return;
+    const baseTime = context.currentTime + 0.01;
+    sequence.forEach((tone) => {
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        const startAt = baseTime + tone.offset;
+
+        oscillator.type = tone.type || 'sine';
+        oscillator.frequency.setValueAtTime(tone.frequency, startAt);
+
+        gainNode.gain.setValueAtTime(0.0001, startAt);
+        gainNode.gain.exponentialRampToValueAtTime(tone.gain || 0.035, startAt + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + tone.duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.start(startAt);
+        oscillator.stop(startAt + tone.duration + 0.02);
+    });
+}
+
+function playAppSound(kind) {
+    const patterns = {
+        sent: [
+            { frequency: 860, offset: 0, duration: 0.08, gain: 0.025, type: 'triangle' },
+            { frequency: 1120, offset: 0.08, duration: 0.06, gain: 0.018, type: 'triangle' }
+        ],
+        received: [
+            { frequency: 560, offset: 0, duration: 0.12, gain: 0.03, type: 'sine' },
+            { frequency: 760, offset: 0.13, duration: 0.11, gain: 0.024, type: 'sine' }
+        ],
+        notification: [
+            { frequency: 520, offset: 0, duration: 0.12, gain: 0.035, type: 'triangle' },
+            { frequency: 660, offset: 0.15, duration: 0.12, gain: 0.03, type: 'triangle' },
+            { frequency: 820, offset: 0.3, duration: 0.1, gain: 0.022, type: 'triangle' }
+        ]
+    };
+
+    if (!patterns[kind]) return;
+    playToneSequence(patterns[kind]);
+}
+
+function truncatePreview(text, maxLength = 90) {
+    if (!text) return 'New message';
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength - 1)}...`;
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => {
+        const entities = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return entities[character];
+    });
+}
+
+function getMessagePreview(message) {
+    if (!message) return 'New message';
+    if (message.type === 'text') {
+        return message.text || 'New message';
+    }
+    if (message.type === 'image') {
+        return 'sent a photo';
+    }
+    if (message.type === 'video') {
+        return 'sent a video';
+    }
+    if (message.type === 'voice') {
+        return 'sent a voice message';
+    }
+    if (message.type === 'sticker') {
+        return message.sticker ? `sent a sticker ${message.sticker}` : 'sent a sticker';
+    }
+    return 'sent a new message';
+}
+
+function showInAppNotification(title, body) {
+    if (!notificationStack) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'notification';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'notification-title';
+    titleEl.textContent = title;
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'notification-body';
+    bodyEl.textContent = body;
+
+    toast.appendChild(titleEl);
+    toast.appendChild(bodyEl);
+
+    toast.addEventListener('click', () => {
+        toast.remove();
+    });
+
+    notificationStack.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 4200);
+}
+
+function showSystemNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    try {
+        const notification = new Notification(title, {
+            body,
+            icon: 'logo2.png',
+            badge: 'logo2.png'
+        });
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+        setTimeout(() => notification.close(), 5000);
+    } catch (error) {
+        console.warn('Notification failed', error);
+    }
+}
+
+function notifyIncomingMessage(scope, message, usernameOverride = null) {
+    if (!message || message.username === currentUser) return;
+
+    const displayName = getDisplayName(usernameOverride || message.username || 'Someone');
+    const title = scope === 'group'
+        ? `${displayName} in group chat`
+        : `New message from ${displayName}`;
+    const body = truncatePreview(getMessagePreview(message));
+    const isVisible = document.visibilityState === 'visible';
+
+    if (isVisible) {
+        showInAppNotification(title, body);
+        playAppSound('received');
+        return;
+    }
+
+    showSystemNotification(title, body);
+    playAppSound('notification');
+}
+
+function updateAlertState(state, message) {
+    state.lastId = message?.id || null;
+    state.lastTimestamp = Number(message?.timestamp) || 0;
+}
+
+function isNewerThanAlertState(state, message) {
+    if (!message) return false;
+    const messageTimestamp = Number(message.timestamp) || 0;
+    if (messageTimestamp > state.lastTimestamp) {
+        return true;
+    }
+    return messageTimestamp === state.lastTimestamp && !!message.id && message.id !== state.lastId;
+}
+
+function handleGroupActivity(messages) {
+    const latestMessage = messages[messages.length - 1];
+    if (!latestMessage) return;
+
+    if (!groupAlertsPrimed) {
+        updateAlertState(groupAlertState, latestMessage);
+        groupAlertsPrimed = true;
+        return;
+    }
+
+    if (!isNewerThanAlertState(groupAlertState, latestMessage)) {
+        return;
+    }
+
+    updateAlertState(groupAlertState, latestMessage);
+    notifyIncomingMessage('group', latestMessage);
+}
+
+function handlePrivateActivity(chatId, lastMessage, otherUser) {
+    if (!chatId || !lastMessage) return;
+
+    const existingState = privateAlertState.get(chatId);
+    if (!existingState) {
+        privateAlertState.set(chatId, {
+            lastId: lastMessage.id || null,
+            lastTimestamp: Number(lastMessage.timestamp) || 0
+        });
+        if (privateAlertsPrimed) {
+            notifyIncomingMessage('private', lastMessage, otherUser);
+        }
+        return;
+    }
+
+    if (!isNewerThanAlertState(existingState, lastMessage)) {
+        return;
+    }
+
+    existingState.lastId = lastMessage.id || null;
+    existingState.lastTimestamp = Number(lastMessage.timestamp) || 0;
+    notifyIncomingMessage('private', lastMessage, otherUser);
+}
+
+function getMessageTarget() {
+    if (currentTab === 'private') {
+        if (!selectedPrivateId) return null;
+        return {
+            scope: 'private',
+            chatId: selectedPrivateId,
+            messagesRef: ref(db, `private_messages/${selectedPrivateId}`)
+        };
+    }
+
+    return {
+        scope: 'group',
+        chatId: null,
+        messagesRef: ref(db, 'messages')
+    };
+}
+
+async function sendMessageToTarget(target, message) {
+    const newMessageRef = push(target.messagesRef);
+    await set(newMessageRef, message);
+    playAppSound('sent');
+    return newMessageRef.key;
+}
 
 function getReadKey(chatId) {
     return `dtubonge_read_${chatId}`;
@@ -958,11 +1218,13 @@ function loadGroupMessages() {
         const data = snapshot.val();
         if (!data) {
             groupEmpty.style.display = 'block';
+            groupAlertsPrimed = true;
             return;
         }
         groupEmpty.style.display = 'none';
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
+        handleGroupActivity(messages);
         messages.forEach(msg => {
             renderMessage(groupMessages, { ...msg, _scope: 'group' }, msg.username === currentUser, true, true, msg.username === currentUser, true, null);
         });
@@ -1142,13 +1404,15 @@ function renderPrivateList(chats) {
         });
         const timeLabel = chat.lastTimestamp ? new Date(chat.lastTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         const unreadDot = chat.unread ? '<span class="unread-dot" aria-label="Unread"></span>' : '';
+        const safeDisplayName = escapeHtml(getDisplayName(chat.user));
+        const safePreview = escapeHtml(chat.lastMessage || 'No messages yet');
         item.innerHTML = `
             <div class="user-info">
                 <div class="user-name">
-                    <span>${getDisplayName(chat.user)}</span>
+                    <span>${safeDisplayName}</span>
                     <span class="chat-time">${timeLabel}</span>
                 </div>
-                <div class="user-status">${chat.lastMessage || 'No messages yet'}</div>
+                <div class="user-status">${safePreview}</div>
             </div>
         `;
         item.prepend(avatar);
@@ -1190,10 +1454,11 @@ function refreshPrivateList() {
         let unreadTotal = 0;
         Object.keys(data).forEach(chatId => {
             if (!chatId.includes(currentUser)) return;
-            const messages = Object.values(data[chatId]);
+            const messages = Object.entries(data[chatId]).map(([id, msg]) => ({ id, ...msg }));
             const lastMessage = messages.sort((a, b) => b.timestamp - a.timestamp)[0];
             const otherUser = chatId.split('_').find(name => name !== currentUser);
             if (otherUser) {
+                handlePrivateActivity(chatId, lastMessage, otherUser);
                 const lastRead = getLastRead(chatId);
                 const isUnread = !!lastMessage
                     && lastMessage.username !== currentUser
@@ -1207,7 +1472,7 @@ function refreshPrivateList() {
                 chats.push({
                     id: chatId,
                     user: otherUser,
-                    lastMessage: lastMessage?.text || '',
+                    lastMessage: getMessagePreview(lastMessage),
                     lastTimestamp: lastMessage?.timestamp || null,
                     unread: isUnread
                 });
@@ -1215,6 +1480,7 @@ function refreshPrivateList() {
         });
         renderPrivateList(chats);
         updatePrivateBadge(unreadTotal);
+        privateAlertsPrimed = true;
     });
 }
 
@@ -1222,33 +1488,24 @@ if (sendBtn && messageInput) sendBtn.addEventListener('click', async () => {
     const text = messageInput.value.trim();
     if (!text) return;
 
-    if (currentTab === 'private') {
-        if (!selectedPrivateId) {
-            privateEmpty.style.display = 'block';
-            return;
-        }
-        const message = {
-            username: currentUser,
-            text,
-            timestamp: Date.now(),
-            type: 'text'
-        };
-        const messagesRef = ref(db, `private_messages/${selectedPrivateId}`);
-        const newMessageRef = push(messagesRef);
-        await set(newMessageRef, message);
-    } else {
-        const message = {
-            username: currentUser,
-            text,
-            timestamp: Date.now(),
-            type: 'text'
-        };
-        if (replyContext) {
-            message.replyTo = replyContext;
-        }
-        const messagesRef = ref(db, 'messages');
-        const newMessageRef = push(messagesRef);
-        await set(newMessageRef, message);
+    const target = getMessageTarget();
+    if (!target) {
+        privateEmpty.style.display = 'block';
+        return;
+    }
+
+    const message = {
+        username: currentUser,
+        text,
+        timestamp: Date.now(),
+        type: 'text'
+    };
+    if (target.scope === 'group' && replyContext) {
+        message.replyTo = replyContext;
+    }
+
+    await sendMessageToTarget(target, message);
+    if (target.scope === 'group') {
         replyContext = null;
         replyPreview.classList.remove('active');
         replyText.textContent = '';
@@ -1273,7 +1530,8 @@ if (imageBtn && imageInput) {
 if (imageInput) imageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (currentTab === 'private' && !selectedPrivateId) {
+    const target = getMessageTarget();
+    if (!target) {
         alert('Select a private chat first.');
         imageInput.value = '';
         return;
@@ -1303,11 +1561,7 @@ if (imageInput) imageInput.addEventListener('change', async (e) => {
                 imageData: mediaData
             };
 
-        const messagesRef = currentTab === 'private'
-            ? ref(db, `private_messages/${selectedPrivateId}`)
-            : ref(db, 'messages');
-        const newMessageRef = push(messagesRef);
-        await set(newMessageRef, message);
+        await sendMessageToTarget(target, message);
         showUploadProgress(isVideo ? 'Uploaded video' : 'Uploaded photo', 100);
         imageInput.value = '';
     };
@@ -1323,7 +1577,8 @@ function renderStickers() {
         btn.className = 'sticker-btn';
         btn.textContent = sticker;
         btn.addEventListener('click', async () => {
-            if (currentTab === 'private' && !selectedPrivateId) {
+            const target = getMessageTarget();
+            if (!target) {
                 alert('Select a private chat first.');
                 return;
             }
@@ -1333,11 +1588,7 @@ function renderStickers() {
                 type: 'sticker',
                 sticker
             };
-            const messagesRef = currentTab === 'private'
-                ? ref(db, `private_messages/${selectedPrivateId}`)
-                : ref(db, 'messages');
-            const newMessageRef = push(messagesRef);
-            await set(newMessageRef, message);
+            await sendMessageToTarget(target, message);
         });
         stickerPanel.appendChild(btn);
     });
@@ -1355,7 +1606,8 @@ if (voiceBtn) voiceBtn.addEventListener('click', async () => {
         mediaRecorder.stop();
         return;
     }
-    if (currentTab === 'private' && !selectedPrivateId) {
+    const target = getMessageTarget();
+    if (!target) {
         alert('Select a private chat first.');
         return;
     }
@@ -1400,11 +1652,7 @@ if (voiceBtn) voiceBtn.addEventListener('click', async () => {
                 duration
             };
 
-            const messagesRef = currentTab === 'private'
-                ? ref(db, `private_messages/${selectedPrivateId}`)
-                : ref(db, 'messages');
-            const newMessageRef = push(messagesRef);
-            await set(newMessageRef, message);
+            await sendMessageToTarget(target, message);
             showUploadProgress('Uploaded voice', 100);
         };
         reader.readAsDataURL(blob);
