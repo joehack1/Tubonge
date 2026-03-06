@@ -21,3 +21,11 @@
 - Sticky message composer with mobile keyboard visibility handling.
 - Responsive, glassmorphism-styled UI with tabs and mobile optimizations.
 - Manual reload button on key pages.
+
+## Android APK workflow
+
+This repo now includes a GitHub Actions workflow at `.github/workflows/android-apk.yml`.
+
+- It builds a debug APK on pushes to `main` or `master`, on pull requests, and on manual `workflow_dispatch`.
+- Before building, it syncs the latest root web files into `mobile-apk/www` with `npm run sync:web`.
+- The generated artifact is uploaded to the workflow run as `tubonge-debug-apk`.
