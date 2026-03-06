@@ -36,5 +36,31 @@ This repo now includes a GitHub Actions workflow at `.github/workflows/android-a
 True Android background or closed-app notifications are wired through Firebase Cloud Messaging.
 
 - Place the real Firebase Android config file at `mobile-apk/google-services.json`. A template lives at `mobile-apk/google-services.json.example`.
-- Deploy the Firebase Functions in `functions/` to the `dtubonge` project so new group and private messages send FCM notifications.
+- Send notifications from one backend option:
+  - deploy the Firebase Functions in `functions/` to the `dtubonge` project, or
+  - use the Netlify scheduled function in `netlify/functions/push-dispatch.mjs`, or
+  - run the standalone Node sender in `push-server/`
 - The Android app registers its device token under `users/{username}/devices/{installationId}` and removes it on logout.
+
+## Netlify push function
+
+If your site is already on Netlify, you can send FCM push notifications without Firebase Functions by using the scheduled function in `netlify/functions/`.
+
+- Netlify will poll `notification_queue` every minute and send pending push notifications.
+- Add one of these Netlify environment variables:
+  - `FIREBASE_SERVICE_ACCOUNT_JSON`
+  - `FIREBASE_SERVICE_ACCOUNT_BASE64`
+- Optional environment variables:
+  - `FIREBASE_DATABASE_URL`
+  - `FIREBASE_PROJECT_ID`
+  - `NETLIFY_PUSH_BATCH_SIZE`
+- Scheduled functions only run on published deploys.
+- Because this is scheduled polling, delivery can be delayed by up to about one minute.
+
+## Node push server alternative
+
+If you do not want to use Firebase Functions on Blaze, a standalone Node sender is available in `push-server/`.
+
+- It watches the Realtime Database directly and sends FCM notifications with Firebase Admin.
+- It needs a Firebase service account JSON file and an always-on place to run.
+- Setup instructions are in `push-server/README.md`.

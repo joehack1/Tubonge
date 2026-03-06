@@ -1,0 +1,15 @@
+{
+  "name": "tubonge-netlify-functions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Netlify functions for Tubonge push notification dispatch.",
+  "scripts": {
+    "check:netlify": "node --check netlify/functions/push-dispatch.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

@@ -510,8 +510,29 @@ function getMessageTarget() {
 async function sendMessageToTarget(target, message) {
     const newMessageRef = push(target.messagesRef);
     await set(newMessageRef, message);
+    try {
+        await enqueueNotificationEvent(target, message, newMessageRef.key);
+    } catch (error) {
+        console.warn('Notification queue write failed', error);
+    }
     playAppSound('sent');
     return newMessageRef.key;
+}
+
+async function enqueueNotificationEvent(target, message, messageId) {
+    if (!messageId || !currentUser) return;
+
+    const eventRef = push(ref(db, 'notification_queue'));
+    await set(eventRef, {
+        scope: target.scope,
+        chatId: target.chatId || '',
+        messageId,
+        sender: currentUser,
+        timestamp: Number(message.timestamp) || Date.now(),
+        type: message.type || 'text',
+        text: message.type === 'text' ? (message.text || '') : '',
+        sticker: message.type === 'sticker' ? (message.sticker || '') : ''
+    });
 }
 
 function isCordovaPushAvailable() {
