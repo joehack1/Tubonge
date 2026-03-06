@@ -17,7 +17,7 @@ const EXECUTION_BUDGET_MS = parsePositiveInteger(process.env.NETLIFY_PUSH_EXECUT
 let firebaseContextPromise = null;
 
 export const config = {
-    schedule: "@every 1m"
+    schedule: "* * * * *"
 };
 
 export default async function handler() {
