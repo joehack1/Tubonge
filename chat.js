@@ -37,6 +37,8 @@ const sendBtn = document.getElementById('send-btn');
 const messageInput = document.getElementById('message-input');
 const imageInput = document.getElementById('image-input');
 const imageBtn = document.getElementById('image-btn');
+const fileBtn = document.getElementById('file-btn');
+const fileInput = document.getElementById('file-input');
 const voiceBtn = document.getElementById('voice-btn');
 const stickerBtn = document.getElementById('sticker-btn');
 const stickerPanel = document.getElementById('sticker-panel');
@@ -85,6 +87,8 @@ const marketGrid = document.getElementById('market-grid');
 const marketEmpty = document.getElementById('market-empty');
 const marketSearch = document.getElementById('market-search');
 const addProductBtn = document.getElementById('add-product-btn');
+const productCategoryInput = document.getElementById('product-category');
+const marketCategoryFilter = document.getElementById('market-category-filter');
 const openCartBtn = document.getElementById('open-cart-btn');
 const cartCount = document.getElementById('cart-count');
 const addModal = document.getElementById('market-add-modal');
@@ -103,16 +107,53 @@ const viewProductImage = document.getElementById('view-product-image');
 const viewProductPrice = document.getElementById('view-product-price');
 const viewProductDesc = document.getElementById('view-product-desc');
 const addToCartBtn = document.getElementById('add-to-cart-btn');
+const contactSellerBtn = document.getElementById('contact-seller-btn');
+const viewProductSeller = document.getElementById('view-product-seller');
 const cartModal = document.getElementById('market-cart-modal');
 const closeCartBtn = document.getElementById('close-cart');
 const cartList = document.getElementById('cart-list');
 const cartTotalEl = document.getElementById('cart-total');
 const clearCartBtn = document.getElementById('clear-cart-btn');
 const checkoutBtn = document.getElementById('checkout-btn');
+const orderHistory = document.getElementById('order-history');
+const globalSearch = document.getElementById('global-search');
+const searchResults = document.getElementById('search-results');
+const groupPinned = document.getElementById('group-pinned');
+const privatePinned = document.getElementById('private-pinned');
+const groupUnpinBtn = document.getElementById('group-unpin-btn');
+const privateUnpinBtn = document.getElementById('private-unpin-btn');
+const groupTyping = document.getElementById('group-typing');
+const privateTyping = document.getElementById('private-typing');
+const groupLoadOlderBtn = document.getElementById('group-load-older');
+const privateLoadOlderBtn = document.getElementById('private-load-older');
+const channelSelect = document.getElementById('channel-select');
+const createChannelBtn = document.getElementById('create-channel-btn');
+const muteChatBtn = document.getElementById('mute-chat-btn');
+const notificationCenterList = document.getElementById('notification-center-list');
+const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+const storySeenList = document.getElementById('story-seen-list');
 
 let allProducts = {};
 let filteredProducts = [];
 let viewingProduct = null;
+let mutedKeys = {};
+let groupLimit = 200;
+let privateLimit = 200;
+let currentChannel = 'general';
+let channelCatalog = { general: { name: 'general', createdAt: Date.now(), createdBy: 'system' } };
+let typingStopTimer = null;
+let groupTypingUnsub = null;
+let privateTypingUnsub = null;
+let currentGroupMessages = [];
+let privateMessagesCache = {};
+let queuedMessages = [];
+let isFlushingQueue = false;
+let pendingReactionMessageId = null;
+let storyPaused = false;
+let storyProgressInterval = null;
+let storyStartTime = 0;
+let storyDuration = 0;
+let currentStoryProgress = 0;
 const privateChatTitle = document.getElementById('private-chat-title');
 
 let currentTab = 'group';
@@ -218,6 +259,7 @@ const groupAlertState = { lastId: null, lastTimestamp: 0 };
 const privateAlertState = new Map();
 let privateAlertsPrimed = false;
 let notificationPermissionRequested = false;
+let appNotifications = [];
 const PUSH_CHANNEL_ID = 'tubonge_messages';
 const PUSH_USER_STORAGE_KEY = 'dtubonge_push_user';
 const PUSH_INSTALLATION_STORAGE_KEY = 'dtubonge_push_installation';
@@ -226,6 +268,9 @@ const nativePushState = {
     installationId: null,
     token: null
 };
+const QUEUED_MESSAGES_STORAGE_KEY = 'dtubonge_offline_queue';
+const MUTED_STORAGE_KEY = 'dtubonge_muted_chats';
+const APP_NOTIFICATIONS_STORAGE_KEY = 'dtubonge_notifications';
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -349,6 +394,92 @@ function escapeHtml(value) {
     });
 }
 
+loadPersistedClientState();
+renderNotificationCenter();
+
+function normalizeChannelName(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    const cleaned = raw.replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return cleaned || 'general';
+}
+
+function getCurrentScopeKey() {
+    if (currentTab === 'private' && selectedPrivateId) {
+        return `private:${selectedPrivateId}`;
+    }
+    return `group:${currentChannel}`;
+}
+
+function loadPersistedClientState() {
+    try {
+        mutedKeys = JSON.parse(localStorage.getItem(MUTED_STORAGE_KEY) || '{}') || {};
+    } catch {
+        mutedKeys = {};
+    }
+    try {
+        queuedMessages = JSON.parse(localStorage.getItem(QUEUED_MESSAGES_STORAGE_KEY) || '[]') || [];
+    } catch {
+        queuedMessages = [];
+    }
+    try {
+        appNotifications = JSON.parse(localStorage.getItem(APP_NOTIFICATIONS_STORAGE_KEY) || '[]') || [];
+    } catch {
+        appNotifications = [];
+    }
+}
+
+function persistClientState() {
+    localStorage.setItem(MUTED_STORAGE_KEY, JSON.stringify(mutedKeys));
+    localStorage.setItem(QUEUED_MESSAGES_STORAGE_KEY, JSON.stringify(queuedMessages.slice(-300)));
+    localStorage.setItem(APP_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(appNotifications.slice(-300)));
+}
+
+function registerAppNotification(item) {
+    if (!item) return;
+    appNotifications.unshift({
+        id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        timestamp: Date.now(),
+        ...item
+    });
+    appNotifications = appNotifications.slice(0, 300);
+    persistClientState();
+    renderNotificationCenter();
+}
+
+function renderNotificationCenter() {
+    if (!notificationCenterList) return;
+    notificationCenterList.innerHTML = '';
+    if (!appNotifications.length) {
+        notificationCenterList.innerHTML = '<div class="empty-state">No notifications yet.</div>';
+        return;
+    }
+    appNotifications.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'notification';
+        const title = document.createElement('div');
+        title.className = 'notification-title';
+        title.textContent = item.title || 'Notification';
+        const body = document.createElement('div');
+        body.className = 'notification-body';
+        body.textContent = item.body || '';
+        const meta = document.createElement('div');
+        meta.className = 'message-time';
+        meta.textContent = new Date(item.timestamp).toLocaleString();
+        row.appendChild(title);
+        row.appendChild(body);
+        row.appendChild(meta);
+        row.addEventListener('click', () => {
+            if (item.scope === 'private' && item.sender) {
+                selectPrivateUser(item.sender);
+                document.querySelector('[data-tab="private"]')?.click();
+            } else if (item.scope === 'group') {
+                document.querySelector('[data-tab="group"]')?.click();
+            }
+        });
+        notificationCenterList.appendChild(row);
+    });
+}
+
 function getMessagePreview(message) {
     if (!message) return 'New message';
     if (message.type === 'text') {
@@ -416,12 +547,22 @@ function showSystemNotification(title, body) {
 
 function notifyIncomingMessage(scope, message, usernameOverride = null) {
     if (!message || message.username === currentUser) return;
+    const scopeKey = scope === 'private' && usernameOverride
+        ? `private:${getChatId(currentUser, usernameOverride)}`
+        : `group:${currentChannel}`;
+    if (mutedKeys[scopeKey]) return;
 
     const displayName = getDisplayName(usernameOverride || message.username || 'Someone');
     const title = scope === 'group'
         ? `${displayName} in group chat`
         : `New message from ${displayName}`;
     const body = truncatePreview(getMessagePreview(message));
+    registerAppNotification({
+        scope,
+        sender: usernameOverride || message.username || '',
+        title,
+        body
+    });
     const isVisible = document.visibilityState === 'visible';
 
     if (isVisible) {
