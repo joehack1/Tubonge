@@ -37,6 +37,8 @@ const sendBtn = document.getElementById('send-btn');
 const messageInput = document.getElementById('message-input');
 const imageInput = document.getElementById('image-input');
 const imageBtn = document.getElementById('image-btn');
+const fileBtn = document.getElementById('file-btn');
+const fileInput = document.getElementById('file-input');
 const voiceBtn = document.getElementById('voice-btn');
 const stickerBtn = document.getElementById('sticker-btn');
 const stickerPanel = document.getElementById('sticker-panel');
@@ -85,6 +87,8 @@ const marketGrid = document.getElementById('market-grid');
 const marketEmpty = document.getElementById('market-empty');
 const marketSearch = document.getElementById('market-search');
 const addProductBtn = document.getElementById('add-product-btn');
+const productCategoryInput = document.getElementById('product-category');
+const marketCategoryFilter = document.getElementById('market-category-filter');
 const openCartBtn = document.getElementById('open-cart-btn');
 const cartCount = document.getElementById('cart-count');
 const addModal = document.getElementById('market-add-modal');
@@ -103,16 +107,53 @@ const viewProductImage = document.getElementById('view-product-image');
 const viewProductPrice = document.getElementById('view-product-price');
 const viewProductDesc = document.getElementById('view-product-desc');
 const addToCartBtn = document.getElementById('add-to-cart-btn');
+const contactSellerBtn = document.getElementById('contact-seller-btn');
+const viewProductSeller = document.getElementById('view-product-seller');
 const cartModal = document.getElementById('market-cart-modal');
 const closeCartBtn = document.getElementById('close-cart');
 const cartList = document.getElementById('cart-list');
 const cartTotalEl = document.getElementById('cart-total');
 const clearCartBtn = document.getElementById('clear-cart-btn');
 const checkoutBtn = document.getElementById('checkout-btn');
+const orderHistory = document.getElementById('order-history');
+const globalSearch = document.getElementById('global-search');
+const searchResults = document.getElementById('search-results');
+const groupPinned = document.getElementById('group-pinned');
+const privatePinned = document.getElementById('private-pinned');
+const groupUnpinBtn = document.getElementById('group-unpin-btn');
+const privateUnpinBtn = document.getElementById('private-unpin-btn');
+const groupTyping = document.getElementById('group-typing');
+const privateTyping = document.getElementById('private-typing');
+const groupLoadOlderBtn = document.getElementById('group-load-older');
+const privateLoadOlderBtn = document.getElementById('private-load-older');
+const channelSelect = document.getElementById('channel-select');
+const createChannelBtn = document.getElementById('create-channel-btn');
+const muteChatBtn = document.getElementById('mute-chat-btn');
+const notificationCenterList = document.getElementById('notification-center-list');
+const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+const storySeenList = document.getElementById('story-seen-list');
 
 let allProducts = {};
 let filteredProducts = [];
 let viewingProduct = null;
+let mutedKeys = {};
+let groupLimit = 200;
+let privateLimit = 200;
+let currentChannel = 'general';
+let channelCatalog = { general: { name: 'general', createdAt: Date.now(), createdBy: 'system' } };
+let typingStopTimer = null;
+let groupTypingUnsub = null;
+let privateTypingUnsub = null;
+let currentGroupMessages = [];
+let privateMessagesCache = {};
+let queuedMessages = [];
+let isFlushingQueue = false;
+let pendingReactionMessageId = null;
+let storyPaused = false;
+let storyProgressInterval = null;
+let storyStartTime = 0;
+let storyDuration = 0;
+let currentStoryProgress = 0;
 const privateChatTitle = document.getElementById('private-chat-title');
 
 let currentTab = 'group';
@@ -181,6 +222,8 @@ const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
     group: document.getElementById('panel-group'),
     private: document.getElementById('panel-private'),
+    status: document.getElementById('panel-status'),
+    notifications: document.getElementById('panel-notifications'),
     market: document.getElementById('panel-market'),
     users: document.getElementById('panel-users')
 };
@@ -218,6 +261,7 @@ const groupAlertState = { lastId: null, lastTimestamp: 0 };
 const privateAlertState = new Map();
 let privateAlertsPrimed = false;
 let notificationPermissionRequested = false;
+let appNotifications = [];
 const PUSH_CHANNEL_ID = 'tubonge_messages';
 const PUSH_USER_STORAGE_KEY = 'dtubonge_push_user';
 const PUSH_INSTALLATION_STORAGE_KEY = 'dtubonge_push_installation';
@@ -226,6 +270,9 @@ const nativePushState = {
     installationId: null,
     token: null
 };
+const QUEUED_MESSAGES_STORAGE_KEY = 'dtubonge_offline_queue';
+const MUTED_STORAGE_KEY = 'dtubonge_muted_chats';
+const APP_NOTIFICATIONS_STORAGE_KEY = 'dtubonge_notifications';
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
@@ -349,6 +396,100 @@ function escapeHtml(value) {
     });
 }
 
+loadPersistedClientState();
+renderNotificationCenter();
+
+function normalizeChannelName(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    const cleaned = raw.replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return cleaned || 'general';
+}
+
+function getCurrentScopeKey() {
+    if (currentTab === 'private' && selectedPrivateId) {
+        return `private:${selectedPrivateId}`;
+    }
+    return `group:${currentChannel}`;
+}
+
+function getGroupMessagesRef(channelId = currentChannel) {
+    const normalized = normalizeChannelName(channelId);
+    if (normalized === 'general') {
+        return ref(db, 'messages');
+    }
+    return ref(db, `channels/${normalized}/messages`);
+}
+
+function loadPersistedClientState() {
+    try {
+        mutedKeys = JSON.parse(localStorage.getItem(MUTED_STORAGE_KEY) || '{}') || {};
+    } catch {
+        mutedKeys = {};
+    }
+    try {
+        queuedMessages = JSON.parse(localStorage.getItem(QUEUED_MESSAGES_STORAGE_KEY) || '[]') || [];
+    } catch {
+        queuedMessages = [];
+    }
+    try {
+        appNotifications = JSON.parse(localStorage.getItem(APP_NOTIFICATIONS_STORAGE_KEY) || '[]') || [];
+    } catch {
+        appNotifications = [];
+    }
+}
+
+function persistClientState() {
+    localStorage.setItem(MUTED_STORAGE_KEY, JSON.stringify(mutedKeys));
+    localStorage.setItem(QUEUED_MESSAGES_STORAGE_KEY, JSON.stringify(queuedMessages.slice(-300)));
+    localStorage.setItem(APP_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(appNotifications.slice(-300)));
+}
+
+function registerAppNotification(item) {
+    if (!item) return;
+    appNotifications.unshift({
+        id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        timestamp: Date.now(),
+        ...item
+    });
+    appNotifications = appNotifications.slice(0, 300);
+    persistClientState();
+    renderNotificationCenter();
+}
+
+function renderNotificationCenter() {
+    if (!notificationCenterList) return;
+    notificationCenterList.innerHTML = '';
+    if (!appNotifications.length) {
+        notificationCenterList.innerHTML = '<div class="empty-state">No notifications yet.</div>';
+        return;
+    }
+    appNotifications.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'notification';
+        const title = document.createElement('div');
+        title.className = 'notification-title';
+        title.textContent = item.title || 'Notification';
+        const body = document.createElement('div');
+        body.className = 'notification-body';
+        body.textContent = item.body || '';
+        const meta = document.createElement('div');
+        meta.className = 'message-time';
+        meta.textContent = new Date(item.timestamp).toLocaleString();
+        row.appendChild(title);
+        row.appendChild(body);
+        row.appendChild(meta);
+        row.addEventListener('click', () => {
+            if (item.scope === 'private' && item.sender) {
+                selectPrivateUser(item.sender);
+                document.querySelector('[data-tab="private"]')?.click();
+            } else if (item.scope === 'group') {
+                document.querySelector('[data-tab="group"]')?.click();
+            }
+        });
+        notificationCenterList.appendChild(row);
+    });
+}
+
 function getMessagePreview(message) {
     if (!message) return 'New message';
     if (message.type === 'text') {
@@ -362,6 +503,9 @@ function getMessagePreview(message) {
     }
     if (message.type === 'voice') {
         return 'sent a voice message';
+    }
+    if (message.type === 'file') {
+        return message.fileName ? `shared ${message.fileName}` : 'shared a file';
     }
     if (message.type === 'sticker') {
         return message.sticker ? `sent a sticker ${message.sticker}` : 'sent a sticker';
@@ -416,12 +560,22 @@ function showSystemNotification(title, body) {
 
 function notifyIncomingMessage(scope, message, usernameOverride = null) {
     if (!message || message.username === currentUser) return;
+    const scopeKey = scope === 'private' && usernameOverride
+        ? `private:${getChatId(currentUser, usernameOverride)}`
+        : `group:${currentChannel}`;
+    if (mutedKeys[scopeKey]) return;
 
     const displayName = getDisplayName(usernameOverride || message.username || 'Someone');
     const title = scope === 'group'
         ? `${displayName} in group chat`
         : `New message from ${displayName}`;
     const body = truncatePreview(getMessagePreview(message));
+    registerAppNotification({
+        scope,
+        sender: usernameOverride || message.username || '',
+        title,
+        body
+    });
     const isVisible = document.visibilityState === 'visible';
 
     if (isVisible) {
@@ -463,6 +617,22 @@ function handleGroupActivity(messages) {
     }
 
     updateAlertState(groupAlertState, latestMessage);
+    if (latestMessage.replyTo?.username === currentUser) {
+        registerAppNotification({
+            scope: 'group',
+            sender: latestMessage.username,
+            title: 'New reply',
+            body: `${getDisplayName(latestMessage.username)} replied to your message`
+        });
+    }
+    if (String(latestMessage.text || '').includes(`@${currentUser}`)) {
+        registerAppNotification({
+            scope: 'group',
+            sender: latestMessage.username,
+            title: 'Mention',
+            body: `${getDisplayName(latestMessage.username)} mentioned you`
+        });
+    }
     notifyIncomingMessage('group', latestMessage);
 }
 
@@ -500,23 +670,48 @@ function getMessageTarget() {
         };
     }
 
+    const channelId = normalizeChannelName(currentChannel);
     return {
         scope: 'group',
-        chatId: null,
-        messagesRef: ref(db, 'messages')
+        chatId: channelId,
+        messagesRef: getGroupMessagesRef(channelId)
     };
 }
 
 async function sendMessageToTarget(target, message) {
-    const newMessageRef = push(target.messagesRef);
-    await set(newMessageRef, message);
-    try {
-        await enqueueNotificationEvent(target, message, newMessageRef.key);
-    } catch (error) {
-        console.warn('Notification queue write failed', error);
+    const payload = { ...message };
+    if (target.scope === 'group') {
+        payload.channelId = normalizeChannelName(target.chatId || currentChannel);
     }
-    playAppSound('sent');
-    return newMessageRef.key;
+    try {
+        const newMessageRef = push(target.messagesRef);
+        await set(newMessageRef, payload);
+        try {
+            await enqueueNotificationEvent(target, payload, newMessageRef.key);
+        } catch (error) {
+            console.warn('Notification queue write failed', error);
+        }
+        playAppSound('sent');
+        return newMessageRef.key;
+    } catch (error) {
+        queuedMessages.push({
+            target: {
+                scope: target.scope,
+                chatId: target.chatId || '',
+                path: target.messagesRef.toString()
+            },
+            message: payload,
+            queuedAt: Date.now()
+        });
+        persistClientState();
+        registerAppNotification({
+            scope: target.scope,
+            sender: currentUser,
+            title: 'Queued while offline',
+            body: truncatePreview(getMessagePreview(payload))
+        });
+        return null;
+    }
 }
 
 async function enqueueNotificationEvent(target, message, messageId) {
@@ -729,6 +924,7 @@ function initializeNativePush() {
 }
 
 async function logoutCurrentSession() {
+    setTypingState(false);
     await removeStoredPushRegistration(currentUser);
     localStorage.removeItem('dtubonge_session');
     localStorage.removeItem('dtubonge_admin');
@@ -772,14 +968,155 @@ tabs.forEach(tab => {
         if (currentTab !== 'private' && privateLayout) {
             privateLayout.classList.remove('split');
         }
+        renderMuteState();
     });
 });
+
+function renderMuteState() {
+    if (!muteChatBtn) return;
+    const key = getCurrentScopeKey();
+    muteChatBtn.textContent = mutedKeys[key] ? 'Unmute' : 'Mute';
+}
+
+function renderChannels() {
+    if (!channelSelect) return;
+    const options = Object.keys(channelCatalog).sort();
+    channelSelect.innerHTML = '';
+    options.forEach((id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = `#${id}`;
+        channelSelect.appendChild(option);
+    });
+    channelSelect.value = normalizeChannelName(currentChannel);
+}
+
+function subscribeChannels() {
+    onValue(ref(db, 'channels/meta'), (snapshot) => {
+        const data = snapshot.val() || {};
+        channelCatalog = {
+            general: { name: 'general', createdAt: Date.now(), createdBy: 'system' },
+            ...data
+        };
+        if (!channelCatalog[currentChannel]) {
+            currentChannel = 'general';
+        }
+        renderChannels();
+        loadGroupMessages();
+        subscribeTypingIndicators();
+        subscribePinnedMessages();
+    });
+}
+
+async function migrateGeneralChannelMessages() {
+    try {
+        const legacyRef = ref(db, 'messages');
+        const generalChannelRef = ref(db, 'channels/general/messages');
+        const [legacySnap, channelSnap] = await Promise.all([get(legacyRef), get(generalChannelRef)]);
+        const legacy = legacySnap.val() || {};
+        const channelMessages = channelSnap.val() || {};
+        const updates = {};
+        Object.entries(channelMessages).forEach(([id, value]) => {
+            if (!legacy[id]) {
+                updates[id] = value;
+            }
+        });
+        if (Object.keys(updates).length) {
+            await update(legacyRef, updates);
+        }
+    } catch (error) {
+        console.warn('General message migration skipped', error);
+    }
+}
+
+function subscribePinnedMessages() {
+    const channelId = normalizeChannelName(currentChannel);
+    onValue(ref(db, `pinned/group/${channelId}`), (snapshot) => {
+        const pin = snapshot.val();
+        if (groupPinned) {
+            groupPinned.textContent = pin ? `Pinned: ${pin.username}: ${pin.text}` : '';
+        }
+    });
+    if (!selectedPrivateId) {
+        if (privatePinned) privatePinned.textContent = '';
+        return;
+    }
+    onValue(ref(db, `pinned/private/${selectedPrivateId}`), (snapshot) => {
+        const pin = snapshot.val();
+        if (privatePinned) {
+            privatePinned.textContent = pin ? `Pinned: ${pin.username}: ${pin.text}` : '';
+        }
+    });
+}
 
 renderThemeOptions();
 applyTheme(getSavedTheme());
 
 if (themeResetBtn) {
     themeResetBtn.addEventListener('click', () => applyTheme('rose'));
+}
+
+if (createChannelBtn) {
+    createChannelBtn.addEventListener('click', async () => {
+        const raw = prompt('New channel name (letters, numbers, -, _)');
+        if (!raw) return;
+        const id = normalizeChannelName(raw);
+        await update(ref(db, `channels/meta/${id}`), {
+            name: id,
+            createdAt: Date.now(),
+            createdBy: currentUser
+        });
+        const inviteRaw = prompt('Invite usernames (comma separated, optional)', '');
+        if (inviteRaw != null && inviteRaw.trim()) {
+            const members = inviteRaw.split(',').map((u) => u.trim()).filter(Boolean);
+            await set(ref(db, `channels/meta/${id}/members`), members);
+        }
+        currentChannel = id;
+        renderChannels();
+        loadGroupMessages();
+        subscribeTypingIndicators();
+        subscribePinnedMessages();
+    });
+}
+
+if (channelSelect) {
+    channelSelect.addEventListener('change', () => {
+        currentChannel = normalizeChannelName(channelSelect.value);
+        loadGroupMessages();
+        subscribeTypingIndicators();
+        subscribePinnedMessages();
+        renderMuteState();
+    });
+}
+
+if (muteChatBtn) {
+    muteChatBtn.addEventListener('click', () => {
+        const key = getCurrentScopeKey();
+        mutedKeys[key] = !mutedKeys[key];
+        persistClientState();
+        renderMuteState();
+    });
+}
+
+if (groupUnpinBtn) {
+    groupUnpinBtn.addEventListener('click', async () => {
+        await remove(ref(db, `pinned/group/${normalizeChannelName(currentChannel)}`));
+    });
+}
+
+if (privateUnpinBtn) {
+    privateUnpinBtn.addEventListener('click', async () => {
+        if (!selectedPrivateId) return;
+        await remove(ref(db, `pinned/private/${selectedPrivateId}`));
+    });
+}
+
+if (clearNotificationsBtn) {
+    clearNotificationsBtn.addEventListener('click', () => {
+        appNotifications = [];
+        persistClientState();
+        renderNotificationCenter();
+    });
 }
 
 sessionUser.textContent = currentUser ? `@${currentUser}` : '';
@@ -1050,8 +1387,10 @@ function userOrdersRefStrict() {
 function renderMarket(products) {
     if (!marketGrid) return;
     const term = (marketSearch?.value || '').trim().toLowerCase();
+    const category = (marketCategoryFilter?.value || '').trim();
     const list = Object.entries(products || {}).map(([id, p]) => ({ id, ...p }))
         .filter(p => !p.status || p.status === 'active')
+        .filter(p => category ? (p.category || 'Other') === category : true)
         .filter(p => term ? (p.title?.toLowerCase().includes(term) || p.description?.toLowerCase().includes(term)) : true)
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     marketGrid.innerHTML = '';
@@ -1070,8 +1409,12 @@ function renderMarket(products) {
         const price = document.createElement('div');
         price.className = 'price';
         price.textContent = p.price != null ? `$${Number(p.price).toFixed(2)}` : '';
+        const seller = document.createElement('div');
+        seller.className = 'message-time';
+        seller.textContent = `Seller: ${getDisplayName(p.seller || '')}`;
         meta.appendChild(title);
         meta.appendChild(price);
+        meta.appendChild(seller);
         card.appendChild(img);
         card.appendChild(meta);
         card.addEventListener('click', () => openProductView(p));
@@ -1105,6 +1448,7 @@ function openProductView(p) {
     }
     if (viewProductPrice) viewProductPrice.textContent = p.price != null ? `$${Number(p.price).toFixed(2)}` : '';
     if (viewProductDesc) viewProductDesc.textContent = p.description || '';
+    if (viewProductSeller) viewProductSeller.textContent = `Seller: ${getDisplayName(p.seller || '')}`;
     if (viewModal) viewModal.style.display = 'flex';
 }
 function closeProductView() {
@@ -1223,6 +1567,12 @@ async function checkoutCart() {
         status: 'placed'
     });
     await remove(cRef);
+    registerAppNotification({
+        scope: 'market',
+        sender: currentUser,
+        title: 'Order placed',
+        body: `Your order total is $${total.toFixed(2)}`
+    });
     alert('Order placed!');
     closeCart();
 }
@@ -1238,6 +1588,43 @@ if (chooseProductImage && productImageInput) {
 }
 if (marketSearch) {
     marketSearch.addEventListener('input', () => renderMarket(allProducts));
+}
+
+function subscribeOrderHistory() {
+    if (!orderHistory || !currentUser) return;
+    onValue(userOrdersRefStrict(), (snapshot) => {
+        const data = snapshot.val() || {};
+        const orders = Object.entries(data)
+            .map(([id, order]) => ({ id, ...order }))
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        orderHistory.innerHTML = '';
+        if (!orders.length) {
+            orderHistory.innerHTML = '<div class="empty-state">No orders yet.</div>';
+            return;
+        }
+        orders.forEach((order) => {
+            const row = document.createElement('div');
+            row.className = 'cart-item';
+            const meta = document.createElement('div');
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = `Order ${order.id.slice(-6)} - ${order.status || 'placed'}`;
+            const sub = document.createElement('div');
+            sub.className = 'meta-line';
+            sub.textContent = `${(order.items || []).length} item(s) - ${new Date(order.createdAt || Date.now()).toLocaleString()}`;
+            meta.appendChild(title);
+            meta.appendChild(sub);
+            const total = document.createElement('div');
+            total.className = 'price';
+            total.textContent = `$${Number(order.total || 0).toFixed(2)}`;
+            row.appendChild(meta);
+            row.appendChild(total);
+            orderHistory.appendChild(row);
+        });
+    });
+}
+if (marketCategoryFilter) {
+    marketCategoryFilter.addEventListener('change', () => renderMarket(allProducts));
 }
 if (openCartBtn) {
     openCartBtn.addEventListener('click', openCart);
@@ -1271,6 +1658,7 @@ if (saveProductBtn && productImageInput && productTitleInput && productPriceInpu
             const title = productTitleInput.value.trim();
             const price = Number(productPriceInput.value);
             const desc = productDescInput.value.trim();
+            const category = (productCategoryInput?.value || 'Other').trim() || 'Other';
             const file = productImageInput.files[0];
             if (!title || isNaN(price) || !file) {
                 alert('Please provide title, price and image.');
@@ -1287,6 +1675,7 @@ if (saveProductBtn && productImageInput && productTitleInput && productPriceInpu
                 description: desc,
                 imageUrl: url,
                 seller: currentUser,
+                category,
                 createdAt: ts,
                 status: 'active',
             });
@@ -1353,6 +1742,28 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         actionWrap.appendChild(deleteBtn);
     }
 
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'ghost-btn';
+    pinBtn.textContent = 'Pin';
+    pinBtn.addEventListener('click', () => pinMessage(msg));
+    actionWrap.appendChild(pinBtn);
+
+    if (msg.username === currentUser) {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'ghost-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.disabled = !canEditOrUnsend(msg);
+        editBtn.addEventListener('click', () => editMessage(msg));
+        actionWrap.appendChild(editBtn);
+
+        const unsendBtn = document.createElement('button');
+        unsendBtn.className = 'ghost-btn';
+        unsendBtn.textContent = 'Unsend';
+        unsendBtn.disabled = !canEditOrUnsend(msg);
+        unsendBtn.addEventListener('click', () => unsendMessage(msg));
+        actionWrap.appendChild(unsendBtn);
+    }
+
     if (showReply && msg.replyTo) {
         const replyBlock = document.createElement('div');
         replyBlock.className = 'reply-block';
@@ -1365,6 +1776,7 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         image.src = msg.imageData;
         image.alt = msg.caption || 'Shared photo';
         image.className = 'shared-image';
+        image.loading = 'lazy';
         messageDiv.appendChild(image);
         if (msg.caption) {
             const caption = document.createElement('div');
@@ -1378,6 +1790,7 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         video.src = msg.videoData;
         video.className = 'shared-video';
         video.playsInline = true;
+        video.preload = 'metadata';
         messageDiv.appendChild(video);
     } else if (msg.type === 'sticker' && msg.sticker) {
         const sticker = document.createElement('div');
@@ -1393,9 +1806,18 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         if (msg.duration) {
             const duration = document.createElement('div');
             duration.className = 'message-time';
-            duration.textContent = `Voice · ${Math.round(msg.duration)}s`;
+            duration.textContent = `Voice - ${Math.round(msg.duration)}s`;
             messageDiv.appendChild(duration);
         }
+    } else if (msg.type === 'file' && msg.fileUrl) {
+        const fileLink = document.createElement('a');
+        fileLink.href = msg.fileUrl;
+        fileLink.target = '_blank';
+        fileLink.rel = 'noopener noreferrer';
+        fileLink.className = 'message-text';
+        const sizeKb = Math.max(1, Math.round((Number(msg.fileSize) || 0) / 1024));
+        fileLink.textContent = `${msg.fileName || 'File'} (${sizeKb} KB)`;
+        messageDiv.appendChild(fileLink);
     } else {
         const textDiv = document.createElement('div');
         textDiv.className = 'message-text';
@@ -1411,6 +1833,9 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
     const timeDiv = document.createElement('div');
     timeDiv.className = 'message-time';
     timeDiv.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (msg.editedAt) {
+        timeDiv.textContent += ' (edited)';
+    }
     metaRow.appendChild(timeDiv);
     if (statusText) {
         const statusDiv = document.createElement('div');
@@ -1419,13 +1844,42 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         metaRow.appendChild(statusDiv);
     }
     messageDiv.appendChild(metaRow);
+    renderReactionRow(msg, messageDiv);
 
     container.appendChild(messageDiv);
 }
 
+async function flushQueuedMessages() {
+    if (isFlushingQueue || !queuedMessages.length) return;
+    isFlushingQueue = true;
+    try {
+        const pending = [...queuedMessages];
+        queuedMessages = [];
+        for (const item of pending) {
+            const scope = item.target?.scope || 'group';
+            let messagesRef = getGroupMessagesRef(normalizeChannelName(currentChannel));
+            let chatId = normalizeChannelName(currentChannel);
+            if (scope === 'private' && item.target?.chatId) {
+                chatId = item.target.chatId;
+                messagesRef = ref(db, `private_messages/${chatId}`);
+            } else if (scope === 'group' && item.message?.channelId) {
+                chatId = normalizeChannelName(item.message.channelId);
+                messagesRef = getGroupMessagesRef(chatId);
+            }
+            await sendMessageToTarget({
+                scope,
+                chatId,
+                messagesRef
+            }, item.message);
+        }
+    } finally {
+        persistClientState();
+        isFlushingQueue = false;
+    }
+}
+
 function deleteGroupMessage(messageId) {
-    const messageRef = ref(db, `messages/${messageId}`);
-    remove(messageRef);
+    remove(child(getGroupMessagesRef(currentChannel), messageId));
 }
 
 function deletePrivateMessage(messageId) {
@@ -1435,20 +1889,23 @@ function deletePrivateMessage(messageId) {
 }
 
 function loadGroupMessages() {
-    const messagesRef = ref(db, 'messages');
-    const recentMessages = query(messagesRef, limitToLast(200));
+    const channelId = normalizeChannelName(currentChannel);
+    const messagesRef = getGroupMessagesRef(channelId);
+    const recentMessages = query(messagesRef, limitToLast(groupLimit));
 
     onValue(recentMessages, snapshot => {
         groupMessages.innerHTML = '';
         const data = snapshot.val();
         if (!data) {
             groupEmpty.style.display = 'block';
+            currentGroupMessages = [];
             groupAlertsPrimed = true;
             return;
         }
         groupEmpty.style.display = 'none';
         const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
+        currentGroupMessages = messages;
         handleGroupActivity(messages);
         messages.forEach(msg => {
             renderMessage(groupMessages, { ...msg, _scope: 'group' }, msg.username === currentUser, true, true, msg.username === currentUser, true, null);
@@ -1511,7 +1968,7 @@ function loadPrivateMessages(chatId) {
     }
 
     const messagesRef = ref(db, `private_messages/${chatId}`);
-    const recentMessages = query(messagesRef, limitToLast(200));
+    const recentMessages = query(messagesRef, limitToLast(privateLimit));
 
     onValue(recentMessages, snapshot => {
         const data = snapshot.val();
@@ -1522,9 +1979,169 @@ function loadPrivateMessages(chatId) {
         }
         currentPrivateMessages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }))
             .sort((a, b) => a.timestamp - b.timestamp);
+        privateMessagesCache[chatId] = currentPrivateMessages;
         renderPrivateMessages();
         markPrivateRead(chatId);
     });
+}
+if (contactSellerBtn) {
+    contactSellerBtn.addEventListener('click', () => {
+        if (!viewingProduct?.seller || viewingProduct.seller === currentUser) return;
+        selectPrivateUser(viewingProduct.seller);
+        document.querySelector('[data-tab="private"]')?.click();
+        closeProductView();
+    });
+}
+
+function getMessageNodeRef(msg) {
+    if (!msg || !msg.id) return null;
+    if (msg._scope === 'private') {
+        return ref(db, `private_messages/${selectedPrivateId}/${msg.id}`);
+    }
+    const channelId = normalizeChannelName(msg.channelId || currentChannel);
+    return child(getGroupMessagesRef(channelId), msg.id);
+}
+
+function canEditOrUnsend(msg) {
+    if (!msg || msg.username !== currentUser) return false;
+    return Date.now() - Number(msg.timestamp || 0) <= 2 * 60 * 1000;
+}
+
+async function editMessage(msg) {
+    if (!canEditOrUnsend(msg)) {
+        alert('Edit window expired (2 minutes).');
+        return;
+    }
+    const updatedText = prompt('Edit your message', msg.text || '');
+    if (updatedText == null) return;
+    const safeText = updatedText.trim();
+    if (!safeText) return;
+    const nodeRef = getMessageNodeRef(msg);
+    if (!nodeRef) return;
+    await update(nodeRef, {
+        text: safeText,
+        editedAt: Date.now()
+    });
+}
+
+async function unsendMessage(msg) {
+    if (!canEditOrUnsend(msg)) {
+        alert('Unsend window expired (2 minutes).');
+        return;
+    }
+    const nodeRef = getMessageNodeRef(msg);
+    if (!nodeRef) return;
+    await remove(nodeRef);
+}
+
+async function toggleReaction(msg, emoji) {
+    if (!emoji) return;
+    const nodeRef = getMessageNodeRef(msg);
+    if (!nodeRef) return;
+    const reactionRef = child(nodeRef, `reactions/${currentUser}`);
+    const currentReaction = msg.reactions?.[currentUser] || '';
+    if (currentReaction === emoji) {
+        await remove(reactionRef);
+    } else {
+        await set(reactionRef, emoji);
+    }
+}
+
+async function pinMessage(msg) {
+    if (!msg) return;
+    const scope = msg._scope === 'private' ? 'private' : 'group';
+    const key = scope === 'private' ? selectedPrivateId : normalizeChannelName(currentChannel);
+    if (!key) return;
+    const pinRef = ref(db, `pinned/${scope}/${key}`);
+    await set(pinRef, {
+        messageId: msg.id,
+        text: msg.text || getMessagePreview(msg),
+        username: msg.username || '',
+        timestamp: Number(msg.timestamp) || Date.now(),
+        scope,
+        key
+    });
+}
+
+function setTypingState(active) {
+    const target = getMessageTarget();
+    if (!target) return;
+    const typingKey = target.scope === 'private'
+        ? `typing/private/${target.chatId}/${currentUser}`
+        : `typing/group/${target.chatId}/${currentUser}`;
+    const typingRef = ref(db, typingKey);
+    if (!active) {
+        remove(typingRef);
+        return;
+    }
+    set(typingRef, {
+        username: currentUser,
+        active: true,
+        updatedAt: Date.now()
+    });
+}
+
+function subscribeTypingIndicators() {
+    if (groupTypingUnsub) {
+        groupTypingUnsub();
+        groupTypingUnsub = null;
+    }
+    if (privateTypingUnsub) {
+        privateTypingUnsub();
+        privateTypingUnsub = null;
+    }
+    const channelId = normalizeChannelName(currentChannel);
+    groupTypingUnsub = onValue(ref(db, `typing/group/${channelId}`), (snapshot) => {
+        const data = snapshot.val() || {};
+        const names = Object.values(data)
+            .filter((entry) => entry?.username && entry.username !== currentUser)
+            .map((entry) => getDisplayName(entry.username));
+        if (groupTyping) {
+            groupTyping.textContent = names.length ? `${names.join(', ')} typing...` : '';
+        }
+    });
+    if (!selectedPrivateId) {
+        if (privateTyping) privateTyping.textContent = '';
+        return;
+    }
+    privateTypingUnsub = onValue(ref(db, `typing/private/${selectedPrivateId}`), (snapshot) => {
+        const data = snapshot.val() || {};
+        const names = Object.values(data)
+            .filter((entry) => entry?.username && entry.username !== currentUser)
+            .map((entry) => getDisplayName(entry.username));
+        if (privateTyping) {
+            privateTyping.textContent = names.length ? `${names.join(', ')} typing...` : '';
+        }
+    });
+}
+
+function renderReactionRow(msg, container) {
+    const row = document.createElement('div');
+    row.className = 'message-reactions';
+    const reactions = msg.reactions || {};
+    const reactionCounts = {};
+    Object.values(reactions).forEach((emoji) => {
+        reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+    });
+    Object.entries(reactionCounts).forEach(([emoji, count]) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'ghost-btn';
+        chip.textContent = `${emoji} ${count}`;
+        chip.addEventListener('click', () => toggleReaction(msg, emoji));
+        row.appendChild(chip);
+    });
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'ghost-btn';
+    add.textContent = '+';
+    add.addEventListener('click', async () => {
+        const emoji = prompt('React with emoji (example: 👍)', '👍');
+        if (!emoji) return;
+        await toggleReaction(msg, emoji.trim());
+    });
+    row.appendChild(add);
+    container.appendChild(row);
 }
 
 function updatePresence() {
@@ -1553,6 +2170,18 @@ function updatePresence() {
         onlineCount.textContent = `${count} online`;
         sessionUser.textContent = currentUser ? `@${getDisplayName(currentUser)}` : '';
         updateHeaderAvatar();
+        if (myStatusAvatar) {
+            const url = getAvatarUrl(currentUser);
+            if (url) {
+                myStatusAvatar.style.backgroundImage = `url("${url}")`;
+                myStatusAvatar.classList.add('has-image');
+                myStatusAvatar.textContent = '';
+            } else {
+                myStatusAvatar.style.backgroundImage = '';
+                myStatusAvatar.classList.remove('has-image');
+                myStatusAvatar.textContent = currentUser ? currentUser.charAt(0).toUpperCase() : '';
+            }
+        }
         renderUserList();
     });
 }
@@ -1668,6 +2297,9 @@ function selectPrivateUser(username) {
     if (currentTab !== 'private') {
         document.querySelector('[data-tab="private"]').click();
     }
+    subscribeTypingIndicators();
+    subscribePinnedMessages();
+    renderMuteState();
     refreshPrivateList();
 }
 
@@ -1680,6 +2312,7 @@ function refreshPrivateList() {
         Object.keys(data).forEach(chatId => {
             if (!chatId.includes(currentUser)) return;
             const messages = Object.entries(data[chatId]).map(([id, msg]) => ({ id, ...msg }));
+            privateMessagesCache[chatId] = messages;
             const lastMessage = messages.sort((a, b) => b.timestamp - a.timestamp)[0];
             const otherUser = chatId.split('_').find(name => name !== currentUser);
             if (otherUser) {
@@ -1730,6 +2363,7 @@ if (sendBtn && messageInput) sendBtn.addEventListener('click', async () => {
     }
 
     await sendMessageToTarget(target, message);
+    setTypingState(false);
     if (target.scope === 'group') {
         replyContext = null;
         replyPreview.classList.remove('active');
@@ -1745,6 +2379,25 @@ if (messageInput && sendBtn) messageInput.addEventListener('keypress', (e) => {
         sendBtn.click();
     }
 });
+
+if (globalSearch) {
+    globalSearch.addEventListener('input', () => {
+        renderGlobalSearchResults(globalSearch.value);
+    });
+}
+
+if (messageInput) {
+    messageInput.addEventListener('input', () => {
+        if (!messageInput.value.trim()) {
+            setTypingState(false);
+            return;
+        }
+        setTypingState(true);
+        if (typingStopTimer) clearTimeout(typingStopTimer);
+        typingStopTimer = setTimeout(() => setTypingState(false), 1800);
+    });
+    messageInput.addEventListener('blur', () => setTypingState(false));
+}
 
 if (imageBtn && imageInput) {
     imageBtn.addEventListener('click', () => {
@@ -1793,6 +2446,46 @@ if (imageInput) imageInput.addEventListener('change', async (e) => {
     reader.readAsDataURL(file);
 });
 
+if (fileBtn && fileInput) {
+    fileBtn.addEventListener('click', () => fileInput.click());
+}
+
+if (fileInput) fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const target = getMessageTarget();
+    if (!target) {
+        alert('Select a private chat first.');
+        fileInput.value = '';
+        return;
+    }
+    if (file.size > MAX_MEDIA_BYTES) {
+        alert('File too large (about 10MB max).');
+        fileInput.value = '';
+        return;
+    }
+    try {
+        const ts = Date.now();
+        const path = `files/${currentUser}/${ts}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const { url } = await uploadToStorage(path, file, 'Uploading file...');
+        const message = {
+            username: currentUser,
+            timestamp: ts,
+            type: 'file',
+            fileUrl: url,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type || 'application/octet-stream'
+        };
+        await sendMessageToTarget(target, message);
+    } catch (error) {
+        console.error('File upload failed', error);
+        alert('Could not send file.');
+    } finally {
+        fileInput.value = '';
+    }
+});
+
 function renderStickers() {
     if (!stickerPanel) return;
     stickerPanel.innerHTML = '';
@@ -1823,6 +2516,85 @@ if (stickerBtn) {
     renderStickers();
     stickerBtn.addEventListener('click', () => {
         stickerPanel.classList.toggle('active');
+    });
+}
+
+if (groupLoadOlderBtn) {
+    groupLoadOlderBtn.addEventListener('click', () => {
+        groupLimit += 200;
+        loadGroupMessages();
+    });
+}
+
+function renderGlobalSearchResults(queryText) {
+    if (!searchResults) return;
+    const term = String(queryText || '').trim().toLowerCase();
+    searchResults.innerHTML = '';
+    if (!term) return;
+
+    const userMatches = Object.keys(userProfiles || {})
+        .filter((username) => username.toLowerCase().includes(term) || getDisplayName(username).toLowerCase().includes(term))
+        .slice(0, 8);
+    const groupMatches = (currentGroupMessages || [])
+        .filter((msg) => (msg.text || '').toLowerCase().includes(term))
+        .slice(-8)
+        .reverse();
+    const privateMatches = Object.entries(privateMessagesCache)
+        .flatMap(([chatId, list]) => list.map((msg) => ({ chatId, ...msg })))
+        .filter((msg) => (msg.text || '').toLowerCase().includes(term))
+        .slice(-8)
+        .reverse();
+
+    if (!userMatches.length && !groupMatches.length && !privateMatches.length) {
+        searchResults.innerHTML = '<div class="empty-state">No matches found.</div>';
+        return;
+    }
+
+    userMatches.forEach((username) => {
+        const row = document.createElement('div');
+        row.className = 'user-item';
+        row.textContent = `User: ${getDisplayName(username)}`;
+        row.addEventListener('click', () => {
+            if (username !== currentUser) {
+                selectPrivateUser(username);
+                document.querySelector('[data-tab="private"]')?.click();
+            }
+            searchResults.innerHTML = '';
+        });
+        searchResults.appendChild(row);
+    });
+
+    groupMatches.forEach((msg) => {
+        const row = document.createElement('div');
+        row.className = 'private-item';
+        row.textContent = `Group: ${getDisplayName(msg.username)} - ${truncatePreview(msg.text || '')}`;
+        row.addEventListener('click', () => {
+            document.querySelector('[data-tab="group"]')?.click();
+            searchResults.innerHTML = '';
+        });
+        searchResults.appendChild(row);
+    });
+
+    privateMatches.forEach((msg) => {
+        const other = msg.chatId.split('_').find((u) => u !== currentUser);
+        const row = document.createElement('div');
+        row.className = 'private-item';
+        row.textContent = `Private (${other || 'chat'}): ${truncatePreview(msg.text || '')}`;
+        row.addEventListener('click', () => {
+            if (other) selectPrivateUser(other);
+            document.querySelector('[data-tab="private"]')?.click();
+            searchResults.innerHTML = '';
+        });
+        searchResults.appendChild(row);
+    });
+}
+
+if (privateLoadOlderBtn) {
+    privateLoadOlderBtn.addEventListener('click', () => {
+        privateLimit += 200;
+        if (selectedPrivateId) {
+            loadPrivateMessages(selectedPrivateId);
+        }
     });
 }
 
@@ -1944,6 +2716,30 @@ function renderStoriesList() {
     });
 }
 
+async function recordStoryView(story) {
+    if (!story || !viewerUser || !currentUser || viewerUser === currentUser) return;
+    try {
+        await set(ref(db, `story_views/${viewerUser}/${story.id}/${currentUser}`), Date.now());
+    } catch (error) {
+        console.warn('Could not record story view', error);
+    }
+}
+
+function renderStorySeenList(story) {
+    if (!storySeenList) return;
+    storySeenList.innerHTML = '';
+    if (!story || viewerUser !== currentUser) return;
+    get(ref(db, `story_views/${currentUser}/${story.id}`)).then((snapshot) => {
+        const data = snapshot.val() || {};
+        const viewers = Object.keys(data);
+        storySeenList.textContent = viewers.length
+            ? `Seen by: ${viewers.map((u) => getDisplayName(u)).join(', ')}`
+            : 'Seen by: nobody yet';
+    }).catch(() => {
+        storySeenList.textContent = '';
+    });
+}
+
 function openStoryViewer(username, items) {
     viewerUser = username;
     viewerStories = items || storiesByUser[username] || [];
@@ -1960,6 +2756,7 @@ function openStoryViewer(username, items) {
         storyViewerAvatar.textContent = username ? username.charAt(0).toUpperCase() : '';
     }
     storyDeleteBtn.style.display = username === currentUser ? 'inline-block' : 'none';
+    storyPaused = false;
     storyViewerModal.style.display = 'flex';
     showCurrentStory();
 }
@@ -1971,6 +2768,7 @@ function closeStoryViewer() {
     }
     storyMedia.innerHTML = '';
     storyViewerModal.style.display = 'none';
+    storyPaused = false;
     viewerUser = null;
     viewerStories = [];
     viewerIndex = 0;
@@ -1991,6 +2789,8 @@ function showCurrentStory() {
         viewerTimer = null;
     }
     const data = viewerStories[viewerIndex];
+    recordStoryView(data);
+    renderStorySeenList(data);
     storyMedia.innerHTML = '';
     storyProgress.style.width = '0%';
     if (data.type === 'image' && data.imageData) {
@@ -2001,6 +2801,10 @@ function showCurrentStory() {
         const duration = 6000;
         const started = Date.now();
         function tick() {
+            if (storyPaused) {
+                viewerTimer = setTimeout(tick, 120);
+                return;
+            }
             const p = Math.min(100, ((Date.now() - started) / duration) * 100);
             storyProgress.style.width = `${p}%`;
             if (p < 100) {
@@ -2021,6 +2825,10 @@ function showCurrentStory() {
         const duration = 6000;
         const started = Date.now();
         function tickImg() {
+            if (storyPaused) {
+                viewerTimer = setTimeout(tickImg, 120);
+                return;
+            }
             const p = Math.min(100, ((Date.now() - started) / duration) * 100);
             storyProgress.style.width = `${p}%`;
             if (p < 100) {
@@ -2041,11 +2849,19 @@ function showCurrentStory() {
         video.controls = true;
         storyMedia.appendChild(video);
         function syncProgress() {
+            if (storyPaused) {
+                if (!video.paused) video.pause();
+                viewerTimer = setTimeout(syncProgress, 120);
+                return;
+            }
             if (!video.duration || isNaN(video.duration)) {
                 storyProgress.style.width = '0%';
             } else {
                 const p = Math.min(100, (video.currentTime / video.duration) * 100);
                 storyProgress.style.width = `${p}%`;
+            }
+            if (video.paused && !video.ended) {
+                video.play().catch(() => {});
             }
             if (!video.paused && !video.ended) {
                 viewerTimer = setTimeout(syncProgress, 50);
@@ -2065,11 +2881,19 @@ function showCurrentStory() {
         audio.src = data.audioData || data.audioUrl;
         storyMedia.appendChild(audio);
         function syncAudioProgress() {
+            if (storyPaused) {
+                if (!audio.paused) audio.pause();
+                viewerTimer = setTimeout(syncAudioProgress, 120);
+                return;
+            }
             if (!audio.duration || isNaN(audio.duration)) {
                 storyProgress.style.width = '0%';
             } else {
                 const p = Math.min(100, (audio.currentTime / audio.duration) * 100);
                 storyProgress.style.width = `${p}%`;
+            }
+            if (audio.paused && !audio.ended) {
+                audio.play().catch(() => {});
             }
             if (!audio.paused && !audio.ended) {
                 viewerTimer = setTimeout(syncAudioProgress, 50);
@@ -2090,6 +2914,10 @@ function showCurrentStory() {
         const duration = Math.max(3000, Math.min(10000, data.text.length * 150));
         const started = Date.now();
         function tickText() {
+            if (storyPaused) {
+                viewerTimer = setTimeout(tickText, 120);
+                return;
+            }
             const p = Math.min(100, ((Date.now() - started) / duration) * 100);
             storyProgress.style.width = `${p}%`;
             if (p < 100) {
@@ -2116,6 +2944,35 @@ function showCurrentStory() {
 
 if (closeStoryViewerBtn) {
     closeStoryViewerBtn.addEventListener('click', closeStoryViewer);
+}
+if (storyMedia) {
+    let touchStartX = 0;
+    storyMedia.addEventListener('mousedown', () => {
+        storyPaused = true;
+    });
+    storyMedia.addEventListener('mouseup', () => {
+        storyPaused = false;
+    });
+    storyMedia.addEventListener('mouseleave', () => {
+        storyPaused = false;
+    });
+    storyMedia.addEventListener('touchstart', (event) => {
+        touchStartX = event.touches?.[0]?.clientX || 0;
+        storyPaused = true;
+    }, { passive: true });
+    storyMedia.addEventListener('touchend', (event) => {
+        const endX = event.changedTouches?.[0]?.clientX || 0;
+        const delta = endX - touchStartX;
+        storyPaused = false;
+        if (Math.abs(delta) > 40) {
+            if (delta > 0) {
+                viewerIndex = Math.max(0, viewerIndex - 1);
+            } else {
+                viewerIndex += 1;
+            }
+            showCurrentStory();
+        }
+    }, { passive: true });
 }
 if (storyPrev) {
     storyPrev.addEventListener('click', () => {
@@ -2321,12 +3178,40 @@ if (window.cordova) {
     document.addEventListener('deviceready', initializeNativePush, false);
 }
 
+window.addEventListener('online', () => {
+    flushQueuedMessages();
+    registerAppNotification({
+        scope: 'group',
+        sender: currentUser,
+        title: 'Back online',
+        body: 'Queued messages are being sent.'
+    });
+});
+
+window.addEventListener('offline', () => {
+    registerAppNotification({
+        scope: 'group',
+        sender: currentUser,
+        title: 'You are offline',
+        body: 'New messages will be queued automatically.'
+    });
+});
+
 await loadUserColor();
+await migrateGeneralChannelMessages();
 updatePresence();
+subscribeChannels();
 loadGroupMessages();
 refreshPrivateList();
+subscribeStories();
 subscribeMarketProducts();
 subscribeCart();
+subscribeOrderHistory();
+subscribeTypingIndicators();
+subscribePinnedMessages();
+renderMuteState();
+flushQueuedMessages();
+if (channelSelect) renderChannels();
 if (privateBackBtn) {
     privateBackBtn.addEventListener('click', () => {
         if (privateLayout) {

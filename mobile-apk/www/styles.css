@@ -3393,3 +3393,169 @@ html[data-theme="instagram"] {
         height: 22px;
     }
 }
+
+/* Feature polish pass for newly added chat functionality */
+.chat-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 14px;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.06));
+    backdrop-filter: blur(10px);
+    margin-bottom: 10px;
+}
+
+#global-search {
+    flex: 1 1 240px;
+    min-width: 180px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    padding: 0 12px;
+}
+
+#channel-select,
+#market-category-filter {
+    min-width: 140px;
+}
+
+.search-results {
+    display: grid;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+    margin-bottom: 10px;
+}
+
+.chat-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.pinned-banner {
+    flex: 1;
+    min-height: 36px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 8px 10px;
+    font-size: 0.84rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.82));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.typing-indicator {
+    min-height: 20px;
+    margin: 4px 2px 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.72));
+}
+
+#group-load-older,
+#private-load-older {
+    margin-bottom: 8px;
+}
+
+.status-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.status-controls input[type="text"] {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.status-list {
+    display: grid;
+    gap: 10px;
+}
+
+.notification-center-list,
+.order-history,
+.story-seen-list {
+    display: grid;
+    gap: 10px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.message-reactions .ghost-btn {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+    border-radius: 999px;
+}
+
+#file-btn.icon-btn .btn-label {
+    font-size: 0.78rem;
+}
+
+#story-progress.story-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3ddbd9, #4f8cff);
+    width: 0%;
+    transition: width 120ms linear;
+}
+
+.story-media {
+    min-height: 280px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+
+.story-seen-list {
+    font-size: 0.78rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.78));
+}
+
+@media (max-width: 768px) {
+    .chat-toolbar {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    #global-search {
+        flex-basis: 100%;
+    }
+
+    #channel-select,
+    #market-category-filter {
+        flex: 1 1 46%;
+        min-width: 0;
+    }
+
+    .chat-meta-row {
+        flex-wrap: wrap;
+    }
+
+    .pinned-banner {
+        white-space: normal;
+        min-height: 0;
+    }
+}
