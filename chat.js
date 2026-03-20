@@ -27,9 +27,25 @@ if (adminSession === 'true') {
 if (!sessionRaw) {
     window.location.href = 'login.html';
 }
+function parseSession(raw) {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'string') return { username: parsed };
+        if (parsed && typeof parsed === 'object') return parsed;
+        return null;
+    } catch {
+        const fallback = String(raw).trim();
+        return fallback ? { username: fallback } : null;
+    }
+}
 
-const session = sessionRaw ? JSON.parse(sessionRaw) : null;
-const currentUser = session?.username;
+const session = parseSession(sessionRaw);
+const currentUser = session?.username ? String(session.username).trim() : '';
+if (!currentUser) {
+    localStorage.removeItem('dtubonge_session');
+    window.location.href = 'login.html';
+}
 
 const logoutBtn = document.getElementById('logout-btn');
 const sessionUser = document.getElementById('session-user');
@@ -3087,7 +3103,7 @@ if (addStoryBtn && storyInput) {
 }
 
 if (addTextStatusBtn && textStatusInput) {
-    addTextStatusBtn.addEventListener('click', async () => {
+    const postTextStatus = async () => {
         try {
             if (!currentUser) {
                 alert('Session expired. Please log in again.');
@@ -3096,13 +3112,44 @@ if (addTextStatusBtn && textStatusInput) {
             }
             const text = (textStatusInput.value || '').trim();
             if (!text) return;
+            addTextStatusBtn.disabled = true;
+            addTextStatusBtn.textContent = 'Posting...';
+
+            const timestamp = Date.now();
             const userStoriesRef = ref(db, `stories/${currentUser}`);
             const newRef = push(userStoriesRef);
-            await set(newRef, { username: currentUser, timestamp: Date.now(), type: 'text', text });
+            await set(newRef, {
+                username: currentUser,
+                timestamp,
+                type: 'text',
+                text
+            });
+
+            // Optimistic local update so status appears immediately.
+            const localStory = { id: newRef.key, username: currentUser, timestamp, type: 'text', text };
+            const mine = storiesByUser[currentUser] || [];
+            storiesByUser[currentUser] = [...mine, localStory].sort((a, b) => a.timestamp - b.timestamp);
+            if (!storyUsers.includes(currentUser)) {
+                storyUsers = [currentUser, ...storyUsers];
+            }
+            renderStoriesList();
+
             textStatusInput.value = '';
+            showUploadProgress('Posted text status', 100);
         } catch (err) {
             console.error('Text status error', err);
             alert('Failed to post text status.');
+        } finally {
+            addTextStatusBtn.disabled = false;
+            addTextStatusBtn.textContent = 'Post';
+        }
+    };
+
+    addTextStatusBtn.addEventListener('click', postTextStatus);
+    textStatusInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            postTextStatus();
         }
     });
 }
@@ -3197,25 +3244,40 @@ window.addEventListener('offline', () => {
     });
 });
 
-await loadUserColor();
-await migrateGeneralChannelMessages();
-updatePresence();
-subscribeChannels();
-loadGroupMessages();
-refreshPrivateList();
-subscribeStories();
-subscribeMarketProducts();
-subscribeCart();
-subscribeOrderHistory();
-subscribeTypingIndicators();
-subscribePinnedMessages();
-renderMuteState();
-flushQueuedMessages();
-if (channelSelect) renderChannels();
-if (privateBackBtn) {
-    privateBackBtn.addEventListener('click', () => {
-        if (privateLayout) {
-            privateLayout.classList.remove('split');
-        }
+try {
+    // Start realtime subscriptions immediately so lists render as soon as data arrives.
+    updatePresence();
+    subscribeChannels();
+    loadGroupMessages();
+    refreshPrivateList();
+    subscribeStories();
+    subscribeMarketProducts();
+    subscribeCart();
+    subscribeOrderHistory();
+    subscribeTypingIndicators();
+    subscribePinnedMessages();
+    renderMuteState();
+    flushQueuedMessages();
+    if (channelSelect) renderChannels();
+    if (privateBackBtn) {
+        privateBackBtn.addEventListener('click', () => {
+            if (privateLayout) {
+                privateLayout.classList.remove('split');
+            }
+        });
+    }
+
+    // Background setup tasks should not block UI rendering.
+    loadUserColor().catch((error) => {
+        console.warn('Profile bootstrap skipped', error);
     });
+    migrateGeneralChannelMessages().catch((error) => {
+        console.warn('Message migration skipped', error);
+    });
+} catch (bootError) {
+    console.error('Chat boot failed', bootError);
+    const bootBanner = document.getElementById('group-empty');
+    if (bootBanner) {
+        bootBanner.textContent = 'Chat failed to load. Reload and sign in again.';
+    }
 }

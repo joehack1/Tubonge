@@ -3464,6 +3464,11 @@ html[data-theme="instagram"] {
 #group-load-older,
 #private-load-older {
     margin-bottom: 8px;
+    min-height: 26px;
+    padding: 4px 9px;
+    font-size: 0.72rem;
+    border-radius: 8px;
+    line-height: 1;
 }
 
 .status-controls {
@@ -3477,6 +3482,19 @@ html[data-theme="instagram"] {
 .status-controls input[type="text"] {
     flex: 1 1 220px;
     min-width: 180px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    padding: 0 12px;
+}
+
+#add-text-status-btn {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 0.8rem;
 }
 
 .status-list {
