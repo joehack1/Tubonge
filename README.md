@@ -3,8 +3,9 @@
 [link](https://tubongechat.netlify.app)
 # Tubonge
 
+
 **Features**
-- Username + password sign up and login with session persistence.
+- Username + password sign up and login with session persistence (no personal data is collected like phone number and email).
 - Admin login path and admin console for managing group messages.
 - Group chat with realtime updates.
 - 1:1 private chat threads with user selection.
