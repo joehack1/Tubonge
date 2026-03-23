@@ -1228,6 +1228,7 @@ body.auth-page {
         radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.28), transparent 30%),
         radial-gradient(circle at bottom right, rgba(var(--accent-strong-rgb), 0.22), transparent 34%),
         var(--surface-page);
+    padding: 10px;
 }
 
 body.chat-page {
@@ -1266,6 +1267,7 @@ body.chat-page {
 .auth-card {
     width: 100%;
     max-width: 1040px;
+    max-height: calc(100dvh - 20px);
     background: rgba(7, 7, 10, 0.78);
     border: 1px solid var(--surface-border);
     border-radius: 32px;
@@ -1279,12 +1281,12 @@ body.chat-page {
 
 .auth-showcase {
     position: relative;
-    padding: 36px;
+    padding: 28px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 18px;
-    min-height: 540px;
+    gap: 14px;
+    min-height: 460px;
     background:
         linear-gradient(150deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
         linear-gradient(145deg, rgba(var(--accent-strong-rgb), 0.38), rgba(var(--accent-rgb), 0.1));
@@ -1321,12 +1323,12 @@ body.chat-page {
     z-index: 1;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .brand-badge {
     align-self: flex-start;
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1338,8 +1340,8 @@ body.chat-page {
 
 .auth-eyebrow,
 .auth-kicker {
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.72);
     font-weight: 700;
@@ -1348,50 +1350,51 @@ body.chat-page {
 .auth-showcase h1 {
     position: relative;
     z-index: 1;
-    max-width: 10ch;
-    font-size: clamp(2.7rem, 4vw, 4.3rem);
-    line-height: 0.96;
+    max-width: 11ch;
+    font-size: clamp(2.2rem, 3.2vw, 3.5rem);
+    line-height: 0.94;
     letter-spacing: -0.05em;
 }
 
 .auth-copy {
     position: relative;
     z-index: 1;
-    max-width: 28rem;
+    max-width: 24rem;
     color: rgba(255, 255, 255, 0.8);
-    font-size: 0.98rem;
-    line-height: 1.6;
+    font-size: 0.92rem;
+    line-height: 1.5;
 }
 
 .auth-highlights {
     position: relative;
     z-index: 1;
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .auth-highlight {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 12px 14px;
-    border-radius: 18px;
+    padding: 10px 12px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .highlight-value {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
 }
 
 .highlight-label {
     color: rgba(255, 255, 255, 0.72);
-    line-height: 1.5;
+    line-height: 1.35;
+    font-size: 0.9rem;
 }
 
 .auth-panel {
-    padding: 32px;
+    padding: 24px 26px;
     background:
         linear-gradient(180deg, rgba(8, 8, 12, 0.92), rgba(8, 8, 12, 0.85)),
         rgba(0, 0, 0, 0.25);
@@ -1405,19 +1408,20 @@ body.chat-page {
 }
 
 .auth-header h2 {
-    margin: 8px 0 10px;
-    font-size: clamp(1.9rem, 2vw, 2.5rem);
+    margin: 6px 0 8px;
+    font-size: clamp(1.7rem, 1.8vw, 2.2rem);
     line-height: 1.05;
     letter-spacing: -0.04em;
 }
 
 .auth-header p {
     color: rgba(255, 255, 255, 0.65);
-    line-height: 1.6;
+    line-height: 1.45;
+    font-size: 0.94rem;
 }
 
 .auth-tabs {
-    margin: 16px 0 18px;
+    margin: 12px 0 14px;
     display: flex;
     gap: 8px;
     background: rgba(255, 255, 255, 0.05);
@@ -1427,7 +1431,7 @@ body.chat-page {
 }
 
 body.auth-page .tab-btn {
-    padding: 13px 18px;
+    padding: 11px 16px;
     color: rgba(255, 255, 255, 0.62);
     border-radius: 14px;
 }
@@ -1459,21 +1463,21 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .field {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .field label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: rgba(255, 255, 255, 0.92);
     font-weight: 600;
-    font-size: 0.96rem;
+    font-size: 0.92rem;
 }
 
 .field input {
     width: 100%;
-    padding: 13px 15px;
-    border-radius: 16px;
+    padding: 11px 14px;
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
@@ -1494,11 +1498,11 @@ body.auth-page .tab-btn:hover:not(.active) {
 .primary-btn,
 .ghost-btn {
     border: none;
-    padding: 11px 14px;
-    border-radius: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1521,15 +1525,15 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .auth-footer {
-    margin-top: 12px;
+    margin-top: 10px;
     display: flex;
     justify-content: center;
 }
 
 .admin-panel {
-    margin-top: 14px;
-    padding: 14px;
-    border-radius: 20px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     display: none;
@@ -1540,11 +1544,12 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .auth-status {
-    margin-top: 12px;
+    margin-top: 8px;
     text-align: center;
     color: #8bf1a6;
-    min-height: 24px;
-    line-height: 1.5;
+    min-height: 20px;
+    line-height: 1.35;
+    font-size: 0.88rem;
 }
 
 .auth-status.error {
@@ -1552,35 +1557,36 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .auth-note {
-    margin: -2px 0 12px;
+    margin: -2px 0 10px;
     color: rgba(255, 255, 255, 0.58);
-    font-size: 0.88rem;
-    line-height: 1.5;
+    font-size: 0.82rem;
+    line-height: 1.35;
 }
 
 @media (max-width: 900px) {
     .auth-card {
         max-width: 680px;
+        max-height: none;
         grid-template-columns: 1fr;
     }
 
     .auth-showcase {
         min-height: auto;
-        padding: 28px 26px 22px;
+        padding: 20px 22px 16px;
     }
 
     .auth-showcase h1 {
-        max-width: 14ch;
+        max-width: 12ch;
     }
 
     .auth-panel {
-        padding: 24px 26px 26px;
+        padding: 20px 22px 22px;
     }
 }
 
 @media (max-width: 640px) {
     body.auth-page {
-        padding: 14px;
+        padding: 8px;
     }
 
     .auth-card {
@@ -1589,15 +1595,47 @@ body.auth-page .tab-btn:hover:not(.active) {
 
     .auth-showcase,
     .auth-panel {
-        padding: 20px 18px;
+        padding: 16px 16px;
     }
 
     .auth-showcase h1 {
-        font-size: 2.35rem;
+        font-size: 1.95rem;
     }
 
     .auth-tabs {
-        margin: 18px 0 22px;
+        margin: 10px 0 12px;
+    }
+}
+
+@media (max-height: 780px) and (min-width: 901px) {
+    .auth-card {
+        max-height: calc(100dvh - 12px);
+    }
+
+    .auth-showcase {
+        padding: 22px;
+        min-height: 400px;
+        gap: 10px;
+    }
+
+    .auth-copy {
+        display: none;
+    }
+
+    .auth-highlight {
+        padding: 8px 10px;
+    }
+
+    .auth-panel {
+        padding: 18px 20px;
+    }
+
+    .field {
+        margin-bottom: 10px;
+    }
+
+    .auth-tabs {
+        margin: 10px 0 12px;
     }
 }
 
