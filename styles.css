@@ -1228,7 +1228,7 @@ body.auth-page {
         radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.28), transparent 30%),
         radial-gradient(circle at bottom right, rgba(var(--accent-strong-rgb), 0.22), transparent 34%),
         var(--surface-page);
-    padding: 10px;
+    padding: 16px;
 }
 
 body.chat-page {
@@ -1267,7 +1267,7 @@ body.chat-page {
 .auth-card {
     width: 100%;
     max-width: 1040px;
-    max-height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 32px);
     background: rgba(7, 7, 10, 0.78);
     border: 1px solid var(--surface-border);
     border-radius: 32px;
@@ -1281,12 +1281,12 @@ body.chat-page {
 
 .auth-showcase {
     position: relative;
-    padding: 28px;
+    padding: 36px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 14px;
-    min-height: 460px;
+    gap: 18px;
+    min-height: 530px;
     background:
         linear-gradient(150deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
         linear-gradient(145deg, rgba(var(--accent-strong-rgb), 0.38), rgba(var(--accent-rgb), 0.1));
@@ -1361,8 +1361,8 @@ body.chat-page {
     z-index: 1;
     max-width: 24rem;
     color: rgba(255, 255, 255, 0.8);
-    font-size: 0.92rem;
-    line-height: 1.5;
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
 
 .auth-highlights {
@@ -1394,7 +1394,7 @@ body.chat-page {
 }
 
 .auth-panel {
-    padding: 24px 26px;
+    padding: 32px 34px;
     background:
         linear-gradient(180deg, rgba(8, 8, 12, 0.92), rgba(8, 8, 12, 0.85)),
         rgba(0, 0, 0, 0.25);
@@ -1408,20 +1408,20 @@ body.chat-page {
 }
 
 .auth-header h2 {
-    margin: 6px 0 8px;
-    font-size: clamp(1.7rem, 1.8vw, 2.2rem);
+    margin: 8px 0 10px;
+    font-size: clamp(1.8rem, 1.9vw, 2.3rem);
     line-height: 1.05;
     letter-spacing: -0.04em;
 }
 
 .auth-header p {
     color: rgba(255, 255, 255, 0.65);
-    line-height: 1.45;
-    font-size: 0.94rem;
+    line-height: 1.55;
+    font-size: 0.96rem;
 }
 
 .auth-tabs {
-    margin: 12px 0 14px;
+    margin: 16px 0 18px;
     display: flex;
     gap: 8px;
     background: rgba(255, 255, 255, 0.05);
@@ -1463,7 +1463,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .field {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .field label {
@@ -1476,7 +1476,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 
 .field input {
     width: 100%;
-    padding: 11px 14px;
+    padding: 13px 15px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
@@ -1498,7 +1498,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 .primary-btn,
 .ghost-btn {
     border: none;
-    padding: 10px 14px;
+    padding: 12px 15px;
     border-radius: 12px;
     cursor: pointer;
     font-weight: 700;
@@ -1525,7 +1525,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .auth-footer {
-    margin-top: 10px;
+    margin-top: 14px;
     display: flex;
     justify-content: center;
 }
@@ -1544,7 +1544,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .auth-status {
-    margin-top: 8px;
+    margin-top: 12px;
     text-align: center;
     color: #8bf1a6;
     min-height: 20px;
@@ -1572,7 +1572,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 
     .auth-showcase {
         min-height: auto;
-        padding: 20px 22px 16px;
+        padding: 28px 28px 20px;
     }
 
     .auth-showcase h1 {
@@ -1580,13 +1580,13 @@ body.auth-page .tab-btn:hover:not(.active) {
     }
 
     .auth-panel {
-        padding: 20px 22px 22px;
+        padding: 28px;
     }
 }
 
 @media (max-width: 640px) {
     body.auth-page {
-        padding: 8px;
+        padding: 12px;
     }
 
     .auth-card {
@@ -1595,7 +1595,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 
     .auth-showcase,
     .auth-panel {
-        padding: 16px 16px;
+        padding: 20px 20px;
     }
 
     .auth-showcase h1 {
@@ -1609,13 +1609,13 @@ body.auth-page .tab-btn:hover:not(.active) {
 
 @media (max-height: 780px) and (min-width: 901px) {
     .auth-card {
-        max-height: calc(100dvh - 12px);
+        max-height: calc(100dvh - 22px);
     }
 
     .auth-showcase {
-        padding: 22px;
-        min-height: 400px;
-        gap: 10px;
+        padding: 26px;
+        min-height: 440px;
+        gap: 12px;
     }
 
     .auth-copy {
@@ -1627,7 +1627,7 @@ body.auth-page .tab-btn:hover:not(.active) {
     }
 
     .auth-panel {
-        padding: 18px 20px;
+        padding: 22px 24px;
     }
 
     .field {
