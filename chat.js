@@ -1745,17 +1745,25 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
     const actionWrap = document.createElement('div');
     actionWrap.className = 'message-actions';
 
+    const actionList = document.createElement('div');
+    actionList.className = 'message-action-list';
+
+    let hasMessageActions = false;
+
     if (showReplyButton) {
         const replyBtn = document.createElement('button');
-        replyBtn.className = 'reply-btn';
+        replyBtn.className = 'reply-btn message-action';
+        replyBtn.type = 'button';
         replyBtn.textContent = 'Reply';
         replyBtn.addEventListener('click', () => setReplyContext(msg));
-        actionWrap.appendChild(replyBtn);
+        actionList.appendChild(replyBtn);
+        hasMessageActions = true;
     }
 
     if (showDeleteButton) {
         const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
+        deleteBtn.className = 'delete-btn message-action';
+        deleteBtn.type = 'button';
         deleteBtn.textContent = 'Delete';
         deleteBtn.addEventListener('click', () => {
             if (msg._scope === 'private') {
@@ -1764,23 +1772,46 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
                 deleteGroupMessage(msg.id);
             }
         });
-        actionWrap.appendChild(deleteBtn);
+        actionList.appendChild(deleteBtn);
+        hasMessageActions = true;
     }
 
     if (msg.username === currentUser) {
         const editBtn = document.createElement('button');
-        editBtn.className = 'ghost-btn';
+        editBtn.className = 'ghost-btn message-action';
+        editBtn.type = 'button';
         editBtn.textContent = 'Edit';
         editBtn.disabled = !canEditOrUnsend(msg);
         editBtn.addEventListener('click', () => editMessage(msg));
-        actionWrap.appendChild(editBtn);
+        actionList.appendChild(editBtn);
+        hasMessageActions = true;
 
         const unsendBtn = document.createElement('button');
-        unsendBtn.className = 'ghost-btn';
+        unsendBtn.className = 'ghost-btn message-action';
+        unsendBtn.type = 'button';
         unsendBtn.textContent = 'Unsend';
         unsendBtn.disabled = !canEditOrUnsend(msg);
         unsendBtn.addEventListener('click', () => unsendMessage(msg));
-        actionWrap.appendChild(unsendBtn);
+        actionList.appendChild(unsendBtn);
+    }
+
+    if (hasMessageActions) {
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'message-menu-btn';
+        menuBtn.type = 'button';
+        menuBtn.setAttribute('aria-label', 'Message actions');
+        menuBtn.innerHTML = '<span></span><span></span><span></span>';
+        actionWrap.appendChild(menuBtn);
+        actionWrap.appendChild(actionList);
+
+        menuBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            actionList.classList.toggle('open');
+        });
+
+        messageDiv.addEventListener('click', () => {
+            actionList.classList.remove('open');
+        });
     }
 
     if (showReply && msg.replyTo) {
@@ -2412,6 +2443,11 @@ if (composerToggle && composerMenu) {
         if (!composerToggle.contains(e.target) && !composerMenu.contains(e.target)) {
             composerMenu.classList.remove('open');
         }
+        document.querySelectorAll('.message-action-list.open').forEach((list) => {
+            if (!list.contains(e.target)) {
+                list.classList.remove('open');
+            }
+        });
     });
 }
 
