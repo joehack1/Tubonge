@@ -134,10 +134,6 @@ const checkoutBtn = document.getElementById('checkout-btn');
 const orderHistory = document.getElementById('order-history');
 const globalSearch = document.getElementById('global-search');
 const searchResults = document.getElementById('search-results');
-const groupPinned = document.getElementById('group-pinned');
-const privatePinned = document.getElementById('private-pinned');
-const groupUnpinBtn = document.getElementById('group-unpin-btn');
-const privateUnpinBtn = document.getElementById('private-unpin-btn');
 const groupTyping = document.getElementById('group-typing');
 const privateTyping = document.getElementById('private-typing');
 const groupLoadOlderBtn = document.getElementById('group-load-older');
@@ -1020,7 +1016,6 @@ function subscribeChannels() {
         renderChannels();
         loadGroupMessages();
         subscribeTypingIndicators();
-        subscribePinnedMessages();
     });
 }
 
@@ -1043,26 +1038,6 @@ async function migrateGeneralChannelMessages() {
     } catch (error) {
         console.warn('General message migration skipped', error);
     }
-}
-
-function subscribePinnedMessages() {
-    const channelId = normalizeChannelName(currentChannel);
-    onValue(ref(db, `pinned/group/${channelId}`), (snapshot) => {
-        const pin = snapshot.val();
-        if (groupPinned) {
-            groupPinned.textContent = pin ? `Pinned: ${pin.username}: ${pin.text}` : '';
-        }
-    });
-    if (!selectedPrivateId) {
-        if (privatePinned) privatePinned.textContent = '';
-        return;
-    }
-    onValue(ref(db, `pinned/private/${selectedPrivateId}`), (snapshot) => {
-        const pin = snapshot.val();
-        if (privatePinned) {
-            privatePinned.textContent = pin ? `Pinned: ${pin.username}: ${pin.text}` : '';
-        }
-    });
 }
 
 renderThemeOptions();
@@ -1091,7 +1066,6 @@ if (createChannelBtn) {
         renderChannels();
         loadGroupMessages();
         subscribeTypingIndicators();
-        subscribePinnedMessages();
     });
 }
 
@@ -1100,7 +1074,6 @@ if (channelSelect) {
         currentChannel = normalizeChannelName(channelSelect.value);
         loadGroupMessages();
         subscribeTypingIndicators();
-        subscribePinnedMessages();
         renderMuteState();
     });
 }
@@ -1111,19 +1084,6 @@ if (muteChatBtn) {
         mutedKeys[key] = !mutedKeys[key];
         persistClientState();
         renderMuteState();
-    });
-}
-
-if (groupUnpinBtn) {
-    groupUnpinBtn.addEventListener('click', async () => {
-        await remove(ref(db, `pinned/group/${normalizeChannelName(currentChannel)}`));
-    });
-}
-
-if (privateUnpinBtn) {
-    privateUnpinBtn.addEventListener('click', async () => {
-        if (!selectedPrivateId) return;
-        await remove(ref(db, `pinned/private/${selectedPrivateId}`));
     });
 }
 
@@ -1758,12 +1718,6 @@ function renderMessage(container, msg, isOwn, showReply, showReplyButton, showDe
         actionWrap.appendChild(deleteBtn);
     }
 
-    const pinBtn = document.createElement('button');
-    pinBtn.className = 'ghost-btn';
-    pinBtn.textContent = 'Pin';
-    pinBtn.addEventListener('click', () => pinMessage(msg));
-    actionWrap.appendChild(pinBtn);
-
     if (msg.username === currentUser) {
         const editBtn = document.createElement('button');
         editBtn.className = 'ghost-btn';
@@ -2063,22 +2017,6 @@ async function toggleReaction(msg, emoji) {
     }
 }
 
-async function pinMessage(msg) {
-    if (!msg) return;
-    const scope = msg._scope === 'private' ? 'private' : 'group';
-    const key = scope === 'private' ? selectedPrivateId : normalizeChannelName(currentChannel);
-    if (!key) return;
-    const pinRef = ref(db, `pinned/${scope}/${key}`);
-    await set(pinRef, {
-        messageId: msg.id,
-        text: msg.text || getMessagePreview(msg),
-        username: msg.username || '',
-        timestamp: Number(msg.timestamp) || Date.now(),
-        scope,
-        key
-    });
-}
-
 function setTypingState(active) {
     const target = getMessageTarget();
     if (!target) return;
@@ -2314,7 +2252,6 @@ function selectPrivateUser(username) {
         document.querySelector('[data-tab="private"]').click();
     }
     subscribeTypingIndicators();
-    subscribePinnedMessages();
     renderMuteState();
     refreshPrivateList();
 }
@@ -3255,7 +3192,6 @@ try {
     subscribeCart();
     subscribeOrderHistory();
     subscribeTypingIndicators();
-    subscribePinnedMessages();
     renderMuteState();
     flushQueuedMessages();
     if (channelSelect) renderChannels();
