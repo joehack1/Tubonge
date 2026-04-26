@@ -229,6 +229,7 @@ const THEMES = [
 ];
 
 const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
+const appShell = document.querySelector('.app-shell');
 const panels = {
     group: document.getElementById('panel-group'),
     private: document.getElementById('panel-private'),
@@ -257,6 +258,13 @@ const textStatusInput = document.getElementById('text-status-input');
 const recordVoiceStatusBtn = document.getElementById('record-voice-status-btn');
 let statusRecorder = null;
 let statusRecordingTimeout = null;
+
+function updatePrivateChatFocusLayout() {
+    const hasOpenPrivateChat = currentTab === 'private' && !!privateLayout && privateLayout.classList.contains('split');
+    if (appShell) {
+        appShell.classList.toggle('private-chat-focus', hasOpenPrivateChat);
+    }
+}
 
 let storiesByUser = {};
 let storyUsers = [];
@@ -977,6 +985,7 @@ tabs.forEach(tab => {
         if (currentTab !== 'private' && privateLayout) {
             privateLayout.classList.remove('split');
         }
+        updatePrivateChatFocusLayout();
         renderMuteState();
     });
 });
@@ -2290,6 +2299,7 @@ function selectPrivateUser(username) {
         document.querySelector('[data-tab="private"]').click();
     }
     subscribeTypingIndicators();
+    updatePrivateChatFocusLayout();
     renderMuteState();
     refreshPrivateList();
 }
@@ -3218,6 +3228,7 @@ try {
             if (privateLayout) {
                 privateLayout.classList.remove('split');
             }
+            updatePrivateChatFocusLayout();
         });
     }
 

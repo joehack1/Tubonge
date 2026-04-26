@@ -2017,16 +2017,18 @@ body.auth-page .tab-btn:hover:not(.active) {
     .composer-menu {
         position: static;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 6px;
         padding: 0;
         border: 0;
         box-shadow: none;
         background: transparent;
+        align-items: center;
     }
     .composer-menu .icon-btn {
-        width: 40px;
-        height: 40px;
+        width: 34px;
+        height: 34px;
         padding: 0;
         justify-content: center;
         border-radius: 12px;
@@ -2522,30 +2524,35 @@ body.auth-page .tab-btn:hover:not(.active) {
     .composer-tools {
         flex-direction: column;
         gap: 4px;
+        align-items: flex-start;
     }
     #image-btn .btn-label,
+    #image-btn .btn-label,
+    #file-btn .btn-label,
     #voice-btn .btn-label,
     #sticker-btn .btn-label {
         display: none;
     }
     #image-btn.icon-btn,
+    #file-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
         padding: 0;
         justify-content: center;
     }
     #image-btn .btn-icon,
+    #file-btn .btn-icon,
     #voice-btn .btn-icon,
     #sticker-btn .btn-icon {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
     #send-btn {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
     }
     .chat-page .composer input {
         padding: 9px 10px;
@@ -2556,14 +2563,22 @@ body.auth-page .tab-btn:hover:not(.active) {
 
 @media (max-width: 480px) {
     #image-btn.icon-btn,
+    #file-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
     }
     #send-btn {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
+    }
+    #image-btn .btn-icon,
+    #file-btn .btn-icon,
+    #voice-btn .btn-icon,
+    #sticker-btn .btn-icon {
+        width: 12px;
+        height: 12px;
     }
 }
 
@@ -3074,9 +3089,29 @@ html[data-theme="instagram"] {
 }
 
 @media (max-width: 900px) {
+    .chat-header {
+        padding: 8px 10px;
+    }
     .chat-header .header-actions {
         gap: 6px;
         flex-wrap: wrap;
+    }
+    .brand-logo {
+        height: 56px;
+    }
+    .dashboard-head {
+        gap: 4px;
+    }
+    .dashboard-search {
+        width: min(100%, 240px);
+    }
+    .dashboard-search #global-search {
+        height: 30px;
+        padding: 0 9px;
+        font-size: 0.78rem;
+    }
+    .dashboard-head .tagline {
+        font-size: 0.92rem;
     }
     #logout-btn {
         display: none;
@@ -3402,6 +3437,14 @@ html[data-theme="instagram"] {
     padding: 12px;
 }
 
+.chat-page .app-shell.private-chat-focus .sidebar {
+    display: none;
+}
+
+.chat-page .app-shell.private-chat-focus .chat-card {
+    width: 100%;
+}
+
 body.auth-page .auth-card {
     padding: 0;
 }
@@ -3598,6 +3641,7 @@ body.auth-page .auth-card {
     }
 
     #image-btn.icon-btn,
+    #file-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
         width: 28px;
@@ -3607,6 +3651,7 @@ body.auth-page .auth-card {
     }
 
     #image-btn .btn-icon,
+    #file-btn .btn-icon,
     #voice-btn .btn-icon,
     #sticker-btn .btn-icon {
         width: 14px;
@@ -3637,15 +3682,15 @@ body.auth-page .auth-card {
     }
 
     .private-layout.split {
-        --private-list-width: clamp(128px, 38%, 172px);
+        grid-template-columns: 1fr;
     }
 
     .private-layout.split .private-list {
-        width: var(--private-list-width);
+        display: none;
     }
 
     .private-layout.split .private-chat {
-        width: calc(100% - var(--private-list-width));
+        width: 100%;
     }
 
     .private-list {
@@ -3745,6 +3790,7 @@ body.auth-page .auth-card {
     }
 
     #image-btn.icon-btn,
+    #file-btn.icon-btn,
     #voice-btn.icon-btn,
     #sticker-btn.icon-btn {
         width: 26px;
@@ -3757,15 +3803,15 @@ body.auth-page .auth-card {
     }
 
     .private-layout.split {
-        --private-list-width: clamp(120px, 40%, 162px);
+        grid-template-columns: 1fr;
     }
 
     .private-layout.split .private-list {
-        width: var(--private-list-width);
+        display: none;
     }
 
     .private-layout.split .private-chat {
-        width: calc(100% - var(--private-list-width));
+        width: 100%;
     }
 
     .private-item {
