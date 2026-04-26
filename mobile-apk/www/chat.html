@@ -20,11 +20,14 @@
 
         <main class="chat-card">
             <header class="chat-header">
-                <div>
+                <div class="dashboard-head">
                     <div class="brand">
                         <img src="logo.png" alt="Tubonge logo" class="brand-logo">
                     </div>
                     <p class="tagline">Talk. Share. Belong.</p>
+                    <div class="dashboard-search">
+                        <input id="global-search" type="text" placeholder="Search users, chats, messages...">
+                    </div>
                 </div>
                 <div class="header-actions">
                     <div class="header-avatar" id="header-avatar"></div>
@@ -35,7 +38,6 @@
             </header>
 
             <div class="chat-toolbar">
-                <input id="global-search" type="text" placeholder="Search users, chats, messages...">
                 <button id="mute-chat-btn" class="ghost-btn">Mute</button>
             </div>
             <div id="search-results" class="search-results" aria-live="polite"></div>

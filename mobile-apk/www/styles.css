@@ -1421,6 +1421,28 @@ body.chat-page {
     gap: 10px;
 }
 
+.dashboard-head {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.dashboard-search {
+    width: min(100%, 360px);
+}
+
+.dashboard-search #global-search {
+    width: 100%;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    padding: 0 11px;
+    font-size: 0.85rem;
+}
+
 .pill {
     background: rgba(255, 255, 255, 0.1);
     padding: 4px 10px;
@@ -3408,7 +3430,7 @@ html[data-theme="instagram"] {
     margin-bottom: 10px;
 }
 
-#global-search {
+.chat-toolbar #global-search {
     flex: 1 1 240px;
     min-width: 180px;
     height: 40px;
@@ -3558,8 +3580,11 @@ html[data-theme="instagram"] {
         padding: 6px 8px;
     }
 
-    #global-search {
-        flex-basis: 100%;
+    .dashboard-search {
+        width: min(100%, 260px);
+    }
+
+    .dashboard-search #global-search {
         min-width: 0;
         height: 34px;
         padding: 0 10px;
