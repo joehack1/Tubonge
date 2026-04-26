@@ -3554,12 +3554,16 @@ html[data-theme="instagram"] {
 
 @media (max-width: 768px) {
     .chat-toolbar {
-        gap: 8px;
-        padding: 8px;
+        gap: 6px;
+        padding: 6px 8px;
     }
 
     #global-search {
         flex-basis: 100%;
+        min-width: 0;
+        height: 34px;
+        padding: 0 10px;
+        font-size: 0.82rem;
     }
 
     #channel-select,
