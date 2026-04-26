@@ -1365,6 +1365,45 @@ body.chat-page {
     line-height: 1.55;
 }
 
+.auth-orbit {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.auth-orb {
+    position: absolute;
+    border-radius: 999px;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.06));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.orb-one {
+    width: 68px;
+    height: 68px;
+    top: 22%;
+    right: 12%;
+    animation: authFloat 5.4s ease-in-out infinite;
+}
+
+.orb-two {
+    width: 42px;
+    height: 42px;
+    bottom: 22%;
+    right: 30%;
+    animation: authFloat 4.8s ease-in-out infinite reverse;
+}
+
+.orb-three {
+    width: 22px;
+    height: 22px;
+    top: 55%;
+    right: 18%;
+    animation: authFloat 3.9s ease-in-out infinite;
+}
+
 .auth-highlights {
     position: relative;
     z-index: 1;
@@ -1380,6 +1419,7 @@ body.chat-page {
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: authPulse 3.4s ease-in-out infinite;
 }
 
 .highlight-value {
@@ -1393,6 +1433,14 @@ body.chat-page {
     font-size: 0.9rem;
 }
 
+.auth-highlight:nth-child(2) {
+    animation-delay: 0.32s;
+}
+
+.auth-highlight:nth-child(3) {
+    animation-delay: 0.64s;
+}
+
 .auth-panel {
     padding: 32px 34px;
     background:
@@ -1401,6 +1449,49 @@ body.chat-page {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+body.auth-page .auth-card {
+    animation: authCardIn 0.55s ease;
+}
+
+@keyframes authCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes authFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes authPulse {
+    0%, 100% {
+        transform: translateY(0);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.24);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.auth-page .auth-card,
+    .auth-orb,
+    .auth-highlight {
+        animation: none !important;
+    }
 }
 
 .auth-header {

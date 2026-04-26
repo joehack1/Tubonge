@@ -36,8 +36,6 @@
 
             <div class="chat-toolbar">
                 <input id="global-search" type="text" placeholder="Search users, chats, messages...">
-                <button id="create-channel-btn" class="ghost-btn">New Channel</button>
-                <select id="channel-select" class="ghost-btn" aria-label="Channel selector"></select>
                 <button id="mute-chat-btn" class="ghost-btn">Mute</button>
             </div>
             <div id="search-results" class="search-results" aria-live="polite"></div>
@@ -49,14 +47,12 @@
                     <span class="tab-badge" id="private-badge"></span>
                 </button>
                 <button class="tab-btn" data-tab="notifications">Notifications</button>
-                <button class="tab-btn" data-tab="market">Market</button>
                 <button class="tab-btn mobile-only" data-tab="users">Users</button>
             </nav>
 
             <section class="chat-body">
                 <div class="tab-panel active" id="panel-group">
                     <div id="group-typing" class="typing-indicator"></div>
-                    <button id="group-load-older" class="ghost-btn">Load older</button>
                     <div class="message-container" id="group-messages"></div>
                     <div class="empty-state" id="group-empty">No group messages yet.</div>
                 </div>
@@ -70,7 +66,6 @@
                                 <div class="private-chat-title" id="private-chat-title">Chat</div>
                             </div>
                             <div id="private-typing" class="typing-indicator"></div>
-                            <button id="private-load-older" class="ghost-btn">Load older</button>
                             <div class="message-container" id="private-messages"></div>
                             <div class="empty-state" id="private-empty">Select a conversation to start chatting.</div>
                         </div>
@@ -83,30 +78,6 @@
                         <button id="clear-notifications-btn" class="ghost-btn">Clear</button>
                     </div>
                     <div id="notification-center-list" class="notification-center-list"></div>
-                </div>
-
-                <div class="tab-panel" id="panel-market">
-                    <div class="market-toolbar">
-                        <input id="market-search" type="text" placeholder="Search products...">
-                        <select id="market-category-filter" class="ghost-btn">
-                            <option value="">All categories</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Fashion">Fashion</option>
-                            <option value="Home">Home</option>
-                            <option value="Services">Services</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <div class="market-actions">
-                            <button id="add-product-btn" class="ghost-btn">Add Item</button>
-                            <button id="open-cart-btn" class="ghost-btn">Cart <span class="pill" id="cart-count"></span></button>
-                        </div>
-                    </div>
-                    <div class="market-grid" id="market-grid"></div>
-                    <div class="empty-state" id="market-empty">No products yet.</div>
-                    <div class="chat-meta-row">
-                        <h3>Order History</h3>
-                    </div>
-                    <div id="order-history" class="order-history"></div>
                 </div>
 
                 <div class="tab-panel" id="panel-users">
@@ -228,81 +199,6 @@
             <path d="M6 19v-4"></path>
         </svg>
     </button>
-
-    <div class="modal-overlay" id="market-add-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add Product</h2>
-                <button class="close-btn" id="close-add-product">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="field">
-                    <label for="product-title">Title</label>
-                    <input id="product-title" type="text" maxlength="80" placeholder="Product title">
-                </div>
-                <div class="field">
-                    <label for="product-category">Category</label>
-                    <select id="product-category">
-                        <option value="Electronics">Electronics</option>
-                        <option value="Fashion">Fashion</option>
-                        <option value="Home">Home</option>
-                        <option value="Services">Services</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="product-price">Price (USD)</label>
-                    <input id="product-price" type="number" min="0" step="0.01" placeholder="0.00">
-                </div>
-                <div class="field">
-                    <label for="product-description">Description</label>
-                    <textarea id="product-description" rows="3" maxlength="500" placeholder="Describe your product"></textarea>
-                </div>
-                <input id="product-image-input" type="file" accept="image/*" style="display:none;">
-                <button id="choose-product-image" class="ghost-btn">Choose Image</button>
-            </div>
-            <div class="modal-footer">
-                <button class="ghost-btn" id="cancel-add-product">Cancel</button>
-                <button class="primary-btn" id="save-product-btn">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="market-view-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="view-product-title">Product</h2>
-                <button class="close-btn" id="close-view-product">&times;</button>
-            </div>
-            <div class="modal-body">
-                <img id="view-product-image" class="market-view-image" alt="">
-                <div class="market-view-price" id="view-product-price"></div>
-                <div class="market-view-desc" id="view-product-desc"></div>
-                <div id="view-product-seller" class="market-view-desc"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="ghost-btn" id="contact-seller-btn">Contact Seller</button>
-                <button class="primary-btn" id="add-to-cart-btn">Add to Cart</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="market-cart-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Your Cart</h2>
-                <button class="close-btn" id="close-cart">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="cart-list" id="cart-list"></div>
-                <div class="cart-total-row">Total: <span id="cart-total">$0.00</span></div>
-            </div>
-            <div class="modal-footer">
-                <button class="ghost-btn" id="clear-cart-btn">Clear</button>
-                <button class="primary-btn" id="checkout-btn">Checkout</button>
-            </div>
-        </div>
-    </div>
 
     <script src="cordova.js"></script>
     <script type="module" src="chat.js"></script>

@@ -136,8 +136,6 @@ const globalSearch = document.getElementById('global-search');
 const searchResults = document.getElementById('search-results');
 const groupTyping = document.getElementById('group-typing');
 const privateTyping = document.getElementById('private-typing');
-const groupLoadOlderBtn = document.getElementById('group-load-older');
-const privateLoadOlderBtn = document.getElementById('private-load-older');
 const channelSelect = document.getElementById('channel-select');
 const createChannelBtn = document.getElementById('create-channel-btn');
 const muteChatBtn = document.getElementById('mute-chat-btn');
@@ -1275,6 +1273,7 @@ viewProfileModal.addEventListener('click', (event) => {
 });
 
 function showUploadProgress(label, percent) {
+    if (!uploadStatus || !uploadLabel || !uploadBarFill) return;
     uploadStatus.classList.add('active');
     uploadLabel.textContent = label;
     uploadBarFill.style.width = `${percent}%`;
@@ -1289,6 +1288,18 @@ function showUploadProgress(label, percent) {
 
 async function uploadToStorage(path, blobOrFile, startLabel) {
     return new Promise((resolve, reject) => {
+        let settled = false;
+        const fail = (error) => {
+            if (settled) return;
+            settled = true;
+            if (uploadStatus && uploadLabel && uploadBarFill) {
+                uploadLabel.textContent = 'Upload failed';
+                uploadBarFill.style.width = '0%';
+                uploadStatus.classList.remove('active');
+            }
+            reject(error);
+        };
+
         try {
             const storageRef = sRef(storage, path);
             const task = uploadBytesResumable(storageRef, blobOrFile);
@@ -1299,16 +1310,22 @@ async function uploadToStorage(path, blobOrFile, startLabel) {
                     showUploadProgress('Uploading...', Math.max(10, Math.min(99, percent)));
                 },
                 (error) => {
-                    reject(error);
+                    fail(error);
                 },
                 async () => {
-                    const url = await getDownloadURL(task.snapshot.ref);
-                    showUploadProgress('Uploaded', 100);
-                    resolve({ url });
+                    try {
+                        const url = await getDownloadURL(task.snapshot.ref);
+                        if (settled) return;
+                        settled = true;
+                        showUploadProgress('Uploaded', 100);
+                        resolve({ url });
+                    } catch (error) {
+                        fail(error);
+                    }
                 }
             );
         } catch (err) {
-            reject(err);
+            fail(err);
         }
     });
 }
@@ -1359,11 +1376,33 @@ function userOrdersRefStrict() {
 }
 
 // Market: products and cart
+function collectMarketProducts(products) {
+    const entries = [];
+    Object.entries(products || {}).forEach(([id, value]) => {
+        if (!value || typeof value !== 'object') return;
+        const looksLikeProduct = typeof value.title === 'string' || value.price != null || value.imageUrl || value.image;
+        if (looksLikeProduct) {
+            entries.push({ id, ...value });
+            return;
+        }
+        // Backward compatibility: support nested shape market/products/{user}/{productId}
+        Object.entries(value).forEach(([nestedId, nestedValue]) => {
+            if (!nestedValue || typeof nestedValue !== 'object') return;
+            const nestedLooksLikeProduct =
+                typeof nestedValue.title === 'string' || nestedValue.price != null || nestedValue.imageUrl || nestedValue.image;
+            if (nestedLooksLikeProduct) {
+                entries.push({ id: nestedId, ...nestedValue });
+            }
+        });
+    });
+    return entries;
+}
+
 function renderMarket(products) {
-    if (!marketGrid) return;
+    if (!marketGrid || !marketEmpty) return;
     const term = (marketSearch?.value || '').trim().toLowerCase();
     const category = (marketCategoryFilter?.value || '').trim();
-    const list = Object.entries(products || {}).map(([id, p]) => ({ id, ...p }))
+    const list = collectMarketProducts(products)
         .filter(p => !p.status || p.status === 'active')
         .filter(p => category ? (p.category || 'Other') === category : true)
         .filter(p => term ? (p.title?.toLowerCase().includes(term) || p.description?.toLowerCase().includes(term)) : true)
@@ -2471,13 +2510,6 @@ if (stickerBtn) {
     });
 }
 
-if (groupLoadOlderBtn) {
-    groupLoadOlderBtn.addEventListener('click', () => {
-        groupLimit += 200;
-        loadGroupMessages();
-    });
-}
-
 function renderGlobalSearchResults(queryText) {
     if (!searchResults) return;
     const term = String(queryText || '').trim().toLowerCase();
@@ -2538,15 +2570,6 @@ function renderGlobalSearchResults(queryText) {
             searchResults.innerHTML = '';
         });
         searchResults.appendChild(row);
-    });
-}
-
-if (privateLoadOlderBtn) {
-    privateLoadOlderBtn.addEventListener('click', () => {
-        privateLimit += 200;
-        if (selectedPrivateId) {
-            loadPrivateMessages(selectedPrivateId);
-        }
     });
 }
 
@@ -3186,9 +3209,6 @@ try {
     subscribeChannels();
     loadGroupMessages();
     refreshPrivateList();
-    subscribeMarketProducts();
-    subscribeCart();
-    subscribeOrderHistory();
     subscribeTypingIndicators();
     renderMuteState();
     flushQueuedMessages();
