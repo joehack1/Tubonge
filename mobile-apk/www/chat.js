@@ -234,7 +234,6 @@ const tabs = document.querySelectorAll('.chat-tabs .tab-btn');
 const panels = {
     group: document.getElementById('panel-group'),
     private: document.getElementById('panel-private'),
-    status: document.getElementById('panel-status'),
     notifications: document.getElementById('panel-notifications'),
     market: document.getElementById('panel-market'),
     users: document.getElementById('panel-users')
@@ -3187,7 +3186,6 @@ try {
     subscribeChannels();
     loadGroupMessages();
     refreshPrivateList();
-    subscribeStories();
     subscribeMarketProducts();
     subscribeCart();
     subscribeOrderHistory();

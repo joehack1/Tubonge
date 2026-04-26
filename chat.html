@@ -48,7 +48,6 @@
                     Private
                     <span class="tab-badge" id="private-badge"></span>
                 </button>
-                <button class="tab-btn" data-tab="status">Status</button>
                 <button class="tab-btn" data-tab="notifications">Notifications</button>
                 <button class="tab-btn" data-tab="market">Market</button>
                 <button class="tab-btn mobile-only" data-tab="users">Users</button>
@@ -76,24 +75,6 @@
                             <div class="empty-state" id="private-empty">Select a conversation to start chatting.</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="tab-panel" id="panel-status">
-                    <div class="status-controls">
-                        <div class="my-status">
-                            <div id="my-status-avatar" class="status-avatar-ring"></div>
-                            <span>My Status</span>
-                        </div>
-                        <button id="add-story-btn" class="ghost-btn">Photo/Video</button>
-                        <button id="record-voice-status-btn" class="ghost-btn">Voice Status</button>
-                    </div>
-                    <div class="status-controls">
-                        <input id="text-status-input" type="text" maxlength="200" placeholder="Post a text status...">
-                        <button id="add-text-status-btn" class="ghost-btn">Post</button>
-                    </div>
-                    <input id="story-input" type="file" accept="image/*,video/*,audio/*" style="display:none;">
-                    <div id="status-list" class="status-list"></div>
-                    <div id="status-empty" class="empty-state">No statuses yet.</div>
                 </div>
 
                 <div class="tab-panel" id="panel-notifications">
@@ -319,30 +300,6 @@
             <div class="modal-footer">
                 <button class="ghost-btn" id="clear-cart-btn">Clear</button>
                 <button class="primary-btn" id="checkout-btn">Checkout</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="story-viewer-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="sender-wrap">
-                    <div class="message-avatar" id="story-viewer-avatar"></div>
-                    <div id="story-viewer-name"></div>
-                </div>
-                <div>
-                    <button class="ghost-btn" id="story-delete">Delete</button>
-                    <button class="close-btn" id="close-story-viewer">&times;</button>
-                </div>
-            </div>
-            <div class="modal-body">
-                <div id="story-progress" class="story-progress"></div>
-                <div id="story-media" class="story-media"></div>
-                <div class="chat-meta-row">
-                    <button class="ghost-btn" id="story-prev">Prev</button>
-                    <button class="ghost-btn" id="story-next">Next</button>
-                </div>
-                <div id="story-seen-list" class="story-seen-list"></div>
             </div>
         </div>
     </div>
