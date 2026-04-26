@@ -57,6 +57,8 @@ const fileBtn = document.getElementById('file-btn');
 const fileInput = document.getElementById('file-input');
 const voiceBtn = document.getElementById('voice-btn');
 const stickerBtn = document.getElementById('sticker-btn');
+const composerToggle = document.getElementById('composer-toggle');
+const composerMenu = document.getElementById('composer-menu');
 const stickerPanel = document.getElementById('sticker-panel');
 const groupMessages = document.getElementById('group-messages');
 const privateMessages = document.getElementById('private-messages');
@@ -2398,6 +2400,19 @@ if (messageInput) {
         typingStopTimer = setTimeout(() => setTypingState(false), 1800);
     });
     messageInput.addEventListener('blur', () => setTypingState(false));
+}
+
+if (composerToggle && composerMenu) {
+    composerToggle.addEventListener('click', () => {
+        composerMenu.classList.toggle('open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!composerToggle.contains(e.target) && !composerMenu.contains(e.target)) {
+            composerMenu.classList.remove('open');
+        }
+    });
 }
 
 if (imageBtn && imageInput) {

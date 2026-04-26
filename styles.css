@@ -2013,6 +2013,24 @@ body.auth-page .tab-btn:hover:not(.active) {
     align-items: center;
 }
 
+.composer-menu.open {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    margin-bottom: 8px;
+}
+
 @media (max-width: 900px) and (hover: none) and (pointer: coarse) {
     .composer-menu {
         position: static;
@@ -2513,7 +2531,7 @@ body.auth-page .tab-btn:hover:not(.active) {
     }
 }
 
-/* Mobile composer layout: stack tools vertically and keep input contained */
+/* Mobile composer layout: hamburger | input | send in one line */
 @media (max-width: 900px) {
     .chat-page .composer {
         display: grid;
@@ -2522,11 +2540,40 @@ body.auth-page .tab-btn:hover:not(.active) {
         gap: 6px;
     }
     .composer-tools {
-        flex-direction: column;
-        gap: 4px;
-        align-items: flex-start;
+        position: relative;
+        order: -1;
     }
-    #image-btn .btn-label,
+    .composer-menu {
+        display: none;
+    }
+    .composer-menu.open {
+        display: flex;
+    }
+    #composer-toggle {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+    #composer-toggle .btn-icon {
+        width: 16px;
+        height: 16px;
+    }
+    #message-input {
+        padding: 9px 10px;
+        border-radius: 12px;
+        font-size: 0.92rem;
+        min-width: 0;
+    }
+    #send-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        justify-content: center;
+        flex-shrink: 0;
+    }
     #image-btn .btn-label,
     #file-btn .btn-label,
     #voice-btn .btn-label,
@@ -2549,10 +2596,6 @@ body.auth-page .tab-btn:hover:not(.active) {
     #sticker-btn .btn-icon {
         width: 14px;
         height: 14px;
-    }
-    #send-btn {
-        width: 36px;
-        height: 36px;
     }
     .chat-page .composer input {
         padding: 9px 10px;
@@ -3608,7 +3651,7 @@ body.auth-page .auth-card {
 
     .chat-page .composer {
         width: 100%;
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: auto 1fr auto;
         gap: 4px;
         padding: 5px;
         border-radius: 14px;
@@ -3640,6 +3683,26 @@ body.auth-page .auth-card {
         box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
     }
 
+    #composer-toggle {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    #composer-toggle .btn-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    #send-btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 999px;
+    }
+
     #image-btn.icon-btn,
     #file-btn.icon-btn,
     #voice-btn.icon-btn,
@@ -3656,13 +3719,6 @@ body.auth-page .auth-card {
     #sticker-btn .btn-icon {
         width: 14px;
         height: 14px;
-    }
-
-    #send-btn {
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        border-radius: 999px;
     }
 
     .chat-page .message {
@@ -3789,6 +3845,16 @@ body.auth-page .auth-card {
         font-size: 0.82rem;
     }
 
+    #composer-toggle {
+        width: 26px;
+        height: 26px;
+    }
+
+    #composer-toggle .btn-icon {
+        width: 12px;
+        height: 12px;
+    }
+
     #image-btn.icon-btn,
     #file-btn.icon-btn,
     #voice-btn.icon-btn,
@@ -3800,6 +3866,14 @@ body.auth-page .auth-card {
     #send-btn {
         width: 28px;
         height: 28px;
+    }
+
+    #image-btn .btn-icon,
+    #file-btn .btn-icon,
+    #voice-btn .btn-icon,
+    #sticker-btn .btn-icon {
+        width: 12px;
+        height: 12px;
     }
 
     .private-layout.split {
