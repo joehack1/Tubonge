@@ -2426,7 +2426,7 @@ body.auth-page .tab-btn:hover:not(.active) {
 }
 
 .mobile-only {
-    display: none;
+    display: none !important;
 }
 
 @media (max-width: 900px) {
@@ -2439,7 +2439,7 @@ body.auth-page .tab-btn:hover:not(.active) {
     }
 
     .mobile-only {
-        display: inline-flex;
+        display: inline-flex !important;
     }
 
     .private-layout {
