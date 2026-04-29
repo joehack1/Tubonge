@@ -184,6 +184,15 @@ function stableThreadId(a, b) {
     return [String(a).trim(), String(b).trim()].sort((x, y) => x.localeCompare(y)).join('__');
 }
 
+function legacyThreadId(a, b) {
+    return [String(a).trim(), String(b).trim()].sort((x, y) => x.localeCompare(y)).join('_');
+}
+
+function threadIdVariants(a, b) {
+    const variants = [stableThreadId(a, b), legacyThreadId(a, b)];
+    return Array.from(new Set(variants.filter(Boolean)));
+}
+
 function privateMessagesPath(threadId) {
     return `private_threads/${threadId}/messages`;
 }
@@ -194,6 +203,13 @@ function privateReadsPath(threadId, username) {
 
 function privateMessagesLegacyPath(threadId) {
     return `private_messages/${threadId}`;
+}
+
+function resolveThreadCandidates(threadId, otherUser) {
+    const out = [];
+    if (threadId) out.push(String(threadId).trim());
+    if (otherUser) out.push(...threadIdVariants(currentUser, otherUser));
+    return Array.from(new Set(out.filter(Boolean)));
 }
 
 function showPanel(tab) {
@@ -651,7 +667,7 @@ function listenAllUnreadCounts() {
     }
 }
 
-let unsubPrivateMessages = null;
+let unsubPrivateMessages = [];
 
 function openThread(threadId, otherUser) {
     state.activeThreadId = threadId;
@@ -665,14 +681,21 @@ function openThread(threadId, otherUser) {
     }
     clearReply();
 
-    const messagesRef = query(ref(db, privateMessagesPath(threadId)), limitToLast(250));
-    if (typeof unsubPrivateMessages === 'function') unsubPrivateMessages();
-    unsubPrivateMessages = onValue(messagesRef, (snapshot) => {
+    if (Array.isArray(unsubPrivateMessages)) {
+        unsubPrivateMessages.forEach((fn) => {
+            if (typeof fn === 'function') fn();
+        });
+    }
+    unsubPrivateMessages = [];
+
+    const candidates = resolveThreadCandidates(threadId, otherUser);
+    const mergeKeySet = new Set();
+    const messageBuckets = new Map();
+    const renderMergedMessages = () => {
         if (!els.privateMessages) return;
-        els.privateMessages.innerHTML = '';
-        const messages = [];
-        snapshot.forEach(s => messages.push({ id: s.key, ...s.val() }));
+        const messages = Array.from(messageBuckets.values());
         messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        els.privateMessages.innerHTML = '';
         for (const msg of messages) {
             renderMessage(els.privateMessages, msg, {
                 isOwn: msg.username === currentUser,
@@ -681,17 +704,38 @@ function openThread(threadId, otherUser) {
         }
         if (els.privateEmpty) els.privateEmpty.style.display = messages.length ? 'none' : 'block';
         els.privateMessages.scrollTop = els.privateMessages.scrollHeight;
-    });
+    };
 
-    set(ref(db, privateReadsPath(threadId, currentUser)), Date.now()).catch((e) => {
-        console.warn('Could not update private read receipt:', e);
-    });
+    for (const candidateId of candidates) {
+        const sources = [
+            query(ref(db, privateMessagesPath(candidateId)), limitToLast(250)),
+            query(ref(db, privateMessagesLegacyPath(candidateId)), limitToLast(250))
+        ];
+        for (const source of sources) {
+            const unsub = onValue(source, (snapshot) => {
+                snapshot.forEach((s) => {
+                    const msg = { id: s.key, ...s.val() };
+                    const key = `${candidateId}:${s.key}`;
+                    mergeKeySet.add(key);
+                    messageBuckets.set(key, msg);
+                });
+                renderMergedMessages();
+            });
+            unsubPrivateMessages.push(unsub);
+        }
+
+        set(ref(db, privateReadsPath(candidateId, currentUser)), Date.now()).catch((e) => {
+            console.warn('Could not update private read receipt:', e);
+        });
+    }
 }
 
 async function openPrivateChat(otherUser) {
     const other = String(otherUser).trim();
     if (!other || other === currentUser) return;
-    const threadId = stableThreadId(currentUser, other);
+    const variants = threadIdVariants(currentUser, other);
+    const existing = variants.find((id) => state.userThreads.has(id));
+    const threadId = existing || variants[0];
     try {
         await ensureThreadMapping(threadId, other);
     } catch (e) {
@@ -739,38 +783,33 @@ async function sendPrivateMessage(payload) {
         };
     }
 
-    const primaryPath = privateMessagesPath(state.activeThreadId);
-    const legacyPath = privateMessagesLegacyPath(state.activeThreadId);
-    let sent = false;
+    const candidateIds = resolveThreadCandidates(state.activeThreadId, state.activeOtherUser);
+    const pathAttempts = [];
+    for (const id of candidateIds) {
+        pathAttempts.push(privateMessagesPath(id));
+        pathAttempts.push(privateMessagesLegacyPath(id));
+    }
+    let sentOnThreadId = null;
     let lastError = null;
 
-    try {
-        await push(ref(db, primaryPath), msg);
-        sent = true;
-    } catch (e) {
-        lastError = e;
-        console.warn('Primary private message path failed:', e);
-    }
-
-    if (!sent) {
+    for (const path of pathAttempts) {
         try {
-            await push(ref(db, legacyPath), msg);
-            sent = true;
+            await push(ref(db, path), msg);
+            const pieces = String(path).split('/');
+            sentOnThreadId = pieces[1] || state.activeThreadId;
+            break;
         } catch (e) {
             lastError = e;
-            console.warn('Legacy private message path failed:', e);
-        }
-    } else {
-        // Best-effort mirror for compatibility.
-        try {
-            await push(ref(db, legacyPath), msg);
-        } catch (e) {
-            console.warn('Could not mirror private message to legacy path:', e);
+            console.warn('Private message path failed:', path, e);
         }
     }
 
-    if (!sent) {
+    if (!sentOnThreadId) {
         throw lastError || new Error('Private message send failed on all paths.');
+    }
+
+    if (sentOnThreadId !== state.activeThreadId) {
+        state.activeThreadId = sentOnThreadId;
     }
 
     try {
