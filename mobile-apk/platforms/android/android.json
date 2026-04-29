@@ -1,0 +1,171 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {
+      "AndroidManifest.xml": {
+        "parents": {
+          "/manifest": [
+            {
+              "xml": "<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />",
+              "count": 6
+            }
+          ],
+          "/*": [
+            {
+              "xml": "<uses-permission android:name=\"android.permission.INTERNET\" />",
+              "count": 1
+            },
+            {
+              "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+              "count": 1
+            },
+            {
+              "xml": "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />",
+              "count": 1
+            }
+          ],
+          "application": [
+            {
+              "xml": "<service android:enabled=\"true\" android:exported=\"false\" android:name=\"com.google.android.gms.measurement.AppMeasurementService\" />",
+              "count": 1
+            },
+            {
+              "xml": "<service android:exported=\"false\" android:name=\"org.apache.cordova.firebase.FirebasePluginMessagingService\"><intent-filter><action android:name=\"com.google.firebase.MESSAGING_EVENT\" /></intent-filter></service>",
+              "count": 1
+            },
+            {
+              "xml": "<receiver android:name=\"org.apache.cordova.firebase.OnNotificationOpenReceiver\" />",
+              "count": 1
+            },
+            {
+              "xml": "<activity android:excludeFromRecents=\"true\" android:exported=\"true\" android:name=\"org.apache.cordova.firebase.OnNotificationReceiverActivity\" android:noHistory=\"true\" android:taskAffinity=\"\" android:theme=\"@android:style/Theme.Translucent.NoTitleBar\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"com.google.firebase.messaging.default_notification_color\" android:resource=\"@color/accent\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"com.google.firebase.messaging.default_notification_channel_id\" android:value=\"@string/default_notification_channel_id\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"firebase_analytics_collection_enabled\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"firebase_performance_collection_enabled\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"firebase_crashlytics_collection_enabled\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"firebase_messaging_auto_init_enabled\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"google_analytics_adid_collection_enabled\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"google_analytics_default_allow_analytics_storage\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"google_analytics_default_allow_ad_storage\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"google_analytics_default_allow_ad_user_data\" android:value=\"true\" />",
+              "count": 1
+            },
+            {
+              "xml": "<meta-data android:name=\"google_analytics_default_allow_ad_personalization_signals\" android:value=\"true\" />",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "config.xml": {
+        "parents": {
+          "/*": [
+            {
+              "xml": "<preference name=\"GradlePluginGoogleServicesEnabled\" value=\"true\" />",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "res/xml/config.xml": {
+        "parents": {
+          "/*": [
+            {
+              "xml": "<preference name=\"FIREBASE_MESSAGING_IMMEDIATE_PAYLOAD_DELIVERY\" value=\"false\" />",
+              "count": 1
+            },
+            {
+              "xml": "<feature name=\"FirebasePlugin\"><param name=\"android-package\" value=\"org.apache.cordova.firebase.FirebasePlugin\" /><param name=\"onload\" value=\"true\" /></feature>",
+              "count": 1
+            }
+          ]
+        }
+      }
+    }
+  },
+  "installed_plugins": {
+    "cordova-plugin-firebasex": {
+      "FIREBASE_ANALYTICS_COLLECTION_ENABLED": "true",
+      "FIREBASE_PERFORMANCE_COLLECTION_ENABLED": "true",
+      "FIREBASE_CRASHLYTICS_COLLECTION_ENABLED": "true",
+      "FIREBASE_FCM_AUTOINIT_ENABLED": "true",
+      "FIREBASE_ANALYTICS_WITHOUT_ADS": "false",
+      "FIREBASE_MESSAGING_IMMEDIATE_PAYLOAD_DELIVERY": "false",
+      "GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED": "true",
+      "GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE": "true",
+      "GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE": "true",
+      "GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA": "true",
+      "GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS": "true",
+      "ANDROID_ICON_ACCENT": "#FF00FFFF",
+      "ANDROID_FIREBASE_PERFORMANCE_MONITORING": "false",
+      "ANDROID_PLAY_SERVICES_TAGMANAGER_VERSION": "18.3.0",
+      "ANDROID_PLAY_SERVICES_AUTH_VERSION": "21.5.1",
+      "ANDROID_FIREBASE_ANALYTICS_VERSION": "23.0.0",
+      "ANDROID_FIREBASE_MESSAGING_VERSION": "25.0.1",
+      "ANDROID_FIREBASE_CONFIG_VERSION": "23.0.1",
+      "ANDROID_FIREBASE_PERF_VERSION": "22.0.2",
+      "ANDROID_FIREBASE_AUTH_VERSION": "24.0.1",
+      "ANDROID_FIREBASE_INAPPMESSAGING_VERSION": "22.0.2",
+      "ANDROID_FIREBASE_FIRESTORE_VERSION": "26.1.0",
+      "ANDROID_FIREBASE_FUNCTIONS_VERSION": "22.1.0",
+      "ANDROID_FIREBASE_IID_VERSION": "21.1.0",
+      "ANDROID_FIREBASE_INSTALLATIONS_VERSION": "19.0.1",
+      "ANDROID_FIREBASE_CRASHLYTICS_VERSION": "20.0.4",
+      "ANDROID_FIREBASE_CRASHLYTICS_NDK_VERSION": "20.0.4",
+      "ANDROID_GSON_VERSION": "2.13.2",
+      "ANDROID_FIREBASE_PERF_GRADLE_PLUGIN_VERSION": "2.0.1",
+      "ANDROID_GRPC_OKHTTP": "1.75.0",
+      "ANDROID_CREDENTIALS_VERSION": "1.5.0",
+      "ANDROID_GOOGLEID_VERSION": "1.2.0",
+      "PACKAGE_NAME": "com.tubonge.mobile"
+    }
+  },
+  "dependent_plugins": {},
+  "modules": [
+    {
+      "id": "cordova-plugin-firebasex.FirebasePlugin",
+      "file": "plugins/cordova-plugin-firebasex/www/firebase.js",
+      "pluginId": "cordova-plugin-firebasex",
+      "clobbers": [
+        "FirebasePlugin"
+      ]
+    }
+  ],
+  "plugin_metadata": {
+    "cordova-plugin-firebasex": "19.1.0"
+  }
+}
