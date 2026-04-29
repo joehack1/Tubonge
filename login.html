@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tubonge - Login</title>
+    <link rel="icon" href="logo2.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles.css">
+    <script src="src/theme.js"></script>
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <section class="auth-showcase">
+            <div class="brand auth-brand">
+                <span class="brand-badge">Tubonge</span>
+                <img src="logo.png" alt="Tubonge logo" class="brand-logo">
+            </div>
+            <p class="auth-eyebrow">Live now</p>
+            <h1>Chat fast. Stay close.</h1>
+            <p class="auth-copy">Real-time group and private chat.</p>
+            <div class="auth-orbit" aria-hidden="true">
+                <span class="auth-orb orb-one"></span>
+                <span class="auth-orb orb-two"></span>
+                <span class="auth-orb orb-three"></span>
+            </div>
+            <div class="auth-highlights">
+                <article class="auth-highlight">
+                    <span class="highlight-value">Instant Login</span>
+                </article>
+                <article class="auth-highlight">
+                    <span class="highlight-value">Live Messages</span>
+                </article>
+                <article class="auth-highlight">
+                    <span class="highlight-value">Mobile Ready</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-header">
+                <p class="auth-kicker">Welcome back</p>
+                <h2>Log in or create an account</h2>
+                <p>Pick a tab and continue.</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">Log In</button>
+                <button class="tab-btn" data-tab="signup">Sign Up</button>
+            </div>
+            <div class="auth-body">
+                <div class="tab-panel active" id="tab-login">
+                    <div class="field">
+                        <label for="login-username">Username</label>
+                        <input id="login-username" type="text" autocomplete="username" maxlength="20" placeholder="Enter your username">
+                    </div>
+                    <div class="field">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" autocomplete="current-password" placeholder="Enter your password">
+                    </div>
+                    <button id="login-btn" class="primary-btn">Log In</button>
+                </div>
+                <div class="tab-panel" id="tab-signup">
+                    <div class="field">
+                        <label for="signup-username">Username</label>
+                        <input id="signup-username" type="text" autocomplete="username" maxlength="20" placeholder="Choose a username">
+                    </div>
+                    <div class="field">
+                        <label for="signup-password">Password</label>
+                        <input id="signup-password" type="password" autocomplete="new-password" placeholder="Create a password">
+                    </div>
+                    <p class="auth-note">Use at least 6 characters so your account is easy to protect.</p>
+                    <button id="signup-btn" class="primary-btn">Create Account</button>
+                </div>
+            </div>
+            <div class="auth-footer">
+                <button id="admin-link" class="ghost-btn">Admin Login</button>
+            </div>
+            <div class="admin-panel" id="admin-panel">
+                <div class="field">
+                    <label for="admin-password">Admin Password</label>
+                    <input id="admin-password" type="password" placeholder="Enter admin password">
+                </div>
+                <button id="admin-login-btn" class="primary-btn">Enter Admin Console</button>
+            </div>
+            <div class="auth-status" id="auth-status"></div>
+        </section>
+    </div>
+    <button class="reload-btn" id="reload-btn" aria-label="Reload">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 0 1 15.5-6.3"></path>
+            <path d="M18 5h-4"></path>
+            <path d="M18 5v4"></path>
+            <path d="M21 12a9 9 0 0 1-15.5 6.3"></path>
+            <path d="M6 19h4"></path>
+            <path d="M6 19v-4"></path>
+        </svg>
+    </button>
+    <script type="module" src="src/login.js"></script>
+</body>
+</html>
