@@ -1371,10 +1371,10 @@ body.chat-page {
     display: flex;
     flex-direction: column;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
-    backdrop-filter: blur(18px) saturate(130%);
-    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    backdrop-filter: blur(22px) saturate(125%);
+    -webkit-backdrop-filter: blur(22px) saturate(125%);
     box-shadow: 0 28px 60px rgba(0, 0, 0, 0.42);
 }
 
@@ -1507,6 +1507,10 @@ body.chat-page {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .reload-btn {
+        display: none;
+    }
+
     .app-shell {
         flex-direction: column;
     }
