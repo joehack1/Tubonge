@@ -184,6 +184,18 @@ function stableThreadId(a, b) {
     return [String(a).trim(), String(b).trim()].sort((x, y) => x.localeCompare(y)).join('__');
 }
 
+function privateMessagesPath(threadId) {
+    return `private_threads/${threadId}/messages`;
+}
+
+function privateReadsPath(threadId, username) {
+    return `private_threads/${threadId}/reads/${username}`;
+}
+
+function privateMessagesLegacyPath(threadId) {
+    return `private_messages/${threadId}`;
+}
+
 function showPanel(tab) {
     state.activeTab = tab;
     for (const btn of els.tabButtons) {
@@ -196,6 +208,14 @@ function showPanel(tab) {
     if (tab === 'users') {
         renderUsersList(els.userListMobile, true);
     }
+    if (tab !== 'private') {
+        setPrivateThreadOpen(false);
+    }
+}
+
+function setPrivateThreadOpen(open) {
+    if (!els.panels.private) return;
+    els.panels.private.classList.toggle('thread-open', Boolean(open));
 }
 
 function setMuted(muted) {
@@ -511,7 +531,40 @@ function listenThreads() {
         });
         renderPrivateList();
         updatePrivateBadge();
+    }, (error) => {
+        console.error('Failed to read user thread mapping:', error);
     });
+
+    const inferThreadFromRoot = (rootPath) => {
+        const rootRef = ref(db, rootPath);
+        onValue(rootRef, (snapshot) => {
+            let changed = false;
+            snapshot.forEach((chatSnap) => {
+                const threadId = String(chatSnap.key || '');
+                if (!threadId || state.userThreads.has(threadId)) return;
+                let parts = threadId.split('__');
+                if (parts.length !== 2) {
+                    parts = threadId.split('_');
+                }
+                if (parts.length !== 2) return;
+                const [a, b] = parts.map((p) => String(p || '').trim());
+                if (!a || !b) return;
+                if (a !== currentUser && b !== currentUser) return;
+                const otherUser = a === currentUser ? b : a;
+                if (!otherUser) return;
+                state.userThreads.set(threadId, otherUser);
+                changed = true;
+            });
+            if (changed) {
+                renderPrivateList();
+                updatePrivateBadge();
+            }
+        });
+    };
+
+    // Fallbacks for older/incomplete data where user_threads mapping is missing.
+    inferThreadFromRoot('private_threads');
+    inferThreadFromRoot('private_messages');
 }
 
 function renderPrivateList() {
@@ -564,8 +617,8 @@ function updatePrivateBadge() {
 function listenUnreadCounts(threadId) {
     if (state.listenedUnread.has(threadId)) return;
     state.listenedUnread.add(threadId);
-    const readsRef = ref(db, `private_threads/${threadId}/reads/${currentUser}`);
-    const messagesRef = query(ref(db, `private_threads/${threadId}/messages`), limitToLast(200));
+    const readsRef = ref(db, privateReadsPath(threadId, currentUser));
+    const messagesRef = query(ref(db, privateMessagesPath(threadId)), limitToLast(200));
 
     let lastRead = 0;
     onValue(readsRef, (snap) => {
@@ -603,6 +656,8 @@ let unsubPrivateMessages = null;
 function openThread(threadId, otherUser) {
     state.activeThreadId = threadId;
     state.activeOtherUser = otherUser;
+    showPanel('private');
+    setPrivateThreadOpen(true);
     renderPrivateList();
     if (els.privateTitle) {
         const other = state.usersByName.get(otherUser);
@@ -610,7 +665,7 @@ function openThread(threadId, otherUser) {
     }
     clearReply();
 
-    const messagesRef = query(ref(db, `private_threads/${threadId}/messages`), limitToLast(250));
+    const messagesRef = query(ref(db, privateMessagesPath(threadId)), limitToLast(250));
     if (typeof unsubPrivateMessages === 'function') unsubPrivateMessages();
     unsubPrivateMessages = onValue(messagesRef, (snapshot) => {
         if (!els.privateMessages) return;
@@ -628,18 +683,28 @@ function openThread(threadId, otherUser) {
         els.privateMessages.scrollTop = els.privateMessages.scrollHeight;
     });
 
-    set(ref(db, `private_threads/${threadId}/reads/${currentUser}`), Date.now());
+    set(ref(db, privateReadsPath(threadId, currentUser)), Date.now()).catch((e) => {
+        console.warn('Could not update private read receipt:', e);
+    });
 }
 
 async function openPrivateChat(otherUser) {
     const other = String(otherUser).trim();
     if (!other || other === currentUser) return;
     const threadId = stableThreadId(currentUser, other);
-    await ensureThreadMapping(threadId, other);
-    await update(ref(db, `private_threads/${threadId}`), {
-        updatedAt: Date.now(),
-        participants: { [currentUser]: true, [other]: true }
-    });
+    try {
+        await ensureThreadMapping(threadId, other);
+    } catch (e) {
+        console.warn('Could not write user_threads mapping, continuing:', e);
+    }
+    try {
+        await update(ref(db, `private_threads/${threadId}`), {
+            updatedAt: Date.now(),
+            participants: { [currentUser]: true, [other]: true }
+        });
+    } catch (e) {
+        console.warn('Could not write private_threads metadata, continuing:', e);
+    }
     openThread(threadId, other);
 }
 
@@ -674,8 +739,45 @@ async function sendPrivateMessage(payload) {
         };
     }
 
-    await push(ref(db, `private_threads/${state.activeThreadId}/messages`), msg);
-    await update(ref(db, `private_threads/${state.activeThreadId}`), { updatedAt: now });
+    const primaryPath = privateMessagesPath(state.activeThreadId);
+    const legacyPath = privateMessagesLegacyPath(state.activeThreadId);
+    let sent = false;
+    let lastError = null;
+
+    try {
+        await push(ref(db, primaryPath), msg);
+        sent = true;
+    } catch (e) {
+        lastError = e;
+        console.warn('Primary private message path failed:', e);
+    }
+
+    if (!sent) {
+        try {
+            await push(ref(db, legacyPath), msg);
+            sent = true;
+        } catch (e) {
+            lastError = e;
+            console.warn('Legacy private message path failed:', e);
+        }
+    } else {
+        // Best-effort mirror for compatibility.
+        try {
+            await push(ref(db, legacyPath), msg);
+        } catch (e) {
+            console.warn('Could not mirror private message to legacy path:', e);
+        }
+    }
+
+    if (!sent) {
+        throw lastError || new Error('Private message send failed on all paths.');
+    }
+
+    try {
+        await update(ref(db, `private_threads/${state.activeThreadId}`), { updatedAt: now });
+    } catch (e) {
+        console.warn('Could not update private thread metadata:', e);
+    }
 }
 
 function activeScope() {
@@ -873,7 +975,9 @@ async function uploadVoiceAndSend(file) {
 
 function wirePrivateBack() {
     if (!els.privateBack) return;
-    els.privateBack.addEventListener('click', () => showPanel('users'));
+    els.privateBack.addEventListener('click', () => {
+        setPrivateThreadOpen(false);
+    });
 }
 
 function openModal(modal, open) {

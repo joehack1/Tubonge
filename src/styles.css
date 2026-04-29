@@ -78,7 +78,7 @@ html[data-theme="violet"] {
 }
 
 body {
-    background: linear-gradient(135deg, #000000 0%, var(--accent-strong) 100%);
+    background: var(--surface-page);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -204,7 +204,7 @@ body.chat-page {
     max-width: 1400px;
     height: 100vh;
     height: 100dvh;
-    background-color: var(--bg-darker);
+    background: var(--surface-page);
     overflow: hidden;
 }
 
@@ -1164,6 +1164,18 @@ body.chat-page {
     .private-layout {
         grid-template-columns: 1fr;
     }
+
+    #panel-private .private-chat {
+        display: none;
+    }
+
+    #panel-private.thread-open .private-list {
+        display: none;
+    }
+
+    #panel-private.thread-open .private-chat {
+        display: flex;
+    }
 }
 
 /* Admin Page Styles */
@@ -1173,7 +1185,7 @@ body.chat-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #000000 0%, var(--accent-strong) 100%);
+    background: var(--surface-page);
 }
 
 .admin-card {
@@ -1351,9 +1363,42 @@ body.chat-page {
     flex-direction: column;
 }
 
-.auth-header {
-    margin-bottom: 30px;
+.auth-flip-shell {
+    perspective: 1400px;
+    min-height: 470px;
 }
+
+.auth-flip-card {
+    position: relative;
+    width: 100%;
+    min-height: 470px;
+    transform-style: preserve-3d;
+    transition: transform 700ms cubic-bezier(0.2, 0.75, 0.15, 1);
+}
+
+.auth-flip-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.auth-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border: 1px solid var(--surface-border);
+    border-radius: 14px;
+    background:
+        radial-gradient(160% 120% at 110% -10%, rgba(var(--accent-rgb), 0.16), transparent 55%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    padding: 26px;
+    box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45);
+}
+
+.auth-face-back {
+    transform: rotateY(180deg);
+}
+
+.auth-header { margin-bottom: 24px; }
 
 .auth-kicker {
     color: var(--accent-color);
@@ -1375,42 +1420,24 @@ body.chat-page {
     margin: 0;
 }
 
-.auth-tabs {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--surface-border);
-}
-
-.auth-tabs .tab-btn {
-    flex: 1;
-    padding: 12px;
-    background: none;
-    border: none;
-    color: #888;
-    font-weight: 600;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-}
-
-.auth-tabs .tab-btn.active {
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
-}
-
 .auth-body {
-    margin-bottom: 24px;
+    display: grid;
+    gap: 12px;
 }
 
 .auth-note {
     color: #888;
     font-size: 0.85rem;
-    margin-top: 8px;
+    margin-top: 2px;
+}
+
+.auth-switch-btn {
+    margin-top: 6px;
 }
 
 .auth-footer {
     text-align: center;
-    margin-top: auto;
+    margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid var(--surface-border);
 }
@@ -1568,10 +1595,20 @@ body.chat-page {
 
     .auth-card {
         grid-template-columns: 1fr;
+        width: 94%;
     }
 
     .auth-showcase {
         display: none;
+    }
+
+    .auth-panel {
+        padding: 22px;
+    }
+
+    .auth-flip-shell,
+    .auth-flip-card {
+        min-height: 500px;
     }
 
     .message {

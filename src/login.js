@@ -18,10 +18,9 @@ const db = getDatabase(app);
 
 const ADMIN_PASSWORD = "Ksh999*7";
 
-const loginTabBtn = document.querySelector('[data-tab="login"]');
-const signupTabBtn = document.querySelector('[data-tab="signup"]');
-const loginPanel = document.getElementById('tab-login');
-const signupPanel = document.getElementById('tab-signup');
+const authFlipCard = document.getElementById('auth-flip-card');
+const toSignupBtn = document.getElementById('to-signup-btn');
+const toLoginBtn = document.getElementById('to-login-btn');
 
 const loginUsername = document.getElementById('login-username');
 const loginPassword = document.getElementById('login-password');
@@ -48,22 +47,13 @@ if (reloadBtn) {
 }
 
 function setActiveTab(tab) {
-    if (tab === 'login') {
-        loginTabBtn.classList.add('active');
-        signupTabBtn.classList.remove('active');
-        loginPanel.classList.add('active');
-        signupPanel.classList.remove('active');
-    } else {
-        signupTabBtn.classList.add('active');
-        loginTabBtn.classList.remove('active');
-        signupPanel.classList.add('active');
-        loginPanel.classList.remove('active');
-    }
+    if (!authFlipCard) return;
+    authFlipCard.classList.toggle('flipped', tab === 'signup');
     setStatus('');
 }
 
-loginTabBtn.addEventListener('click', () => setActiveTab('login'));
-signupTabBtn.addEventListener('click', () => setActiveTab('signup'));
+if (toSignupBtn) toSignupBtn.addEventListener('click', () => setActiveTab('signup'));
+if (toLoginBtn) toLoginBtn.addEventListener('click', () => setActiveTab('login'));
 
 adminLink.addEventListener('click', () => {
     adminPanel.classList.toggle('active');
