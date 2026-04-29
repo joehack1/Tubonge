@@ -33,6 +33,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
+const LOCAL_GEMINI_API_KEY = "AIzaSyC9-SKbxtrN33RTVYZDLFfCsdlToO1rTa4";
+const LOCAL_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+const LOCAL_GEMINI_API_VERSIONS = ["v1", "v1beta"];
 
 const sessionRaw = localStorage.getItem('dtubonge_session');
 const adminSession = localStorage.getItem('dtubonge_admin');
@@ -1285,17 +1288,91 @@ async function askAston() {
     setAstonLoading(true);
 
     try {
-        const res = await fetch('/.netlify/functions/aston-chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt,
-                history: state.astonHistory.slice(-8)
-            })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            throw new Error(data?.error || `Aston request failed (${res.status})`);
+        const endpoints = [
+            '/.netlify/functions/aston-chat',
+            '/netlify/functions/aston-chat'
+        ];
+        let res = null;
+        let data = {};
+        let lastErr = null;
+
+        for (const endpoint of endpoints) {
+            try {
+                res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        history: state.astonHistory.slice(-8)
+                    })
+                });
+                data = await res.json().catch(() => ({}));
+                if (res.ok) break;
+                lastErr = new Error(data?.error || `Aston request failed (${res.status}) at ${endpoint}`);
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+
+        if ((!res || !res.ok) && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+            let listedModels = [];
+            for (const apiVersion of LOCAL_GEMINI_API_VERSIONS) {
+                const modelListRes = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models?key=${encodeURIComponent(LOCAL_GEMINI_API_KEY)}`);
+                if (!modelListRes.ok) continue;
+                const modelListData = await modelListRes.json().catch(() => ({}));
+                const found = Array.isArray(modelListData?.models)
+                    ? modelListData.models
+                        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                        .map((m) => String(m.name || '').replace(/^models\//, ''))
+                        .filter(Boolean)
+                    : [];
+                if (found.length) {
+                    listedModels = found;
+                    break;
+                }
+            }
+            const localModels = Array.from(new Set([...listedModels, ...LOCAL_GEMINI_MODELS]));
+            let directReply = '';
+            let directError = '';
+
+            for (const apiVersion of LOCAL_GEMINI_API_VERSIONS) {
+                for (const model of localModels) {
+                    const direct = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(LOCAL_GEMINI_API_KEY)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                ...state.astonHistory.slice(-8).map((h) => ({
+                                    role: h.role === 'assistant' ? 'model' : 'user',
+                                    parts: [{ text: String(h.text || '') }]
+                                })),
+                                { role: 'user', parts: [{ text: prompt }] }
+                            ]
+                        })
+                    });
+                    const directData = await direct.json().catch(() => ({}));
+                    if (!direct.ok) {
+                        directError = directData?.error?.message || `Aston direct Gemini failed (${direct.status})`;
+                        continue;
+                    }
+                    directReply = String(
+                        directData?.candidates?.[0]?.content?.parts?.map((p) => p?.text || '').join('') || ''
+                    ).trim();
+                    if (directReply) break;
+                }
+                if (directReply) break;
+            }
+
+            if (!directReply) throw new Error(directError || 'Aston direct Gemini returned empty response.');
+            if (!directReply) throw new Error('Aston direct Gemini returned empty response.');
+            renderAstonMessage('assistant', directReply);
+            state.astonHistory.push({ role: 'assistant', text: directReply });
+            saveAstonHistory();
+            return;
+        }
+
+        if (!res || !res.ok) {
+            throw lastErr || new Error('Aston request failed on all endpoints.');
         }
         const reply = String(data?.reply || '').trim() || 'I am here. Ask me anything.';
         renderAstonMessage('assistant', reply);
@@ -1303,8 +1380,9 @@ async function askAston() {
         saveAstonHistory();
     } catch (e) {
         console.error(e);
-        renderAstonMessage('assistant', 'I could not respond right now. Check Aston API setup and try again.');
-        state.astonHistory.push({ role: 'assistant', text: 'I could not respond right now. Check Aston API setup and try again.' });
+        const msg = `Aston error: ${String(e?.message || 'Unknown error')}`;
+        renderAstonMessage('assistant', msg);
+        state.astonHistory.push({ role: 'assistant', text: msg });
         saveAstonHistory();
     } finally {
         setAstonLoading(false);
