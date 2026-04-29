@@ -33,9 +33,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
-const LOCAL_GEMINI_API_KEY = "AIzaSyC9-SKbxtrN33RTVYZDLFfCsdlToO1rTa4";
-const LOCAL_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
-const LOCAL_GEMINI_API_VERSIONS = ["v1", "v1beta"];
 
 const sessionRaw = localStorage.getItem('dtubonge_session');
 const adminSession = localStorage.getItem('dtubonge_admin');
@@ -143,14 +140,7 @@ const els = {
     viewProfileName: document.getElementById('view-profile-name'),
     viewProfileBio: document.getElementById('view-profile-bio'),
     viewProfileStatus: document.getElementById('view-profile-status'),
-    viewProfileJoin: document.getElementById('view-profile-join'),
-
-    astonFab: document.getElementById('aston-fab'),
-    astonPanel: document.getElementById('aston-panel'),
-    astonClose: document.getElementById('aston-close'),
-    astonMessages: document.getElementById('aston-messages'),
-    astonInput: document.getElementById('aston-input'),
-    astonSend: document.getElementById('aston-send')
+    viewProfileJoin: document.getElementById('view-profile-join')
 };
 
 const state = {
@@ -162,10 +152,7 @@ const state = {
     reply: null,
     muted: localStorage.getItem('dtubonge_muted') === 'true',
     notifications: [],
-    listenedUnread: new Set(),
-    astonOpen: false,
-    astonLoading: false,
-    astonHistory: []
+    listenedUnread: new Set()
 };
 
 const avatarIcons = ['🐼', '🦊', '🐯', '🦁', '🐸', '🐵', '🐙', '🦄', '🐶', '🐱', '🐧', '🐨'];
@@ -1213,220 +1200,6 @@ function renderSearch(term) {
     }
 }
 
-function renderAstonMessage(role, text) {
-    if (!els.astonMessages) return;
-    const row = document.createElement('div');
-    row.className = `aston-row ${role === 'user' ? 'user' : 'assistant'}`;
-    row.textContent = String(text || '');
-    els.astonMessages.appendChild(row);
-    els.astonMessages.scrollTop = els.astonMessages.scrollHeight;
-}
-
-function astonStorageKey() {
-    return `dtubonge_aston_history_${currentUser}`;
-}
-
-function saveAstonHistory() {
-    try {
-        localStorage.setItem(astonStorageKey(), JSON.stringify(state.astonHistory.slice(-40)));
-    } catch (e) {
-        console.warn('Could not persist Aston history:', e);
-    }
-}
-
-function loadAstonHistory() {
-    try {
-        const raw = localStorage.getItem(astonStorageKey());
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-            .filter((r) => r && (r.role === 'user' || r.role === 'assistant') && typeof r.text === 'string')
-            .slice(-40);
-    } catch {
-        return [];
-    }
-}
-
-function setAstonLoading(active) {
-    state.astonLoading = Boolean(active);
-    if (els.astonSend) els.astonSend.disabled = state.astonLoading;
-    if (!els.astonMessages) return;
-
-    const existing = document.getElementById('aston-typing');
-    if (state.astonLoading) {
-        if (existing) return;
-        const typing = document.createElement('div');
-        typing.id = 'aston-typing';
-        typing.className = 'aston-row assistant aston-typing';
-        typing.innerHTML = `
-            <span>Aston is thinking</span>
-            <i></i><i></i><i></i>
-        `;
-        els.astonMessages.appendChild(typing);
-        els.astonMessages.scrollTop = els.astonMessages.scrollHeight;
-    } else if (existing) {
-        existing.remove();
-    }
-}
-
-function setAstonOpen(open) {
-    state.astonOpen = Boolean(open);
-    if (!els.astonPanel || !els.astonFab) return;
-    els.astonPanel.classList.toggle('open', state.astonOpen);
-    els.astonFab.classList.toggle('open', state.astonOpen);
-}
-
-async function askAston() {
-    if (!els.astonInput || state.astonLoading) return;
-    const prompt = String(els.astonInput.value || '').trim();
-    if (!prompt) return;
-    els.astonInput.value = '';
-    renderAstonMessage('user', prompt);
-    state.astonHistory.push({ role: 'user', text: prompt });
-    saveAstonHistory();
-    setAstonLoading(true);
-
-    try {
-        const endpoints = [
-            '/.netlify/functions/aston-chat',
-            '/netlify/functions/aston-chat'
-        ];
-        let res = null;
-        let data = {};
-        let lastErr = null;
-
-        for (const endpoint of endpoints) {
-            try {
-                res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt,
-                        history: state.astonHistory.slice(-8)
-                    })
-                });
-                data = await res.json().catch(() => ({}));
-                if (res.ok) break;
-                lastErr = new Error(data?.error || `Aston request failed (${res.status}) at ${endpoint}`);
-            } catch (err) {
-                lastErr = err;
-            }
-        }
-
-        if ((!res || !res.ok) && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-            let listedModels = [];
-            for (const apiVersion of LOCAL_GEMINI_API_VERSIONS) {
-                const modelListRes = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models?key=${encodeURIComponent(LOCAL_GEMINI_API_KEY)}`);
-                if (!modelListRes.ok) continue;
-                const modelListData = await modelListRes.json().catch(() => ({}));
-                const found = Array.isArray(modelListData?.models)
-                    ? modelListData.models
-                        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-                        .map((m) => String(m.name || '').replace(/^models\//, ''))
-                        .filter(Boolean)
-                    : [];
-                if (found.length) {
-                    listedModels = found;
-                    break;
-                }
-            }
-            const localModels = Array.from(new Set([...listedModels, ...LOCAL_GEMINI_MODELS]));
-            let directReply = '';
-            let directError = '';
-
-            for (const apiVersion of LOCAL_GEMINI_API_VERSIONS) {
-                for (const model of localModels) {
-                    const direct = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(LOCAL_GEMINI_API_KEY)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [
-                                ...state.astonHistory.slice(-8).map((h) => ({
-                                    role: h.role === 'assistant' ? 'model' : 'user',
-                                    parts: [{ text: String(h.text || '') }]
-                                })),
-                                { role: 'user', parts: [{ text: prompt }] }
-                            ]
-                        })
-                    });
-                    const directData = await direct.json().catch(() => ({}));
-                    if (!direct.ok) {
-                        directError = directData?.error?.message || `Aston direct Gemini failed (${direct.status})`;
-                        continue;
-                    }
-                    directReply = String(
-                        directData?.candidates?.[0]?.content?.parts?.map((p) => p?.text || '').join('') || ''
-                    ).trim();
-                    if (directReply) break;
-                }
-                if (directReply) break;
-            }
-
-            if (!directReply) throw new Error(directError || 'Aston direct Gemini returned empty response.');
-            if (!directReply) throw new Error('Aston direct Gemini returned empty response.');
-            renderAstonMessage('assistant', directReply);
-            state.astonHistory.push({ role: 'assistant', text: directReply });
-            saveAstonHistory();
-            return;
-        }
-
-        if (!res || !res.ok) {
-            throw lastErr || new Error('Aston request failed on all endpoints.');
-        }
-        const reply = String(data?.reply || '').trim() || 'I am here. Ask me anything.';
-        renderAstonMessage('assistant', reply);
-        state.astonHistory.push({ role: 'assistant', text: reply });
-        saveAstonHistory();
-    } catch (e) {
-        console.error(e);
-        const msg = `Aston error: ${String(e?.message || 'Unknown error')}`;
-        renderAstonMessage('assistant', msg);
-        state.astonHistory.push({ role: 'assistant', text: msg });
-        saveAstonHistory();
-    } finally {
-        setAstonLoading(false);
-        if (els.astonInput) els.astonInput.focus();
-    }
-}
-
-function wireAston() {
-    if (!els.astonFab || !els.astonPanel) return;
-    els.astonFab.addEventListener('click', () => {
-        const next = !state.astonOpen;
-        setAstonOpen(next);
-        if (next && els.astonInput) els.astonInput.focus();
-    });
-    if (els.astonClose) {
-        els.astonClose.addEventListener('click', () => setAstonOpen(false));
-    }
-    if (els.astonSend) {
-        els.astonSend.addEventListener('click', () => askAston());
-    }
-    if (els.astonInput) {
-        els.astonInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                askAston();
-            }
-        });
-    }
-    state.astonHistory = loadAstonHistory();
-    if (els.astonMessages) {
-        els.astonMessages.innerHTML = '';
-    }
-    if (state.astonHistory.length) {
-        for (const msg of state.astonHistory) {
-            renderAstonMessage(msg.role, msg.text);
-        }
-    } else {
-        const welcome = 'Hi, I am Aston. I can help with ideas, writing, and quick answers.';
-        renderAstonMessage('assistant', welcome);
-        state.astonHistory.push({ role: 'assistant', text: welcome });
-        saveAstonHistory();
-    }
-}
-
 async function boot() {
     wireTabs();
     wireComposerMenu();
@@ -1438,7 +1211,6 @@ async function boot() {
     wireThemes();
     wireNotifications();
     wireSearch();
-    wireAston();
     setMuted(state.muted);
 
     await ensureUserRecord();
