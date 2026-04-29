@@ -140,7 +140,14 @@ const els = {
     viewProfileName: document.getElementById('view-profile-name'),
     viewProfileBio: document.getElementById('view-profile-bio'),
     viewProfileStatus: document.getElementById('view-profile-status'),
-    viewProfileJoin: document.getElementById('view-profile-join')
+    viewProfileJoin: document.getElementById('view-profile-join'),
+
+    astonFab: document.getElementById('aston-fab'),
+    astonPanel: document.getElementById('aston-panel'),
+    astonClose: document.getElementById('aston-close'),
+    astonMessages: document.getElementById('aston-messages'),
+    astonInput: document.getElementById('aston-input'),
+    astonSend: document.getElementById('aston-send')
 };
 
 const state = {
@@ -152,7 +159,10 @@ const state = {
     reply: null,
     muted: localStorage.getItem('dtubonge_muted') === 'true',
     notifications: [],
-    listenedUnread: new Set()
+    listenedUnread: new Set(),
+    astonOpen: false,
+    astonLoading: false,
+    astonHistory: []
 };
 
 const avatarIcons = ['🐼', '🦊', '🐯', '🦁', '🐸', '🐵', '🐙', '🦄', '🐶', '🐱', '🐧', '🐨'];
@@ -1200,6 +1210,145 @@ function renderSearch(term) {
     }
 }
 
+function renderAstonMessage(role, text) {
+    if (!els.astonMessages) return;
+    const row = document.createElement('div');
+    row.className = `aston-row ${role === 'user' ? 'user' : 'assistant'}`;
+    row.textContent = String(text || '');
+    els.astonMessages.appendChild(row);
+    els.astonMessages.scrollTop = els.astonMessages.scrollHeight;
+}
+
+function astonStorageKey() {
+    return `dtubonge_aston_history_${currentUser}`;
+}
+
+function saveAstonHistory() {
+    try {
+        localStorage.setItem(astonStorageKey(), JSON.stringify(state.astonHistory.slice(-40)));
+    } catch (e) {
+        console.warn('Could not persist Aston history:', e);
+    }
+}
+
+function loadAstonHistory() {
+    try {
+        const raw = localStorage.getItem(astonStorageKey());
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .filter((r) => r && (r.role === 'user' || r.role === 'assistant') && typeof r.text === 'string')
+            .slice(-40);
+    } catch {
+        return [];
+    }
+}
+
+function setAstonLoading(active) {
+    state.astonLoading = Boolean(active);
+    if (els.astonSend) els.astonSend.disabled = state.astonLoading;
+    if (!els.astonMessages) return;
+
+    const existing = document.getElementById('aston-typing');
+    if (state.astonLoading) {
+        if (existing) return;
+        const typing = document.createElement('div');
+        typing.id = 'aston-typing';
+        typing.className = 'aston-row assistant aston-typing';
+        typing.innerHTML = `
+            <span>Aston is thinking</span>
+            <i></i><i></i><i></i>
+        `;
+        els.astonMessages.appendChild(typing);
+        els.astonMessages.scrollTop = els.astonMessages.scrollHeight;
+    } else if (existing) {
+        existing.remove();
+    }
+}
+
+function setAstonOpen(open) {
+    state.astonOpen = Boolean(open);
+    if (!els.astonPanel || !els.astonFab) return;
+    els.astonPanel.classList.toggle('open', state.astonOpen);
+    els.astonFab.classList.toggle('open', state.astonOpen);
+}
+
+async function askAston() {
+    if (!els.astonInput || state.astonLoading) return;
+    const prompt = String(els.astonInput.value || '').trim();
+    if (!prompt) return;
+    els.astonInput.value = '';
+    renderAstonMessage('user', prompt);
+    state.astonHistory.push({ role: 'user', text: prompt });
+    saveAstonHistory();
+    setAstonLoading(true);
+
+    try {
+        const res = await fetch('/.netlify/functions/aston-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt,
+                history: state.astonHistory.slice(-8)
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data?.error || `Aston request failed (${res.status})`);
+        }
+        const reply = String(data?.reply || '').trim() || 'I am here. Ask me anything.';
+        renderAstonMessage('assistant', reply);
+        state.astonHistory.push({ role: 'assistant', text: reply });
+        saveAstonHistory();
+    } catch (e) {
+        console.error(e);
+        renderAstonMessage('assistant', 'I could not respond right now. Check Aston API setup and try again.');
+        state.astonHistory.push({ role: 'assistant', text: 'I could not respond right now. Check Aston API setup and try again.' });
+        saveAstonHistory();
+    } finally {
+        setAstonLoading(false);
+        if (els.astonInput) els.astonInput.focus();
+    }
+}
+
+function wireAston() {
+    if (!els.astonFab || !els.astonPanel) return;
+    els.astonFab.addEventListener('click', () => {
+        const next = !state.astonOpen;
+        setAstonOpen(next);
+        if (next && els.astonInput) els.astonInput.focus();
+    });
+    if (els.astonClose) {
+        els.astonClose.addEventListener('click', () => setAstonOpen(false));
+    }
+    if (els.astonSend) {
+        els.astonSend.addEventListener('click', () => askAston());
+    }
+    if (els.astonInput) {
+        els.astonInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askAston();
+            }
+        });
+    }
+    state.astonHistory = loadAstonHistory();
+    if (els.astonMessages) {
+        els.astonMessages.innerHTML = '';
+    }
+    if (state.astonHistory.length) {
+        for (const msg of state.astonHistory) {
+            renderAstonMessage(msg.role, msg.text);
+        }
+    } else {
+        const welcome = 'Hi, I am Aston. I can help with ideas, writing, and quick answers.';
+        renderAstonMessage('assistant', welcome);
+        state.astonHistory.push({ role: 'assistant', text: welcome });
+        saveAstonHistory();
+    }
+}
+
 async function boot() {
     wireTabs();
     wireComposerMenu();
@@ -1211,6 +1360,7 @@ async function boot() {
     wireThemes();
     wireNotifications();
     wireSearch();
+    wireAston();
     setMuted(state.muted);
 
     await ensureUserRecord();
