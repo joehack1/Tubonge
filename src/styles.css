@@ -759,6 +759,7 @@ body.chat-page {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    height: 100%;
     border: 1px solid var(--surface-border);
     border-radius: 14px;
     overflow: hidden;
@@ -773,6 +774,14 @@ body.chat-page {
     padding: 12px 14px;
     border-bottom: 1px solid var(--surface-border);
     background: rgba(0, 0, 0, 0.18);
+}
+
+#private-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .private-chat-title {
@@ -1276,14 +1285,14 @@ body.chat-page {
 
 .auth-card {
     width: 90%;
-    max-width: 1000px;
-    background: rgba(26, 26, 26, 0.95);
-    border-radius: 16px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
-    border: 1px solid var(--surface-border);
-    animation: slideIn 0.4s ease;
+    max-width: 560px;
+    background: transparent;
+    border-radius: 0;
+    display: block;
+    overflow: visible;
+    border: none;
+    box-shadow: none;
+    animation: slideIn 0.35s ease;
 }
 
 .auth-showcase {
@@ -1358,9 +1367,15 @@ body.chat-page {
 }
 
 .auth-panel {
-    padding: 40px;
+    padding: 28px;
     display: flex;
     flex-direction: column;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.42);
 }
 
 .auth-flip-shell {
