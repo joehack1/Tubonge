@@ -689,7 +689,6 @@ function openThread(threadId, otherUser) {
     unsubPrivateMessages = [];
 
     const candidates = resolveThreadCandidates(threadId, otherUser);
-    const mergeKeySet = new Set();
     const messageBuckets = new Map();
     const renderMergedMessages = () => {
         if (!els.privateMessages) return;
@@ -716,7 +715,6 @@ function openThread(threadId, otherUser) {
                 snapshot.forEach((s) => {
                     const msg = { id: s.key, ...s.val() };
                     const key = `${candidateId}:${s.key}`;
-                    mergeKeySet.add(key);
                     messageBuckets.set(key, msg);
                 });
                 renderMergedMessages();
